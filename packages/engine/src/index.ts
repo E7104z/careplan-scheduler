@@ -17,3 +17,4 @@ export * from "./compose/composeWeek.js";
 export * from "./rules/auth.js";
 export * from "./rules/sch.js";
 export * from "./rules/conflicts.js";
+export * from "./validate.js";
