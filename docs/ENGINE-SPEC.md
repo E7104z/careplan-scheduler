@@ -1,0 +1,272 @@
+# CarePlan Scheduler — Engine Specification (Phase 1)
+
+Condensed from "CarePlan Scheduler — Missouri Scheduling Rules Specification" v0.3
+(Claude Docs, Oct 20, 2026). Rule IDs, formulas and expected values here are identical to
+that document. Phase 1 = the rules engine package only (`packages/engine`).
+
+---
+
+## 1. Principles (apply to every module)
+
+| ID | Principle |
+|---|---|
+| P-01 | Three layers stay separate: Authorization (read only), Schedule (this engine), Delivery/Billing (out of scope). |
+| P-02 | An imported Fusion authorization is never recalculated or overwritten. Computed values carry `source: "derived"` and a `method`. |
+| P-03 | Each service is validated under its own rule pack; one participant can have several services. |
+| P-04 | Schedules are built from tasks. Monthly units are never spread evenly across days. |
+| P-05 | A rule with status OPEN or PARTIAL produces `REVIEW`, never a silent pass. |
+| P-06 | Rule packs are effective-dated; a schedule stores the rule-pack version it was validated under. |
+
+Severities: `BLOCK` (cannot publish), `WARN`, `INFO`, `REVIEW` (unverified; never counted as compliant).
+
+---
+
+## 2. Types (`src/types.ts`)
+
+```ts
+export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;            // 0 = Sunday
+export type Severity = "BLOCK" | "WARN" | "INFO" | "REVIEW";
+export type ProgramCode =
+  | "CDS" | "ILW" | "AGENCY_PC" | "APC" | "NURSE" | "HOMEMAKER" | "CHORE" | "RESPITE";
+export type ServiceCode =
+  | "T1019U2" | "T1019U6" | "T1019" | "T1019TF" | "T1001"
+  | "S5130" | "S5120" | "S5150" | "S5150TF";
+export type AuthState =
+  | "active" | "future" | "partial" | "suspended" | "expired" | "pending_approval";
+export type WaiverCode = "ILW" | "ADW" | "ADCW" | "SFCW";
+
+export interface AuthorizedTask {
+  id: string;                     // stable, scoped to its authorization (SCH-13)
+  serviceAuthId: string;
+  taskCode: string;               // from the rule-pack task library
+  name: string;                   // display only, never a key
+  minPerDay: number;              // integer minutes per occurrence
+  daysPerWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+}
+
+export interface ServiceAuthorization {
+  id: string;
+  participantId: string;
+  program: ProgramCode;
+  serviceCode: ServiceCode;
+  start: string;                  // YYYY-MM-DD
+  end: string;                    // YYYY-MM-DD
+  state: AuthState;
+  suspensions: { start: string; end: string }[];
+  receivedDate?: string;          // CON-13
+  revision: number;
+  tasks: AuthorizedTask[];
+  transportMinutesPerMonth?: number;
+}
+
+export interface MonthlyAuthorization {
+  serviceAuthId: string;
+  month: string;                  // YYYY-MM
+  units: number;
+  source: "fusion" | "derived";
+  method?: "hcbs3c-roundup" | "workbook-trunc099" | "short-month";
+  revision: number;
+}
+
+export interface TemplateEntry { taskId: string; weekday: Weekday; minutes: number; }
+export interface ScheduleTemplate {
+  id: string;
+  participantId: string;
+  start: string; end: string;
+  entries: TemplateEntry[];
+  rulePackVersion: string;
+}
+export interface CalendarException {
+  id: string; participantId: string; date: string;
+  taskId: string; minutesDelta: number;   // + adds, - removes on that date
+  reason: string; author: string; createdAt: string;
+}
+export interface Visit {
+  id: string; participantId: string; caregiverId: string;
+  serviceCode: ServiceCode;
+  start: string; end: string;     // local ISO "YYYY-MM-DDTHH:mm", America/Chicago
+  taskIds: string[];
+}
+export interface Caregiver {
+  id: string;
+  relationships: Record<string, "spouse" | "legal_guardian" | "parent" | "sibling"
+    | "child" | "stepchild" | "grandparent" | "grandchild" | "other_family" | "none">;
+  agencyEmployee?: boolean;
+  nurseLicense?: boolean;
+  fcsrRegistered?: boolean;
+}
+export interface WaiverEnrollment { participantId: string; waiver: WaiverCode; start: string; end: string; }
+export interface ValidationResult {
+  ruleId: string; severity: Severity; message: string;
+  refs: { taskId?: string; visitId?: string; date?: string; month?: string; serviceAuthId?: string };
+}
+```
+
+---
+
+## 3. Rule pack `mo-2026-07` (`src/rulepacks/mo-2026-07.ts`)
+
+Effective 2026-07-01. Sources: 3.00 Appendix 1 (rev. Jul 2026), Policy 3.50 (rev. Jul 2026),
+HCBS 06-26-01.
+
+| Service | Code | Program | Unit | Monthly ceiling | Other limits |
+|---|---|---|---|---|---|
+| CDS Personal Care Assistance (State Plan) | T1019U2 | CDS | 15 min | 641 | — |
+| ILW Personal Care Assistance | T1019U6 | ILW | 15 min | 868 | 49 h/week; BFP approval required |
+| Basic Personal Care – Agency | T1019 | AGENCY_PC | 15 min | 412 | — |
+| Advanced Personal Care | T1019TF | APC | 15 min | none | — |
+| Authorized Nurse Visits | T1001 | NURSE | 1 visit | — | 1/day; 26 per 6-month period |
+| Homemaker (ADW) | S5130 | HOMEMAKER | 15 min | none | — |
+| Chore (ADW) | S5120 | CHORE | 15 min | none | frequency as days/month |
+| Respite – Basic / Advanced (ADW) | S5150 / S5150TF | RESPITE | 15 min | 868 combined | 49 h/week combined |
+
+Days-per-month factor (AUTH-02): `{1:5, 2:10, 3:15, 4:19, 5:23, 6:27, 7:31}`.
+
+Task library: every task has a `taskCode` and `aliases` (all spellings below map to one code).
+
+CDS / ILW (DHSS 14b dropdown, HCBS-3c names as aliases):
+Assistive Transfer Device (alias "Asst. Transfer Device"); Assistance with Toileting (aliases
+"Asstance with Toileting", "Asst. with Toileting"); Bathing; Bowel/Bladder Routine; Catheter
+Hygiene; Change Linens; Clean Bath; Clean Floors; Clean Kitchen; Clean/Maintain Equipment;
+Dressing/Grooming; Essential Correspondence; Laundry (Home); Laundry (Off Site); Make Bed;
+Meal Prep/Eating; Medications; Mobility/Transfer; Ostomy Hygiene; Passive ROM; Tidy and Dust;
+Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (transport).
+
+Agency model (DHSS 14a dropdown):
+Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
+Medications; Toileting. Homemaker — Clean Bath; Clean Kitchen; Clean Living Area; Essential
+Correspondence; Iron/Mend; Laundry; Make Bed/Change Linens; Meals/Dishes; Shopping/Errands;
+Trash; Wash Windows/Blinds. APC — Aseptic Dressings; Assistive Transfer Device; Bowel
+Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite — Basic
+Respite; Advanced Respite.
+
+Service-pair overlap matrix (CON-02): `CDS+NURSE: allowed`; `RESPITE+any other: prohibited`;
+same code twice: prohibited (CON-01); every other pair: `unknown` (→ REVIEW).
+
+---
+
+## 4. Formulas (`src/math/`)
+
+| ID | Function | Formula | Notes |
+|---|---|---|---|
+| F-1 | `factorFor(daysPerWeek)` | table above | — |
+| F-2a | `hcbs3cTaskUnits(minPerDay, dpw)` | `ceil(minPerDay / 15 * factor)` | HCBS-3c cell Q11 |
+| F-2b | `workbookTaskUnits(weeklyMinutes, timesPerWeek)` | `trunc(weeklyMinutes / timesPerWeek / 15 * factor + 0.99)` | DHSS 14a/14b cell M7 |
+| F-3 | `monthTaskUnits(weeklyMinutes, timesPerWeek, daysInMonth)` | if timesPerWeek = 7: `trunc(weeklyMinutes/7/15*daysInMonth + 0.99)`; else F-2b | 14a/14b cell D37; short months affect 7-day tasks only |
+| F-4 | `transport(minPerTrip, tripsPerWeek)` | `min = minPerTrip * factor`; `units = floor(min/15)`; `unallocated = min - units*15` | Policy 3.25; HCBS-3c L88 |
+| F-5 | `dayUnits(minutes)` | `units = floor(min/15)`, `remainder = min mod 15` | display only |
+| F-6 | `usageMeasures(template, months[])` | weekly baseline `floor(weekMin/15) * 52`; calendar minutes; monthly whole units `Σ floor(monthMin/15)` + remainders | never merged into one number |
+| F-7 | `calendarCheck` | `Σ scheduled minutes of task in month ≤ 15 × monthTaskUnits` | always runs |
+| F-8 | `projectIlwSwitch(dailyUnits[], statePlanUnits)` | first date where the running total would exceed the imported State Plan units; split that day | only when both imported authorizations exist |
+| F-9 | `weeklyHours` | Sunday–Saturday totals (labeled convention) + every rolling 7-day window | never reset at month/year boundary |
+
+Floating-point guard: compute `weeklyMinutes * factor` as integers and divide once;
+for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer numerator
+`num = weeklyMinutes * factor` and denominator `den = timesPerWeek * 15`.
+
+---
+
+## 5. Rules (`src/rules/`)
+
+### Authorization (`auth.ts`)
+
+| ID | Rule | Severity | Status |
+|---|---|---|---|
+| AUTH-03 | Derived task units use F-2b; also compute F-2a; if they differ, emit REVIEW (edge case P-1). | INFO / REVIEW | PARTIAL |
+| AUTH-05 | Derived month units use F-3 for in-home task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER). Other services are not prorated. | INFO | PARTIAL |
+| AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED |
+| AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED |
+| AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED |
+| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. | BLOCK / REVIEW | VERIFIED |
+| AUTH-11 | ILW switch projection only when both imported authorizations exist; label "projection". | INFO | PARTIAL |
+| AUTH-12 | ILW units scheduled while `state = pending_approval` → BLOCK. Never create a State Plan authorization for an ILW participant. | BLOCK | VERIFIED |
+| AUTH-13 | Validation results carry the rule-pack version. | INFO | APPROVED |
+
+### Schedule (`sch.ts`)
+
+| ID | Rule | Severity | Status |
+|---|---|---|---|
+| SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis |
+| SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED |
+| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK. | BLOCK | VERIFIED |
+| SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). | WARN | APPROVED |
+| SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED |
+| SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED |
+| SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED |
+
+### Conflicts and eligibility (`con.ts`)
+
+| ID | Rule | Severity | Status |
+|---|---|---|---|
+| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. | BLOCK / WARN | PARTIAL |
+| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. | per matrix | PARTIAL |
+| CON-03 | Respite overlapping any other service → BLOCK. | BLOCK | VERIFIED |
+| CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED |
+| CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED |
+| CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) |
+| CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. | BLOCK / REVIEW | VERIFIED |
+| CON-09 | ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN. | REVIEW / WARN | PARTIAL |
+| CON-10 | Nurse visits: > 1 per date → BLOCK; > 26 in a six-month period → BLOCK. | BLOCK | VERIFIED |
+| CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED |
+| CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED |
+| CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL |
+
+---
+
+## 6. Composer (`src/compose/composeWeek.ts`)
+
+Port of Scheduler Lite `carePlan.person.ts` (`composePCSSnapshot`), changed to use task IDs.
+
+Input: `tasks: AuthorizedTask[]`, `activeDays: boolean[7]`, `overrides: Record<taskId, Weekday[]>`,
+`weeklyTransportMinutes`, `transportDay: Weekday`.
+Behavior (keep exactly):
+1. Only active days receive tasks.
+2. 7-day tasks go on every active day unless an override lists days.
+3. Other tasks: if an override exists, use exactly those days (still active days only).
+   Otherwise place heaviest tasks first, each on its `daysPerWeek` lightest active days by
+   current load; ties go Monday-first order `[1,2,3,4,5,6,0]`.
+4. The transport day starts with `weeklyTransportMinutes` of load so tasks steer away from it.
+5. A task never appears twice on the same day.
+Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
+
+---
+
+## 7. Acceptance fixtures (expected values are exact)
+
+| TC | Input | Expected |
+|---|---|---|
+| TC-01 | Bathing 30 min Mon/Wed/Fri; Toileting 15 daily; Meals/Dishes 45 daily; Laundry 30 Tue/Thu; Clean Kitchen 10 Sun/Sat; Sep 2025–Aug 2026 | day minutes Sun..Sat `[70,90,90,90,90,90,70]`; week 590 = 39 units + 5; month units: 31-day 181, 30-day 177, Feb 2026 169, Feb 2028 173; 12-month total 2,144; weekly baseline 2,028; calendar minutes 30,770; monthly whole units 2,047 with 65 remainder minutes; Sep 2025 usage 169 units + 5 |
+| TC-02 | one task 30 min daily | 56 / 58 / 60 / 62 in 28 / 29 / 30 / 31-day months |
+| TC-03 | Transfer Device 30 min daily; Toileting 15 daily; Bathing 30 min 5×/wk | 130 / 133 / 136 / 139 in 28 / 29 / 30 / 31 days |
+| TC-04 | 309 min/day, 5×/wk | F-2a 474; written-example method 483 (not implemented; documented) |
+| TC-05 | 10 min 1×/wk; 10 min 2×/wk | 4; 7 |
+| TC-06 | transport 90×1; 60×2; 60×3 | 450/600/900 min = 30/40/60 units, 0 unallocated |
+| TC-07 | Respite 13:00–17:00 and CDS 14:00–15:00, same participant/day | BLOCK CON-03 |
+| TC-08 | (a) two CDS visits overlap; (b) CDS + NURSE overlap; (c) AGENCY_PC + HOMEMAKER overlap | (a) BLOCK CON-01; (b) none; (c) REVIEW CON-02 |
+| TC-09 | composer: active Sun/Tue/Thu/Sat; override Bathing → Sun/Tue/Thu | entries only on 0,2,4,6; Bathing on 0,2,4 |
+| TC-10 | 420 min/day daily, 31-day month, imported State Plan 500, ILW 368; then ILW missing | switch day 18 (24 SP + 4 ILW); days 19–31 ILW; without ILW: no projection |
+| TC-11 | ILW 420 min/day Sun 2029-01-28 – Sat 2029-02-03 | week total 49 h, no REVIEW; window not reset on Feb 1 |
+| TC-12 | all months 2026–2036 | max occurrences of k weekdays = 5,10,15,19,23,27,31 |
+| TC-13 | AGENCY_PC aide is grandchild | BLOCK CON-07 |
+| TC-14 | CDS attendant: child → ok; spouse → BLOCK CON-06 |
+| TC-15 | two NURSE visits same date; 27th visit in 6 months | BLOCK; BLOCK |
+| TC-16 | 15 min/day 4×/wk; template Mon 51, Tue 3, Wed 3, Thu 3; March 2027 | 297 > 285 → BLOCK SCH-08; WARN SCH-03 |
+| TC-17 | Respite Basic 500 + Advanced 500 in one month | BLOCK AUTH-09 |
+| TC-18 | ILW 2026-10-01..2027-03-31 and ADW 2026-10-15..2027-03-31 | BLOCK CON-16 |
+| TC-20 | transport 50×1; 70×2 | 250 min = 16 units + 10; 700 = 46 + 10 |
+| TC-21 | authorization start 2026-10-15, no imported Oct figure | no visits before Oct 15; REVIEW SCH-12 |
+| TC-22 | authorization end 2026-10-20; visit 2026-10-21 | BLOCK SCH-14 |
+| TC-24 | suspension 2026-10-05..2026-10-12; visit 2026-10-07 | BLOCK SCH-14 |
+| TC-25 | ILW 450 min/day Sun 2026-12-27 – Sat 2027-01-02 | 52.5 h → REVIEW CON-09 |
+| TC-26 | wk1 Sun–Wed 285 min, Thu–Sat 600; wk2 Sun–Wed 600, Thu–Sat 180 | each Sun–Sat week 49 h; Thu–Wed window 70 h → WARN CON-09 |
+| TC-27 | visit 2026-10-31T22:00 → 2026-11-01T06:00 | 540 min: 120 on Oct 31, 420 on Nov 1 |
+| TC-28 | visit 2027-03-13T22:00 → 2027-03-14T06:00 | 420 min: 120 on Mar 13, 300 on Mar 14 |
+| TC-29 | ADW ends 2026-10-10, ILW starts 2026-10-11; then ADW ends 2026-10-12 | first ok; second BLOCK CON-16 |
+| TC-30 | ILW visit, no enrollment record | REVIEW CON-16 |
+| TC-31 | CDS "Bathing" and AGENCY_PC "Bathing"; override only the CDS task id | agency Bathing unchanged |
+| TC-32 | caregiver A: P-1 09:00–11:00, P-2 10:00–12:00 same date | BLOCK CON-04 |
+| TC-33 | caregiver 42 h in workweek | WARN CON-05 only |
+| TC-35 | ILW attendant `fcsrRegistered` undefined | REVIEW CON-17 |
+| TC-37 | 7-day task, 61 weekly minutes (10×6 + 1) | F-2b 18; F-2a 19; REVIEW AUTH-03 |
+
+TC-19 (app-level), TC-23 (amendment), TC-34 (GHE) and TC-36 (exports) belong to later phases.

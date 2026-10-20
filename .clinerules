@@ -1,0 +1,44 @@
+# CarePlan Scheduler — Cline project rules
+
+These rules apply to every task in this repository. Read them before every task.
+
+## What this project is
+CarePlan Scheduler is a standalone, multi-tenant scheduling app for Missouri home and
+community-based services (HCBS). Phase 1 builds only the rules engine: a pure TypeScript
+package with no UI, in `packages/engine`. The full specification is `docs/ENGINE-SPEC.md`.
+That file is the source of truth. If a prompt and the spec disagree, stop and ask.
+
+## Hard rules
+1. Build exactly what the current prompt asks. Do not start the next task, add UI, add
+   Firebase, or refactor files the prompt did not name.
+2. Every rule function is named after its spec ID (e.g. `ruleSCH08CalendarCheck`) and has a
+   JSDoc line: `@rule SCH-08` and `@source <source named in the spec>`.
+3. Never hardcode participant data, debug data or sample results inside `src/`. Test data
+   lives only in `packages/engine/test/`. Real-looking names are never used; use
+   identifiers like `P-TEST-01`.
+4. Never recalculate and overwrite an imported Fusion authorization. Values the engine
+   computes are always tagged `source: "derived"` with a `method` string.
+5. Never mark something compliant when its rule status is OPEN or PARTIAL: emit severity
+   `REVIEW`, not silence.
+6. Use exact integer minute arithmetic. Only apply rounding where the spec names the
+   rounding function (`ceil`, `trunc(x + 0.99)`, `floor`).
+7. TypeScript `strict: true`. No `any`. No `// @ts-ignore`. No default exports.
+8. Complete every function you start. No `TODO`, no stubs, no placeholder returns.
+9. Before finishing any task run, in `packages/engine`:
+   `npx tsc --noEmit` and `npx vitest run`. Both must pass. Paste the summary lines of both
+   into your final message.
+10. Commit on the branch the prompt names, with the commit message the prompt gives. Never
+    commit to `main` directly and never push with `--force`.
+
+## Pinned versions (do not upgrade)
+- Node 22 LTS
+- typescript 5.9.3
+- vitest 3.2.4
+- luxon 3.5.0 and @types/luxon 3.4.2
+- Package manager: npm (workspaces). No pnpm, no yarn.
+
+## Style
+- One concept per file, files under 300 lines.
+- Pure functions; no module-level mutable state; no I/O in `src/`.
+- Dates: ISO strings `YYYY-MM-DD`; months `YYYY-MM`; times are local
+  `America/Chicago` and converted with luxon only inside `src/calendar/time.ts`.
