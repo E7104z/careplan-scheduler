@@ -13,3 +13,4 @@ export * from "./calendar/expand.js";
 export * from "./calendar/usage.js";
 export * from "./calendar/time.js";
 export * from "./calendar/weeks.js";
+export * from "./compose/composeWeek.js";
