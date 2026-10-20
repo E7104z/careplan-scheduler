@@ -16,3 +16,4 @@ export * from "./calendar/weeks.js";
 export * from "./compose/composeWeek.js";
 export * from "./rules/auth.js";
 export * from "./rules/sch.js";
+export * from "./rules/conflicts.js";
