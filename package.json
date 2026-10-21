@@ -1,0 +1,11 @@
+{
+  "name": "careplan-scheduler",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm run test -w @careplan/engine",
+    "typecheck": "npm run typecheck -w @careplan/engine"
+  }
+}
