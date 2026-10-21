@@ -4,41 +4,72 @@ These rules apply to every task in this repository. Read them before every task.
 
 ## What this project is
 CarePlan Scheduler is a standalone, multi-tenant scheduling app for Missouri home and
-community-based services (HCBS). Phase 1 builds only the rules engine: a pure TypeScript
-package with no UI, in `packages/engine`. The full specification is `docs/ENGINE-SPEC.md`.
-That file is the source of truth. If a prompt and the spec disagree, stop and ask.
+community-based services (HCBS).
+- `packages/engine`: the rules engine (Phase 1, done). Pure TypeScript, no UI.
+  Source of truth: `docs/ENGINE-SPEC.md`.
+- `apps/web`: the React app (Phase 2): public site, accounts, Quick Schedule.
+  Source of truth: `docs/APP-SPEC.md`. Visual target: `docs/design/quick-schedule-prototype.html`
+  and `docs/design/tokens.css`.
+If a prompt and a spec disagree, stop and ask.
 
-## Hard rules
-1. Build exactly what the current prompt asks. Do not start the next task, add UI, add
-   Firebase, or refactor files the prompt did not name.
-2. Every rule function is named after its spec ID (e.g. `ruleSCH08CalendarCheck`) and has a
-   JSDoc line: `@rule SCH-08` and `@source <source named in the spec>`.
-3. Never hardcode participant data, debug data or sample results inside `src/`. Test data
-   lives only in `packages/engine/test/`. Real-looking names are never used; use
-   identifiers like `P-TEST-01`.
-4. Never recalculate and overwrite an imported Fusion authorization. Values the engine
-   computes are always tagged `source: "derived"` with a `method` string.
-5. Never mark something compliant when its rule status is OPEN or PARTIAL: emit severity
-   `REVIEW`, not silence.
-6. Use exact integer minute arithmetic. Only apply rounding where the spec names the
-   rounding function (`ceil`, `trunc(x + 0.99)`, `floor`).
-7. TypeScript `strict: true`. No `any`. No `// @ts-ignore`. No default exports.
-8. Complete every function you start. No `TODO`, no stubs, no placeholder returns.
-9. Before finishing any task run, in `packages/engine`:
-   `npx tsc --noEmit` and `npx vitest run`. Both must pass. Paste the summary lines of both
-   into your final message.
-10. Commit on the branch the prompt names, with the commit message the prompt gives. Never
-    commit to `main` directly and never push with `--force`.
+## Hard rules (whole repo)
+1. Build exactly what the current prompt asks. Do not start the next prompt, and do not
+   refactor files the prompt did not name.
+2. TypeScript `strict: true`. No `any`. No `// @ts-ignore` or `@ts-expect-error`. No default
+   exports (except where a tool requires one: `vite.config.ts`, `playwright.config.ts`,
+   `vitest.rules.config.ts`).
+3. Complete every function and component you start. No `TODO`, no stubs, no placeholder
+   returns, no "coming soon" screens, no lorem ipsum.
+4. Never hardcode participant data, debug data or sample results in source. Test data lives
+   only in test folders and uses identifiers like `P-TEST-01`, never real-looking names.
+   The Quick Schedule example plan (APP-SPEC QS-12) is the one allowed built-in example.
+5. Pinned versions only (below and APP-SPEC section 1). Install with exact versions
+   (`--save-exact`). Never upgrade or add a package the prompt didn't name.
+6. Before finishing any prompt, run every command in its "Finish" list. All must pass. Paste
+   the summary lines into your final message.
+7. Commit on the branch the prompt names with the commit message it gives. Never commit to
+   `main` and never push with `--force`.
+
+## Engine rules (`packages/engine`)
+8. Every rule function is named after its spec ID (e.g. `ruleSCH08CalendarCheck`) and has
+   JSDoc lines `@rule SCH-08` and `@source <source named in the spec>`.
+9. Never recalculate and overwrite an imported Fusion authorization. Computed values are
+   tagged `source: "derived"` with a `method`.
+10. Never mark something compliant when its rule status is OPEN or PARTIAL: emit `REVIEW`.
+11. Exact integer minute arithmetic. Round only where the spec names the function.
+12. No I/O, no module-level mutable state in `src/`.
+
+## App rules (`apps/web`)
+13. All schedule math comes from `@careplan/engine`. The app never re-implements units,
+    rounding, composing or rule checks.
+14. Colors, fonts, radii and shadows come only from `src/styles/tokens.css` through the
+    Tailwind token names. No hex, rgb() or hsl() literals anywhere else (a test enforces it).
+15. Every user-facing string follows APP-SPEC section 4.3: sentence case, plain words, buttons
+    say what happens, errors say how to fix it. Use the exact copy the spec gives.
+16. Accessibility is part of done: labels on every control, keyboard paths, visible focus,
+    `aria-live` where the spec says, WCAG 2.2 AA (axe must report zero violations).
+17. Public pages (`/`, `/quick`, `/rules`, `/privacy`) never import Firebase. Firebase code
+    loads only through lazy routes. `scripts/check-bundle.mjs` must pass.
+18. Never call `getAnalytics` or add any tracking, analytics or third-party script.
+19. Quick Schedule state lives only in React state and `sessionStorage` key `cps.quick.v1`.
+    Never write it to Firestore, `localStorage`, the URL or the console.
+20. Never edit `firestore.rules`, `docs/design/tokens.css`, `docs/APP-SPEC.md` or
+    `docs/ENGINE-SPEC.md` unless the prompt says to. If one seems wrong, stop and report.
+21. Firebase calls live in `src/features/*/` service modules; components call those
+    modules, never the Firebase SDK directly. Every Firestore error maps to copy from
+    APP-SPEC 6.6.
+22. No `console.log` in committed code. No `dangerouslySetInnerHTML`.
 
 ## Pinned versions (do not upgrade)
-- Node 22 LTS
-- typescript 5.9.3
-- vitest 3.2.4
-- luxon 3.5.0 and @types/luxon 3.4.2
-- Package manager: npm (workspaces). No pnpm, no yarn.
+- Node 22 LTS. Package manager: npm workspaces. No pnpm, no yarn.
+- Engine: typescript 5.9.3, vitest 3.2.4, luxon 3.5.0, @types/luxon 3.4.2, @types/node 22.20.5.
+- Web: see APP-SPEC section 1 (react 19.3.1, react-router 7.18.4, vite 7.3.7,
+  tailwindcss 4.3.3, firebase 12.19.0, and the rest of that table).
+- Root dev: firebase-tools 14.27.0.
 
 ## Style
 - One concept per file, files under 300 lines.
-- Pure functions; no module-level mutable state; no I/O in `src/`.
-- Dates: ISO strings `YYYY-MM-DD`; months `YYYY-MM`; times are local
-  `America/Chicago` and converted with luxon only inside `src/calendar/time.ts`.
+- Engine: pure functions; dates as ISO strings `YYYY-MM-DD`, months `YYYY-MM`; local time
+  `America/Chicago` converted with luxon only inside `src/calendar/time.ts`.
+- App: function components and hooks; state with `useReducer` where several inputs interact;
+  pure logic in `.ts` files next to the feature, tested without rendering.
