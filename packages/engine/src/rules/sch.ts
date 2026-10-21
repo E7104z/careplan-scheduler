@@ -1,5 +1,5 @@
 import { daysInMonth } from "../math/dates.js";
-import { monthTaskUnits } from "../math/units.js";
+import { derivedServiceMonthUnits, monthTaskUnits, monthTransportUnits } from "../math/units.js";
 import { expandMonth, monthTaskMinutes } from "../calendar/expand.js";
 import type {
   AuthorizedTask,
@@ -13,7 +13,7 @@ import type {
 
 /**
  * @rule SCH-02
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2
  */
 export function ruleSCH02TemplateDays(
   template: ScheduleTemplate,
@@ -46,7 +46,7 @@ export function ruleSCH02TemplateDays(
 
 /**
  * @rule SCH-03
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid
  */
 export function ruleSCH03TemplateMinutes(
   template: ScheduleTemplate,
@@ -70,33 +70,59 @@ export function ruleSCH03TemplateMinutes(
 
 /**
  * @rule SCH-08
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2
  */
 export function ruleSCH08CalendarCheck(
+  authorizations: ServiceAuthorization[],
+  monthlyAuthorizations: MonthlyAuthorization[],
   template: ScheduleTemplate,
   exceptions: CalendarException[],
   months: string[],
-  tasks: AuthorizedTask[],
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
-  const byId = new Map(tasks.map((task) => [task.id, task]));
-  for (const month of months) {
-    const [yearStr, monthStr] = month.split("-");
-    const year = Number(yearStr);
-    const monthNum = Number(monthStr);
-    const expanded = expandMonth(template, exceptions, year, monthNum, template.start, template.end);
-    const scheduled = monthTaskMinutes(expanded);
-    for (const [taskId, minutes] of Object.entries(scheduled)) {
-      const task = byId.get(taskId);
-      if (!task) continue;
-      const units = monthTaskUnits(task.minPerDay * task.daysPerWeek, task.daysPerWeek, daysInMonth(year, monthNum)).units;
-      if (minutes > 15 * units) {
+  for (const auth of authorizations) {
+    // Template time only counts on dates inside both the template and the authorization.
+    const from = auth.start > template.start ? auth.start : template.start;
+    const to = auth.end < template.end ? auth.end : template.end;
+    for (const month of months) {
+      const [yearStr, monthStr] = month.split("-");
+      const year = Number(yearStr);
+      const monthNum = Number(monthStr);
+      const scheduled = monthTaskMinutes(expandMonth(template, exceptions, year, monthNum, from, to));
+
+      // Service budget: the imported Fusion figure when present, otherwise the derived figure.
+      // Template entries never contain transport time, so transport units come off the budget.
+      const imported = monthlyAuthorizations.find(
+        (ma) => ma.source === "fusion" && ma.serviceAuthId === auth.id && ma.month === month,
+      );
+      const label = imported ? "Fusion" : "derived";
+      const units = imported ? imported.units : derivedServiceMonthUnits(auth, year, monthNum);
+      const budget = (units - monthTransportUnits(auth)) * 15;
+      const total = auth.tasks.reduce((sum, task) => sum + (scheduled[task.id] ?? 0), 0);
+      if (total > budget) {
         results.push({
           ruleId: "SCH-08",
           severity: "BLOCK",
-          message: `Scheduled ${minutes} min exceeds ${15 * units} min (${units} units) in ${month}`,
-          refs: { taskId, month },
+          message: `Scheduled ${total} min exceeds ${label} authorization ${budget} min in ${month}`,
+          refs: { serviceAuthId: auth.id, month },
         });
+      }
+
+      for (const task of auth.tasks) {
+        const minutes = scheduled[task.id] ?? 0;
+        const taskUnits = monthTaskUnits(
+          task.minPerDay * task.daysPerWeek,
+          task.daysPerWeek,
+          daysInMonth(year, monthNum),
+        ).units;
+        if (minutes > 15 * taskUnits) {
+          results.push({
+            ruleId: "SCH-08",
+            severity: "BLOCK",
+            message: `Task limit (derived): Scheduled ${minutes} min exceeds ${15 * taskUnits} min (${taskUnits} units) in ${month}`,
+            refs: { taskId: task.id, serviceAuthId: auth.id, month },
+          });
+        }
       }
     }
   }
@@ -123,7 +149,7 @@ function monthsBetween(startMonth: string, endMonth: string): string[] {
 
 /**
  * @rule SCH-11
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic
  */
 export function ruleSCH11RepeatedExceptions(exceptions: CalendarException[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -156,7 +182,7 @@ export function ruleSCH11RepeatedExceptions(exceptions: CalendarException[]): Va
 
 /**
  * @rule SCH-12
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Product decision approved Oct 20, 2026
  */
 export function ruleSCH12PartialMonth(
   authorizations: ServiceAuthorization[],
@@ -189,28 +215,33 @@ export function ruleSCH12PartialMonth(
 
 /**
  * @rule SCH-14
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval)
  */
 export function ruleSCH14VisitDates(
   visits: Visit[],
   authorizations: ServiceAuthorization[],
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
-  const authByKey = new Map<string, ServiceAuthorization>();
-  for (const auth of authorizations) {
-    authByKey.set(`${auth.participantId}:${auth.serviceCode}`, auth);
-  }
   for (const visit of visits) {
-    const auth = authByKey.get(`${visit.participantId}:${visit.serviceCode}`);
-    if (!auth) continue;
     const date = visit.start.slice(0, 10);
-    if (date < auth.start || date > auth.end) {
+    // The authorization version in force on the visit date; the highest revision wins a tie.
+    const auth = authorizations
+      .filter(
+        (a) =>
+          a.participantId === visit.participantId &&
+          a.serviceCode === visit.serviceCode &&
+          a.start <= date &&
+          date <= a.end,
+      )
+      .sort((a, b) => b.revision - a.revision)[0];
+    if (!auth) {
       results.push({
         ruleId: "SCH-14",
         severity: "BLOCK",
-        message: `Visit on ${date} outside authorization ${auth.start}..${auth.end}`,
+        message: `No authorization covers ${date}`,
         refs: { visitId: visit.id, date },
       });
+      continue;
     }
     for (const suspension of auth.suspensions) {
       if (date >= suspension.start && date <= suspension.end) {

@@ -170,46 +170,46 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 
 ### Authorization (`auth.ts`)
 
-| ID | Rule | Severity | Status |
-|---|---|---|---|
-| AUTH-03 | Derived task units use F-2b; also compute F-2a; if they differ, emit REVIEW (edge case P-1). | INFO / REVIEW | PARTIAL |
-| AUTH-05 | Derived month units use F-3 for in-home task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER). Other services are not prorated. | INFO | PARTIAL |
-| AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED |
-| AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED |
-| AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED |
-| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. | BLOCK / REVIEW | VERIFIED |
-| AUTH-11 | ILW switch projection only when both imported authorizations exist; label "projection". | INFO | PARTIAL |
-| AUTH-12 | ILW units scheduled while `state = pending_approval` → BLOCK. Never create a State Plan authorization for an ILW participant. | BLOCK | VERIFIED |
-| AUTH-13 | Validation results carry the rule-pack version. | INFO | APPROVED |
+| ID | Rule | Severity | Status | Source |
+|---|---|---|---|---|
+| AUTH-03 | Derived task units use F-2b; also compute F-2a; if they differ, emit REVIEW (edge case P-1). | INFO / REVIEW | PARTIAL | HCBS-3c (10/26) cell Q11; DHSS 4.00 Appendix 14a/14b cell M7 |
+| AUTH-05 | Derived month units use F-3 for in-home task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER). Other services are not prorated. | INFO | PARTIAL | INFO 05-25-03 (May 9, 2025); Fusion FAQ (Jun 4, 2025); DHSS 14a/14b cell D37 |
+| AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED | INFO 05-25-03 (May 9, 2025) |
+| AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 (P-02) |
+| AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED | Policy 3.25 (01/26); HCBS-3c cell L88 |
+| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. | BLOCK / REVIEW | VERIFIED | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
+| AUTH-11 | ILW switch projection only when both imported authorizations exist; label "projection". | INFO | PARTIAL | Policy 3.55 (01/26) |
+| AUTH-12 | ILW units scheduled while `state = pending_approval` → BLOCK. Never create a State Plan authorization for an ILW participant. | BLOCK | VERIFIED | Policy 3.55 (01/26); 3.00 Appendix 1 (rev. Jul 2026) |
+| AUTH-13 | Validation results carry the rule-pack version. | INFO | APPROVED | Product decision approved Oct 20, 2026 (P-06) |
 
 ### Schedule (`sch.ts`)
 
-| ID | Rule | Severity | Status |
-|---|---|---|---|
-| SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis |
-| SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED |
-| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK. | BLOCK | VERIFIED |
-| SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). | WARN | APPROVED |
-| SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED |
-| SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED |
-| SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED |
+| ID | Rule | Severity | Status | Source |
+|---|---|---|---|---|
+| SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
+| SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
+| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK. | BLOCK | VERIFIED | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2 |
+| SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). | WARN | APPROVED | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
+| SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 |
+| SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
+| SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
 
 ### Conflicts and eligibility (`con.ts`)
 
-| ID | Rule | Severity | Status |
-|---|---|---|---|
-| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. | BLOCK / WARN | PARTIAL |
-| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. | per matrix | PARTIAL |
-| CON-03 | Respite overlapping any other service → BLOCK. | BLOCK | VERIFIED |
-| CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED |
-| CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED |
-| CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) |
-| CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. | BLOCK / REVIEW | VERIFIED |
-| CON-09 | ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN. | REVIEW / WARN | PARTIAL |
-| CON-10 | Nurse visits: > 1 per date → BLOCK; > 26 in a six-month period → BLOCK. | BLOCK | VERIFIED |
-| CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED |
-| CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED |
-| CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL |
+| ID | Rule | Severity | Status | Source |
+|---|---|---|---|---|
+| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. | BLOCK / WARN | PARTIAL | CDS policy clarification Q5 |
+| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
+| CON-03 | Respite overlapping any other service → BLOCK. | BLOCK | VERIFIED | Policy 3.50 (rev. Jul 2026) |
+| CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
+| CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
+| CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |
+| CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
+| CON-09 | ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN. | REVIEW / WARN | PARTIAL | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention |
+| CON-10 | Nurse visits: > 1 per date → BLOCK; > 26 in a six-month period → BLOCK. | BLOCK | VERIFIED | Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026) |
+| CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
+| CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25) |
+| CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
 
 ---
 

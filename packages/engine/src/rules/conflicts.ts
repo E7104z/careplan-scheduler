@@ -31,9 +31,26 @@ function workweekStartOf(date: string, startDay: Weekday): string {
   return addDays(date, -offset);
 }
 
+/** Caregivers with a visit on this authorization's participant and service, inside its dates. */
+function assignedCaregiverIds(auth: ServiceAuthorization, visits: Visit[]): Set<string> {
+  const ids = new Set<string>();
+  for (const visit of visits) {
+    const date = visit.start.slice(0, 10);
+    if (
+      visit.participantId === auth.participantId &&
+      visit.serviceCode === auth.serviceCode &&
+      auth.start <= date &&
+      date <= auth.end
+    ) {
+      ids.add(visit.caregiverId);
+    }
+  }
+  return ids;
+}
+
 /**
  * @rule CON-01
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source CDS policy clarification Q5
  */
 export function ruleCON01SameServiceOverlap(visits: Visit[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -59,7 +76,7 @@ export function ruleCON01SameServiceOverlap(visits: Visit[]): ValidationResult[]
 
 /**
  * @rule CON-02
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)
  */
 export function ruleCON02DifferentServiceOverlap(visits: Visit[], pack: RulePack): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -73,6 +90,7 @@ export function ruleCON02DifferentServiceOverlap(visits: Visit[], pack: RulePack
       const programA = serviceByCode(pack, a.serviceCode)?.program;
       const programB = serviceByCode(pack, b.serviceCode)?.program;
       if (!programA || !programB) continue;
+      if (programA === "RESPITE" || programB === "RESPITE") continue; // reported by CON-03
       const rule = pack.overlap(programA, programB);
       if (rule === "allowed") continue;
       const severity: Severity = rule === "prohibited" ? "BLOCK" : "REVIEW";
@@ -89,7 +107,7 @@ export function ruleCON02DifferentServiceOverlap(visits: Visit[], pack: RulePack
 
 /**
  * @rule CON-03
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policy 3.50 (rev. Jul 2026)
  */
 export function ruleCON03RespiteOverlap(visits: Visit[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -116,7 +134,7 @@ export function ruleCON03RespiteOverlap(visits: Visit[]): ValidationResult[] {
 
 /**
  * @rule CON-04
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Product decision approved Oct 20, 2026
  */
 export function ruleCON04CaregiverOverlap(visits: Visit[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -141,7 +159,7 @@ export function ruleCON04CaregiverOverlap(visits: Visit[]): ValidationResult[] {
 
 /**
  * @rule CON-05
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source FLSA; product decision approved Oct 20, 2026
  */
 export function ruleCON05CaregiverHours(visits: Visit[], workweekStart: Weekday): ValidationResult[] {
   const byCaregiver = new Map<string, Map<string, number>>();
@@ -171,16 +189,19 @@ export function ruleCON05CaregiverHours(visits: Visit[], workweekStart: Weekday)
 
 /**
  * @rule CON-06
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policy 3.25 (01/26)
  */
 export function ruleCON06AttendantRelationship(
   authorizations: ServiceAuthorization[],
   caregivers: Caregiver[],
+  visits: Visit[],
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
   for (const auth of authorizations) {
     if (auth.program !== "CDS" && auth.program !== "ILW") continue;
+    const assigned = assignedCaregiverIds(auth, visits);
     for (const caregiver of caregivers) {
+      if (!assigned.has(caregiver.id)) continue;
       const rel = caregiver.relationships[auth.participantId];
       if (rel !== "spouse" && rel !== "legal_guardian") continue;
       const severity: Severity = auth.program === "CDS" ? "BLOCK" : "REVIEW";
@@ -202,17 +223,20 @@ const AGENCY_PROGRAMS = new Set(["AGENCY_PC", "APC", "HOMEMAKER", "RESPITE", "CH
 
 /**
  * @rule CON-07
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)
  */
 export function ruleCON07AgencyAide(
   authorizations: ServiceAuthorization[],
   caregivers: Caregiver[],
+  visits: Visit[],
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
   for (const auth of authorizations) {
     if (!AGENCY_PROGRAMS.has(auth.program)) continue;
     const severity: Severity = auth.program === "CHORE" ? "REVIEW" : "BLOCK";
+    const assigned = assignedCaregiverIds(auth, visits);
     for (const caregiver of caregivers) {
+      if (!assigned.has(caregiver.id)) continue;
       const rel = caregiver.relationships[auth.participantId];
       if (rel !== undefined && FORBIDDEN_FAMILY.has(rel)) {
         results.push({
@@ -235,20 +259,28 @@ export function ruleCON07AgencyAide(
   return results;
 }
 
+/** CON-09 limit groups: ILW alone; Respite Basic and Advanced combined. */
+export type WeeklyHourGroup = "ILW" | "RESPITE";
+
 /**
  * @rule CON-09
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention
  */
-export function ruleCON09WeeklyHours(dailyMinutes: Record<string, number>): ValidationResult[] {
+export function ruleCON09WeeklyHours(
+  dailyMinutes: Record<string, number>,
+  scope?: { participantId: string; group: WeeklyHourGroup },
+): ValidationResult[] {
   const results: ValidationResult[] = [];
   const limit = 49 * 60;
+  const prefix = scope ? `${scope.participantId} ${scope.group}: ` : "";
+  const participantRef = scope ? { participantId: scope.participantId } : {};
   for (const week of sundayWeeks(dailyMinutes)) {
     if (week.minutes > limit) {
       results.push({
         ruleId: "CON-09",
         severity: "REVIEW",
-        message: `Sunday-Saturday week ${week.weekStart} exceeds 49 h (${week.minutes} min)`,
-        refs: { date: week.weekStart },
+        message: `${prefix}Sunday-Saturday week ${week.weekStart} exceeds 49 h (${week.minutes} min)`,
+        refs: { date: week.weekStart, ...participantRef },
       });
     }
   }
@@ -257,8 +289,8 @@ export function ruleCON09WeeklyHours(dailyMinutes: Record<string, number>): Vali
       results.push({
         ruleId: "CON-09",
         severity: "WARN",
-        message: `Rolling 7-day window ${window.start}..${window.end} exceeds 49 h (${window.minutes} min)`,
-        refs: { date: window.start },
+        message: `${prefix}Rolling 7-day window ${window.start}..${window.end} exceeds 49 h (${window.minutes} min)`,
+        refs: { date: window.start, ...participantRef },
       });
     }
   }
@@ -267,7 +299,7 @@ export function ruleCON09WeeklyHours(dailyMinutes: Record<string, number>): Vali
 
 /**
  * @rule CON-10
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026)
  */
 export function ruleCON10NurseVisits(visits: Visit[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -310,7 +342,7 @@ export function ruleCON10NurseVisits(visits: Visit[]): ValidationResult[] {
 
 /**
  * @rule CON-13
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2
  */
 export function ruleCON13FirstVisit(
   authorizations: ServiceAuthorization[],
@@ -354,7 +386,7 @@ const WAIVER_BY_PROGRAM: Partial<Record<ProgramCode, WaiverCode>> = {
 
 /**
  * @rule CON-16
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policy 3.05 (04/25)
  */
 export function ruleCON16WaiverEnrollments(
   enrollments: WaiverEnrollment[],
@@ -402,15 +434,18 @@ export function ruleCON16WaiverEnrollments(
 
 /**
  * @rule CON-17
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration)
  */
 export function ruleCON17QualificationData(
   authorizations: ServiceAuthorization[],
   caregivers: Caregiver[],
+  visits: Visit[],
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
   for (const auth of authorizations) {
+    const assigned = assignedCaregiverIds(auth, visits);
     for (const caregiver of caregivers) {
+      if (!assigned.has(caregiver.id)) continue;
       if (auth.program === "ILW" && caregiver.fcsrRegistered !== true) {
         results.push({
           ruleId: "CON-17",

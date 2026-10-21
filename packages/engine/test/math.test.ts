@@ -4,6 +4,7 @@ import {
   dayUnits,
   factorFor,
   hcbs3cTaskUnits,
+  hcbs3cTaskUnitsFromWeekly,
   maxWeekdayOccurrences,
   monthTaskUnits,
   transportAllowance,
@@ -53,7 +54,7 @@ describe("F-2a hcbs3cTaskUnits", () => {
   });
 
   it("TC-37: 61/7 min/day 7x/wk = 19", () => {
-    expect(hcbs3cTaskUnits(61 / 7, 7).units).toBe(19);
+    expect(hcbs3cTaskUnitsFromWeekly(61, 7).units).toBe(19);
   });
 });
 

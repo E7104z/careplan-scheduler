@@ -126,24 +126,27 @@ describe("conflict rules", () => {
 
   it("TC-14: CON-06 BLOCK for CDS spouse, none for child", () => {
     const a = auth({ id: "a-1", program: "CDS", serviceCode: "T1019U2" });
+    const v = visit({ id: "v-1", serviceCode: "T1019U2", start: "2026-10-05T09:00", end: "2026-10-05T10:00" });
     expect(ruleCON06AttendantRelationship([a], [
       caregiver({ id: "C-1", relationships: { "P-TEST-01": "child" } }),
-    ])).toEqual([]);
+    ], [v])).toEqual([]);
     expect(ruleCON06AttendantRelationship([a], [
       caregiver({ id: "C-1", relationships: { "P-TEST-01": "spouse" } }),
-    ]).some((r) => r.severity === "BLOCK")).toBe(true);
+    ], [v]).some((r) => r.severity === "BLOCK")).toBe(true);
   });
 
   it("CON-06 REVIEW for ILW spouse", () => {
     const a = auth({ id: "a-1", program: "ILW", serviceCode: "T1019U6" });
     const spouse = caregiver({ id: "C-1", relationships: { "P-TEST-01": "spouse" } });
-    expect(ruleCON06AttendantRelationship([a], [spouse]).some((r) => r.severity === "REVIEW")).toBe(true);
+    const v = visit({ id: "v-1", serviceCode: "T1019U6", start: "2026-10-05T09:00", end: "2026-10-05T10:00" });
+    expect(ruleCON06AttendantRelationship([a], [spouse], [v]).some((r) => r.severity === "REVIEW")).toBe(true);
   });
 
   it("TC-13: CON-07 BLOCK for AGENCY_PC aide who is a grandchild", () => {
     const a = auth({ id: "a-1", program: "AGENCY_PC", serviceCode: "T1019" });
     const c = caregiver({ id: "C-1", relationships: { "P-TEST-01": "grandchild" } });
-    expect(ruleCON07AgencyAide([a], [c]).some((r) => r.severity === "BLOCK")).toBe(true);
+    const v = visit({ id: "v-1", serviceCode: "T1019", start: "2026-10-05T09:00", end: "2026-10-05T10:00" });
+    expect(ruleCON07AgencyAide([a], [c], [v]).some((r) => r.severity === "BLOCK")).toBe(true);
   });
 
   it("TC-11: CON-09 no result at exactly 49 h across a month boundary", () => {
@@ -230,6 +233,7 @@ describe("conflict rules", () => {
   it("TC-35: CON-17 REVIEW for ILW attendant missing FCSR registration", () => {
     const a = auth({ id: "a-1", program: "ILW", serviceCode: "T1019U6" });
     const c = caregiver({ id: "C-1", relationships: { "P-TEST-01": "none" } });
-    expect(ruleCON17QualificationData([a], [c]).some((r) => r.severity === "REVIEW")).toBe(true);
+    const v = visit({ id: "v-1", serviceCode: "T1019U6", start: "2026-10-05T09:00", end: "2026-10-05T10:00" });
+    expect(ruleCON17QualificationData([a], [c], [v]).some((r) => r.severity === "REVIEW")).toBe(true);
   });
 });

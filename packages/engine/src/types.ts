@@ -31,6 +31,7 @@ export interface ServiceAuthorization {
   revision: number;
   tasks: AuthorizedTask[];
   transportMinutesPerMonth?: number;
+  migratedFromWebTool?: boolean;  // AUTH-06
 }
 
 export interface MonthlyAuthorization {
@@ -72,5 +73,8 @@ export interface Caregiver {
 export interface WaiverEnrollment { participantId: string; waiver: WaiverCode; start: string; end: string; }
 export interface ValidationResult {
   ruleId: string; severity: Severity; message: string;
-  refs: { taskId?: string; visitId?: string; date?: string; month?: string; serviceAuthId?: string };
+  refs: {
+    taskId?: string; visitId?: string; date?: string; month?: string; serviceAuthId?: string;
+    participantId?: string;
+  };
 }

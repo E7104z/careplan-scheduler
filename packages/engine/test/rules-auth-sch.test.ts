@@ -124,7 +124,11 @@ describe("schedule rules", () => {
       { taskId: "bathing", weekday: 4, minutes: 3 },
     ]);
 
-    const sch08 = ruleSCH08CalendarCheck(tpl, [], ["2027-03"], [t]);
+    const a = {
+      ...auth({ id: "auth-1", program: "CDS", serviceCode: "T1019U2", start: "2027-01-01", end: "2027-12-31" }),
+      tasks: [t],
+    };
+    const sch08 = ruleSCH08CalendarCheck([a], [], tpl, [], ["2027-03"]);
     expect(sch08.some((r) => r.severity === "BLOCK")).toBe(true);
     expect(sch08[0]!.message).toContain("297");
     expect(sch08[0]!.message).toContain("285");

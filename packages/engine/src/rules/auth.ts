@@ -1,4 +1,4 @@
-import { hcbs3cTaskUnits, workbookTaskUnits } from "../math/units.js";
+import { hcbs3cTaskUnitsFromWeekly, workbookTaskUnits } from "../math/units.js";
 import { MO_2026_07 } from "../rulepacks/mo-2026-07.js";
 import { serviceByCode } from "../rulepacks/lookup.js";
 import type {
@@ -10,7 +10,7 @@ import type {
 
 /**
  * @rule AUTH-03
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source HCBS-3c (10/26) cell Q11; DHSS 4.00 Appendix 14a/14b cell M7
  */
 export function ruleAUTH03DerivedTaskUnits(
   tasks: AuthorizedTask[],
@@ -21,19 +21,12 @@ export function ruleAUTH03DerivedTaskUnits(
     const weeklyMinutes = weeklyMinutesByTask[task.id] ?? task.minPerDay * task.daysPerWeek;
     const timesPerWeek = task.daysPerWeek;
     const f2b = workbookTaskUnits(weeklyMinutes, timesPerWeek).units;
-    const f2a = hcbs3cTaskUnits(weeklyMinutes / timesPerWeek, timesPerWeek).units;
+    const f2a = hcbs3cTaskUnitsFromWeekly(weeklyMinutes, timesPerWeek).units;
     if (f2b !== f2a) {
       results.push({
         ruleId: "AUTH-03",
         severity: "REVIEW",
         message: `Derived task units differ (F-2b ${f2b} vs F-2a ${f2a})`,
-        refs: { taskId: task.id, serviceAuthId: task.serviceAuthId },
-      });
-    } else {
-      results.push({
-        ruleId: "AUTH-03",
-        severity: "INFO",
-        message: `Derived task units agree (${f2b})`,
         refs: { taskId: task.id, serviceAuthId: task.serviceAuthId },
       });
     }
@@ -45,7 +38,7 @@ const PRORATED_PROGRAMS = new Set(["CDS", "ILW", "AGENCY_PC", "APC", "HOMEMAKER"
 
 /**
  * @rule AUTH-05
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source INFO 05-25-03 (May 9, 2025); Fusion FAQ (Jun 4, 2025); DHSS 14a/14b cell D37
  */
 export function ruleAUTH05DerivedMonthUnits(authorizations: ServiceAuthorization[]): ValidationResult[] {
   return authorizations.map((auth) => ({
@@ -60,14 +53,10 @@ export function ruleAUTH05DerivedMonthUnits(authorizations: ServiceAuthorization
 
 /**
  * @rule AUTH-06
- * @source Policy 3.50 (rev. Jul 2026)
+ * @source INFO 05-25-03 (May 9, 2025)
  */
-export function ruleAUTH06MigratedPlan(
-  authorizations: ServiceAuthorization[],
-  migratedFromWebTool = false,
-): ValidationResult[] {
-  if (!migratedFromWebTool) return [];
-  return authorizations.map((auth) => ({
+export function ruleAUTH06MigratedPlan(authorizations: ServiceAuthorization[]): ValidationResult[] {
+  return authorizations.filter((auth) => auth.migratedFromWebTool === true).map((auth) => ({
     ruleId: "AUTH-06",
     severity: "WARN" as const,
     message: "per-month figures are derived",
@@ -77,7 +66,7 @@ export function ruleAUTH06MigratedPlan(
 
 /**
  * @rule AUTH-07
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source Product decision approved Oct 20, 2026 (P-02)
  */
 export function ruleAUTH07DerivedVsFusion(
   monthlyAuthorizations: MonthlyAuthorization[],
@@ -102,7 +91,7 @@ export function ruleAUTH07DerivedVsFusion(
 
 /**
  * @rule AUTH-08
- * @source Policy 3.50 (rev. Jul 2026)
+ * @source Policy 3.25 (01/26); HCBS-3c cell L88
  */
 export function ruleAUTH08Transport(authorizations: ServiceAuthorization[]): ValidationResult[] {
   const results: ValidationResult[] = [];
@@ -121,7 +110,7 @@ export function ruleAUTH08Transport(authorizations: ServiceAuthorization[]): Val
 
 /**
  * @rule AUTH-09
- * @source 3.00 Appendix 1 (rev. Jul 2026)
+ * @source 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01
  */
 export function ruleAUTH09Ceiling(
   authorizations: ServiceAuthorization[],
@@ -172,7 +161,7 @@ export function ruleAUTH09Ceiling(
 
 /**
  * @rule AUTH-11
- * @source Policy 3.50 (rev. Jul 2026)
+ * @source Policy 3.55 (01/26)
  */
 export function ruleAUTH11ProjectIlwSwitch(
   dailyUnits: number[],
@@ -200,7 +189,7 @@ export function ruleAUTH11ProjectIlwSwitch(
 
 /**
  * @rule AUTH-12
- * @source Policy 3.50 (rev. Jul 2026)
+ * @source Policy 3.55 (01/26); 3.00 Appendix 1 (rev. Jul 2026)
  */
 export function ruleAUTH12PendingApproval(authorizations: ServiceAuthorization[]): ValidationResult[] {
   const results: ValidationResult[] = [];
