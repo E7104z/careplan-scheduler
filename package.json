@@ -5,7 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "test": "npm run test -w @careplan/engine",
-    "typecheck": "npm run typecheck -w @careplan/engine"
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }
