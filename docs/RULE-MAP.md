@@ -32,10 +32,11 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | SCH-02 | `packages/engine/src/rules/sch.ts` | `ruleSCH02TemplateDays` | `packages/engine/test/rules-auth-sch.test.ts` | — (custom) | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
 | SCH-03 | `packages/engine/src/rules/sch.ts` | `ruleSCH03TemplateMinutes` | `packages/engine/test/rules-auth-sch.test.ts` | TC-16 (WARN) | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
 | SCH-08 | `packages/engine/src/rules/sch.ts` | `ruleSCH08CalendarCheck` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-16 (BLOCK), FIX-1 | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2 |
-| SCH-11 | `packages/engine/src/rules/sch.ts` | `ruleSCH11RepeatedExceptions` | — | — | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
+| SCH-11 | `packages/engine/src/rules/sch.ts` | `ruleSCH11RepeatedExceptions` | `packages/engine/test/fit.test.ts` | TC-39 | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
 | SCH-12 | `packages/engine/src/rules/sch.ts` | `ruleSCH12PartialMonth` | `packages/engine/test/rules-auth-sch.test.ts` | TC-21 | Product decision approved Oct 20, 2026 |
 | SCH-14 | `packages/engine/src/rules/sch.ts` | `ruleSCH14VisitDates` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-22, TC-24, FIX-6c | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | `packages/engine/src/calendar/time.ts` | `elapsedMinutes`, `splitByDate` | `packages/engine/test/calendar.test.ts` | TC-27, TC-28 | Product decision approved Oct 20, 2026 |
+| SCH-17 | `packages/engine/src/rules/fit.ts` | `fitToAuthorization` | `packages/engine/test/fit.test.ts` | TC-38, TC-39 | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
 
 ### Conflicts and eligibility
 
@@ -53,6 +54,12 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | CON-13 | `packages/engine/src/rules/conflicts.ts` | `ruleCON13FirstVisit` | `packages/engine/test/rules-con.test.ts` | — (custom) | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | `packages/engine/src/rules/conflicts.ts` | `ruleCON16WaiverEnrollments` | `packages/engine/test/rules-con.test.ts` | TC-18, TC-29, TC-30 | Policy 3.05 (04/25) |
 | CON-17 | `packages/engine/src/rules/conflicts.ts` | `ruleCON17QualificationData` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-35, FIX-2 | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
+
+## Catalog
+
+| File | Exports | Test file | Checks |
+|---|---|---|---|
+| `packages/engine/src/rulepacks/catalog.ts` | `RULE_CATALOG`, `ruleById`, `RuleArea`, `RuleStatus`, `RuleCatalogEntry` | `packages/engine/test/catalog.test.ts` | Same IDs, order, rule text, status, source and severities as section 5 of `docs/ENGINE-SPEC.md`; every `ruleId` in `src/rules/*.ts` is listed |
 
 ## Review fixes (Prompt 9)
 

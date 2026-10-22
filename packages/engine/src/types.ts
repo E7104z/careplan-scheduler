@@ -55,6 +55,7 @@ export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date
   reason: string; author: string; createdAt: string;
+  kind?: "change" | "fit";                // Amendment A: "fit" = automatic trim from SCH-17; absent = "change"
 }
 export interface Visit {
   id: string; participantId: string; caregiverId: string;

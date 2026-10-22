@@ -64,7 +64,7 @@ const tasks: TaskDef[] = [
   t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
   t("DRESSING_GROOMING", "Dressing/Grooming", [], ["CDS", "ILW", "AGENCY_PC"]),
-  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", [], ["CDS", "ILW", "HOMEMAKER"]),
+  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
   t("MAKE_BED", "Make Bed", [], ["CDS", "ILW"]),

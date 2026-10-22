@@ -20,6 +20,7 @@ const SOURCES: Record<string, string> = {
   "SCH-12": "Product decision approved Oct 20, 2026",
   "SCH-14": "Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval)",
   "SCH-15": "Product decision approved Oct 20, 2026",
+  "SCH-17": "Product decision approved Oct 21, 2026 (schedules never exceed SCH-08)",
   "CON-01": "CDS policy clarification Q5",
   "CON-02": "CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)",
   "CON-03": "Policy 3.50 (rev. Jul 2026)",

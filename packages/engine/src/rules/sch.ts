@@ -155,6 +155,8 @@ export function ruleSCH11RepeatedExceptions(exceptions: CalendarException[]): Va
   const results: ValidationResult[] = [];
   const monthsByTask = new Map<string, Set<string>>();
   for (const ex of exceptions) {
+    // Automatic SCH-17 trims are not a person's change (Amendment A).
+    if (ex.kind === "fit") continue;
     const month = ex.date.slice(0, 7);
     const set = monthsByTask.get(ex.taskId) ?? new Set<string>();
     set.add(month);
