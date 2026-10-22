@@ -11,7 +11,7 @@ reader and the guard; it is the look and behavior every Quick Schedule prompt is
 
 Order: 1 engine · 2 import package · 3 web scaffold and UI kit · 4 public site ·
 5 Quick Schedule logic · 6–7 Quick Schedule screens · 8 sign-in · 9 agencies · 10 team ·
-11 accessibility, phones and the pull request.
+11 accessibility, phones and the pull request · 12 Windows desktop app (after the merge).
 
 ---
 
@@ -190,6 +190,11 @@ Read .clinerules and docs/APP-SPEC.md sections 1, 2, 4, 9 and 10 first.
 Task: scaffold apps/web and build the UI component kit. No pages except a development-only
 component gallery.
 
+0. Security patch first: change vitest from 3.2.4 to 3.2.7 (exact) in packages/engine and
+   packages/import, run `npm install --save-exact`, and confirm `npm audit` no longer lists
+   vitest's own dependencies. This is the one allowed version change (the pinned list now
+   says 3.2.7). Engine and import tests must still pass before you continue.
+
 1. Root package.json: workspaces ["packages/*", "apps/*"]; scripts:
      "typecheck": "npm run typecheck --workspaces --if-present",
      "test": "npm run test --workspaces --if-present",
@@ -339,7 +344,8 @@ Files in apps/web/src/features/:
    `identity`; validate shape; never throw.
 6. quick-schedule/grouping.ts and ruleCopy.ts: APP-SPEC 5.5, copy table verbatim.
 7. import/fromFusion.ts: IMPORT-SPEC section 4 (care days, transport day, weekly hint, view
-   month) → QuickState with source "fusion".
+   month) → QuickState with source "fusion". The import package returns taskCode null for a
+   task not in the rule pack; fromFusion sets taskCode to `FUSION:<name>` for those (IMP-09).
 8. import/importFlow.ts: a small pure state machine for the import panel: pages[] (IMP-12),
    choices { acceptPartial, serviceCode, serviceIndex, plan }, and next(): either
    { kind: "needs", issues } (hard stops from IMPORT-SPEC 3.1 still open) or
@@ -665,3 +671,91 @@ Finish:
 4. Phase 3 (care plan import, saved participants, caregivers and visits) starts after the
    merge. Before any real participant data goes in: Google Cloud BAA signed, App Check on,
    audit log in place (APP-SPEC section 13).
+
+---
+
+## Prompt 12 — Windows desktop app (.exe installer)
+
+Do this only after Phase 2 is merged to `main` and the production site works on Vercel.
+Create the branch first: `git checkout main && git pull && git checkout -b phase-2-desktop`.
+
+```
+Read .clinerules (desktop rules D-1 to D-5) and docs/APP-SPEC.md sections 2 and 9 first.
+
+Task: a Windows installer for CarePlan Scheduler. The desktop app is a thin shell around the
+live site: one window that loads the production URL. It adds no schedule logic, no storage and
+no second copy of the app, so every Vercel deploy updates it and sign-in, rules and Quick
+Schedule behave exactly as on the web.
+
+1. apps/desktop/package.json: name "@careplan/desktop", private, version "0.1.0", main
+   "dist/main.js", description "CarePlan Scheduler", author "Golden Care Alliance, LLC".
+   devDependencies (exact; run `npm view <name>@<version> version` first and report if a
+   version is missing): electron 44.6.0, electron-builder 26.17.0, typescript 5.9.3,
+   @types/node 22.20.5, vitest 3.2.7. Scripts: "build": "tsc", "typecheck": "tsc --noEmit",
+   "test": "vitest run", "dist": "npm run build && electron-builder --win nsis --x64 --publish never".
+   Do not add the `electron` package to apps/web or the root.
+2. apps/desktop/src/config.ts: exports APP_URL = "https://careplan-scheduler.vercel.app"
+   (ask me if the domain differs) and a pure function isAllowedNavigation(url: string):
+   boolean that returns true only for https URLs whose host is the APP_URL host or one of
+   accounts.google.com, care-plan-scheduler.firebaseapp.com (Google sign-in), and false for
+   everything else. Unit-tested: allowed hosts, lookalike hosts (e.g.
+   careplan-scheduler.vercel.app.evil.com), http, file:, javascript:, malformed input.
+3. apps/desktop/src/main.ts, strict TypeScript:
+   - One BrowserWindow 1280x860, min 900x640, title "CarePlan Scheduler". Set show: false and
+     call win.show() on ready-to-show so there is no white flash; the page paints its own theme.
+   - webPreferences: contextIsolation true, nodeIntegration false, sandbox true,
+     webSecurity true, no preload script.
+   - Load APP_URL. setWindowOpenHandler and will-navigate: allowed URLs per
+     isAllowedNavigation open in the window (Google sign-in opens in a child window that closes
+     itself); every other URL goes to shell.openExternal only if it is https, then is denied.
+   - Block all permission requests (session.setPermissionRequestHandler returns false).
+   - Single instance lock; second launch focuses the existing window.
+   - If the page fails to load (did-fail-load, offline), show apps/desktop/assets/offline.html:
+     plain page, "You're offline", "CarePlan Scheduler needs an internet connection to open.
+     Check your connection, then try again.", and a "Try again" button that reloads APP_URL.
+     Use only system fonts and inline CSS with no new color values beyond black, white and
+     the pine green already in tokens.css (copy those three values; this file is the one
+     allowed exception to the hex rule, because it can't load the web bundle).
+   - Menu: File (Print, Quit), Edit, View (Reload, Actual size, Zoom in, Zoom out, Full
+     screen), Help (Open privacy page, which loads APP_URL + "/privacy" in the window). No
+     DevTools in the packaged build.
+   - Print works through the page's own Print button (window.print), so printed schedules
+     match the web version.
+4. electron-builder config (apps/desktop/electron-builder.yml): appId
+   "com.goldencarealliance.careplan", productName "CarePlan Scheduler", NSIS one-click false,
+   allowToChangeInstallationDirectory true, perMachine false, desktop and start-menu
+   shortcuts, artifactName "CarePlan-Scheduler-Setup-${version}.exe", output "release". Icon:
+   convert the existing logo to apps/desktop/assets/icon.ico (256x256, plus smaller sizes);
+   if you can't, stop and tell me instead of using a placeholder.
+5. .github/workflows/desktop.yml: runs on workflow_dispatch and on tags "desktop-v*", on
+   windows-latest, Node 22, npm ci, npm run typecheck, npm test, then `npm run dist -w
+   @careplan/desktop`, then uploads release/*.exe as a workflow artifact "windows-installer".
+   On a tag, also attach the .exe to a GitHub Release for that tag. Unsigned for now.
+6. apps/desktop/README.md: how to build locally on Windows (`npm ci`, `npm run dist -w
+   @careplan/desktop`), where the .exe lands, the SmartScreen "Windows protected your PC"
+   screen (More info, then Run anyway) until the installer is code-signed, and one paragraph
+   on signing (an OV or EV certificate and electron-builder's win.signtoolOptions, as a
+   later step; do not add any signing config now).
+7. Add .clinerules desktop rules only if I told you to; they are already there (D-1 to D-5).
+
+Finish:
+1. npm run typecheck, npm test (all workspaces). Paste the summaries.
+2. `npm run build -w @careplan/desktop` succeeds. If you are on Windows, also run
+   `npm run dist -w @careplan/desktop` and report the installer's file size; if not,
+   say that CI builds it.
+3. Commit: "feat(desktop): Windows installer shell for CarePlan Scheduler". Push, open a pull
+   request from phase-2-desktop to main, do not merge.
+4. Tell me the exact steps to run the workflow and download the .exe.
+```
+
+---
+
+## After Prompt 12 (you)
+
+1. GitHub → Actions → Desktop → Run workflow on `phase-2-desktop` (or push a tag
+   `desktop-v0.1.0` after merging). Download `windows-installer` and run it on a Windows PC.
+2. Check: it opens the live site, Quick Schedule imports a pasted care plan, Google sign-in
+   completes, Print opens the Windows print dialog, and unplugging the network shows the
+   offline page.
+3. Windows will warn "Windows protected your PC" until the installer is signed. For agency
+   pitches, buy a code-signing certificate before sending the .exe to anyone outside GCA.

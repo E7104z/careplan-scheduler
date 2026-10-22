@@ -73,12 +73,24 @@ I-3. Participant name and DCN never go to storage, the URL, the console, error m
     APP-SPEC 6.6.
 22. No `console.log` in committed code. No `dangerouslySetInnerHTML`.
 
+## Desktop rules (`apps/desktop`, Prompt 12 only)
+D-1. The desktop app is a shell that loads the live site. No schedule logic, no storage, no
+     copy of apps/web inside it.
+D-2. `contextIsolation` true, `nodeIntegration` false, `sandbox` true, no preload script. Block
+     every permission request.
+D-3. Only URLs passing `isAllowedNavigation` load in the app; other https links open in the
+     user's browser.
+D-4. No auto-update, telemetry or crash reporting. Unsigned installers only until Jason adds a
+     certificate.
+D-5. Never change apps/web, packages/* or firestore.rules in the desktop prompt.
+
 ## Pinned versions (do not upgrade)
 - Node 22 LTS. Package manager: npm workspaces. No pnpm, no yarn.
-- Engine: typescript 5.9.3, vitest 3.2.4, luxon 3.5.0, @types/luxon 3.4.2, @types/node 22.20.5.
+- Engine: typescript 5.9.3, vitest 3.2.7, luxon 3.5.0, @types/luxon 3.4.2, @types/node 22.20.5.
 - Web: see APP-SPEC section 1 (react 19.3.1, react-router 7.18.4, vite 7.3.7,
   tailwindcss 4.3.3, firebase 12.19.0, and the rest of that table).
 - Root dev: firebase-tools 14.27.0.
+- Desktop (Prompt 12 only): electron 44.6.0, electron-builder 26.17.0.
 - pdfjs-dist 4.10.38 (web dependency; import dev dependency for PDF fixture tests).
 
 ## Style

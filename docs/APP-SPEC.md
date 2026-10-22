@@ -61,7 +61,7 @@ acceptance check in section 11 passes.
 | clsx | 2.1.1 | web |
 | @fontsource-variable/public-sans | 5.3.0 | web |
 | typescript | 5.9.3 | web (dev), same as engine |
-| vitest | 3.2.4 | web (dev), same as engine |
+| vitest | 3.2.7 | web (dev), same as engine |
 | jsdom | 26.1.0 | web (dev) |
 | @testing-library/react | 16.3.3 | web (dev) |
 | @testing-library/user-event | 14.6.8 | web (dev) |
