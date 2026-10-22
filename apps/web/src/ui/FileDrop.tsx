@@ -1,0 +1,65 @@
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { Upload } from "lucide-react";
+import { cn } from "../lib/cn";
+
+export interface FileDropProps {
+  onFile: (file: File) => void;
+  accept?: string;
+  acceptLabel?: string;
+  title?: string;
+  hint?: string;
+  className?: string;
+}
+
+export function FileDrop({
+  onFile,
+  accept,
+  acceptLabel = "PDF",
+  title = "Choose a file",
+  hint,
+  className,
+}: FileDropProps) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) onFile(file);
+    event.target.value = "";
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    const file = event.dataTransfer.files[0];
+    if (file) onFile(file);
+  };
+
+  return (
+    <label
+      onDragOver={(event) => {
+        event.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      className={cn(
+        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-line-2 bg-surface px-6 py-8 text-center transition-colors focus-within:border-pine",
+        dragOver && "border-pine bg-pine-tint",
+        className,
+      )}
+    >
+      <Upload className="h-6 w-6 text-pine" aria-hidden="true" />
+      <span className="text-sm font-medium text-ink">{title}</span>
+      <span className="text-[13px] text-ink-3">{acceptLabel}</span>
+      {hint ? <span className="text-[13px] text-ink-3">{hint}</span> : null}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="sr-only"
+        onChange={handleChange}
+      />
+    </label>
+  );
+}

@@ -1,0 +1,146 @@
+/*
+ * CarePlan Scheduler — design tokens (Phase 2)
+ *
+ * Copy this file verbatim to apps/web/src/styles/tokens.css. It is the only place colors,
+ * fonts, radii and shadows are defined. Components use the Tailwind names in the
+ * `@theme inline` block at the bottom (e.g. `bg-surface`, `text-ink-2`, `border-line`),
+ * never a literal hex value.
+ *
+ * Direction: plain, civic and exact. Public Sans is the US Web Design System typeface,
+ * chosen because state reviewers and agency staff read it as government-grade. Pine green
+ * is both the brand color and the "compliant" color, so the product's own color always
+ * means "this follows the rules". Severity colors are separate from the brand and always
+ * appear with an icon and a word, never color alone.
+ *
+ * Theme: light by default; dark follows the operating system unless the person picks a
+ * theme in Account, which sets data-theme="light" | "dark" on <html>.
+ */
+
+:root {
+  /* Neutrals (faint pine bias, never pure grey) */
+  --paper: #F6F8F7;        /* page background */
+  --surface: #FFFFFF;      /* panels, inputs, menus */
+  --sunk: #EEF2F0;         /* wells, table heads, hover fills */
+  --ink: #15231F;          /* primary text */
+  --ink-2: #4B5B56;        /* secondary text, labels */
+  --ink-3: #6E7D78;        /* hints, placeholders (4.6:1 on surface) */
+  --line: #D9E1DE;         /* dividers, panel borders */
+  --line-2: #C3CEC9;       /* input borders, strong dividers */
+
+  /* Brand = compliant */
+  --pine: #0B6E5A;
+  --pine-hover: #075745;
+  --pine-tint: #E2F1EB;
+  --pine-on: #FFFFFF;      /* text on pine */
+
+  /* One 15-minute unit */
+  --tile: #0B6E5A;
+  --tile-empty: #D3E3DC;
+
+  /* Severities (text color / background) */
+  --block: #B42318;  --block-bg: #FDECEA;   /* Must fix */
+  --review: #5B3FB8; --review-bg: #EFEBFB;  /* Needs review (rule not yet verified) */
+  --warn: #8A4B08;   --warn-bg: #FCF1DE;    /* Check */
+  --info: #2D5A88;   --info-bg: #E7EFF8;    /* Good to know */
+
+  --focus: #0B6E5A;
+  --overlay: rgba(21, 35, 31, 0.45);
+  --sh-panel: 0 1px 2px rgba(21, 35, 31, 0.06), 0 2px 8px rgba(21, 35, 31, 0.05);
+  --sh-pop: 0 8px 24px rgba(21, 35, 31, 0.14);
+
+  /* Type */
+  --font-body: "Public Sans Variable", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+
+  /* Shape */
+  --r-sm: 6px;   /* controls, chips, cells */
+  --r-md: 10px;  /* panels, dialogs */
+  --r-pill: 999px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1614; --surface: #15201D; --sunk: #1B2824;
+    --ink: #E5EEEA; --ink-2: #A9B9B3; --ink-3: #8A9B95;
+    --line: #2A3935; --line-2: #3A4C47;
+    --pine: #43C3A0; --pine-hover: #6BD4B6; --pine-tint: #16362D; --pine-on: #06231B;
+    --tile: #43C3A0; --tile-empty: #26403A;
+    --block: #F4887C; --block-bg: #3B1B18;
+    --review: #BBA8F6; --review-bg: #2A2343;
+    --warn: #F1B661; --warn-bg: #3A2B13;
+    --info: #93BDEA; --info-bg: #182A3D;
+    --focus: #6BD4B6;
+    --overlay: rgba(0, 0, 0, 0.6);
+    --sh-panel: none;
+    --sh-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0E1614; --surface: #15201D; --sunk: #1B2824;
+  --ink: #E5EEEA; --ink-2: #A9B9B3; --ink-3: #8A9B95;
+  --line: #2A3935; --line-2: #3A4C47;
+  --pine: #43C3A0; --pine-hover: #6BD4B6; --pine-tint: #16362D; --pine-on: #06231B;
+  --tile: #43C3A0; --tile-empty: #26403A;
+  --block: #F4887C; --block-bg: #3B1B18;
+  --review: #BBA8F6; --review-bg: #2A2343;
+  --warn: #F1B661; --warn-bg: #3A2B13;
+  --info: #93BDEA; --info-bg: #182A3D;
+  --focus: #6BD4B6;
+  --overlay: rgba(0, 0, 0, 0.6);
+  --sh-panel: none;
+  --sh-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+/* Tailwind v4: expose the tokens as utilities (bg-paper, text-ink-2, border-line, ...). */
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-pine: var(--pine);
+  --color-pine-hover: var(--pine-hover);
+  --color-pine-tint: var(--pine-tint);
+  --color-pine-on: var(--pine-on);
+  --color-tile: var(--tile);
+  --color-tile-empty: var(--tile-empty);
+  --color-block: var(--block);
+  --color-block-bg: var(--block-bg);
+  --color-review: var(--review);
+  --color-review-bg: var(--review-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-focus: var(--focus);
+  --color-overlay: var(--overlay);
+  --font-sans: var(--font-body);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --shadow-panel: var(--sh-panel);
+  --shadow-pop: var(--sh-pop);
+}
+
+/* Type scale (px): 13 caption · 15 body · 17 lead/section · 22 figure · 28 page title · 40 landing hero.
+ * Weights: 400 body, 500 nav/labels, 600 controls and emphasis, 700 headings and figures.
+ * Every number that lines up in a column uses `tabular-nums` (set on body). */
+html { font-family: var(--font-body); font-size: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
