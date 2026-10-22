@@ -1,17 +1,21 @@
 # CarePlan Scheduler — App Specification (Phase 2)
 
 Phase 2 puts the Phase 1 rules engine in front of people: a public site, sign-in, agency
-accounts, and **Quick Schedule**. Nothing about a participant is stored in Phase 2.
+accounts, and **Quick Schedule**: paste a care plan from Fusion (or open its PDF) and get a
+ready schedule that can't be edited outside Missouri's rules. Nothing about a participant is
+stored in Phase 2.
 
 This file is the source of truth for everything under `apps/web`, `firestore.rules`,
-`firebase.json` and `vercel.json`. `docs/ENGINE-SPEC.md` stays the source of truth for
-`packages/engine`. If a prompt and a spec disagree, stop and ask.
+`firebase.json` and `vercel.json`. `docs/IMPORT-SPEC.md` is the source of truth for reading
+Fusion care plans (`packages/import`), and `docs/ENGINE-SPEC.md` for `packages/engine`.
+If a prompt and a spec disagree, stop and ask.
 
 Visual and behavioral target: `docs/design/quick-schedule-prototype.html` (open it in a
 browser; it runs the real engine). Tokens: `docs/design/tokens.css`.
 
 **Done when:** the Vercel preview of the `phase-2-app` pull request works end to end: a
-visitor builds a schedule in Quick Schedule without an account; an agency owner signs up,
+visitor pastes a Fusion care plan into Quick Schedule without an account and gets a ready
+schedule; an agency owner signs up,
 verifies their email, creates the agency, invites a scheduler, and the scheduler joins; every
 acceptance check in section 11 passes.
 
@@ -33,6 +37,10 @@ acceptance check in section 11 passes.
 | D-10 | Signed-in sessions end after 30 minutes without activity, with a 2-minute warning. | Expected by agencies and the state for any system that will hold participant data. |
 | D-11 | Deployed on Vercel from the repo root (`vercel.json`), with strict security headers. Firebase is used only for Auth and Firestore, not Hosting. | Every pull request gets a preview link. |
 | D-12 | The engine gains one export, `RULE_CATALOG` (rule ID, area, rule text, severities, status, source), tested against ENGINE-SPEC section 5. | The public "Rules and sources" page and the check copy are generated from the engine, not retyped. |
+| D-13 | **Import is the front door.** Quick Schedule opens on "Paste the care plan from Fusion" and "Open the care plan PDF"; building by hand is the fallback. Reading Fusion text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
+| D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
+| D-15 | PDFs are read in the browser with `pdfjs-dist` 4.10.38, loaded only when a PDF is opened (its own chunk and worker file). Nothing is uploaded. | Keeps public pages fast; keeps participant data on the person's computer. |
+| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are pasted into it. |
 
 ### Pinned versions (verified to install, typecheck, test and build together on Node 22)
 
@@ -62,6 +70,7 @@ acceptance check in section 11 passes.
 | @playwright/test | 1.64.1 | web (dev) |
 | @axe-core/playwright | 4.14.0 | web (dev) |
 | @firebase/rules-unit-testing | 5.0.2 | web (dev) |
+| pdfjs-dist | 4.10.38 | web; import (dev, for the PDF fixture tests) |
 | firebase-tools | 14.27.0 | root (dev) |
 
 Do not use newer majors (Vite 8, React Router 8, Vitest 5, TypeScript 7, Firebase 13). They
@@ -80,8 +89,10 @@ careplan-scheduler/
   .firebaserc                   { "projects": { "default": "care-plan-scheduler" } }
   vercel.json                   section 9
   package.json                  workspaces ["packages/*", "apps/*"]
-  docs/  APP-SPEC.md  ENGINE-SPEC.md  RULE-MAP.md  PHASE-2-CLINE-PROMPTS.md  design/
-  packages/engine/              Phase 1 + RULE_CATALOG
+  docs/  APP-SPEC.md  ENGINE-SPEC.md  IMPORT-SPEC.md  RULE-MAP.md  PHASE-2-CLINE-PROMPTS.md
+         design/ (tokens, prototype, reference/)  fixtures/fusion/
+  packages/engine/              Phase 1 + Amendment A (RULE_CATALOG, SCH-17)
+  packages/import/              @careplan/import: Fusion text reader (IMPORT-SPEC)
   apps/web/
     .env                        public Firebase web config (section 7.1)
     index.html
@@ -97,7 +108,8 @@ careplan-scheduler/
       layouts/ PublicLayout.tsx  AppLayout.tsx  AuthLayout.tsx
       pages/   Landing.tsx  Rules.tsx  Privacy.tsx  NotFound.tsx
       features/
-        quick-schedule/   model.ts  grouping.ts  ruleCopy.ts  state.ts  QuickSchedule.tsx  ...
+        quick-schedule/   model.ts  guard.ts  grouping.ts  ruleCopy.ts  state.ts  QuickSchedule.tsx  ...
+        import/           ImportPanel.tsx  ReadSummary.tsx  readPdf.ts  importFlow.ts  ...
         auth/             firebase.ts  AuthProvider.tsx  SignIn.tsx  SignUp.tsx  ...
         agency/           tenants.ts  members.ts  invites.ts  AgencyProvider.tsx  ...
     test/        unit + component tests (*.test.ts, *.test.tsx)
@@ -179,6 +191,8 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Toast | Radix Toast, bottom-right (bottom-center on phones), 5s, `role="status"`. Message names the result of the action ("Invite link copied"). |
 | Menu | Radix DropdownMenu for the account menu and agency switcher. |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
+| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPaste` hands the pasted text up after the browser inserts it. |
+| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (pine border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
 | SkipLink | First focusable element: "Skip to main content". |
 | Logo | The four-square mark from the prototype (three filled squares, one outlined) + "CarePlan Scheduler". The outlined square is the unit still to be scheduled. |
 
@@ -209,112 +223,150 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 ## 5. Quick Schedule
 
 Quick Schedule is the prototype in `docs/design/quick-schedule-prototype.html`, rebuilt in
-React with the components above. Match its layout, copy and behavior unless this section
-says otherwise. Where the prototype and this section disagree, this section wins.
+React with the components above. Its reference logic is `docs/design/reference/`. Match its
+layout, copy and behavior unless this section says otherwise; this section wins.
+
+Two ways in, one schedule:
+- **From Fusion** (the default): paste the care plan or open its PDF (IMPORT-SPEC). Minutes per
+  day and days per week come from Fusion and are locked.
+- **By hand** (fallback): enter service, dates and tasks (QS-01 to QS-09).
 
 ### 5.1 Layout
-- Page intro: `h1` "Quick Schedule", one-sentence description, actions "Load example plan"
-  and "Start blank".
-- Notice (info style): "Nothing you enter here is saved to our servers or sent anywhere. It
-  stays in this browser tab until you close it. Don't enter a participant's name or DCN."
-- Two panes at ≥ 1060px: Care plan (360–400px) on the left, Schedule on the right. One column
-  below 1060px with the status bar first, then Care plan, then the schedule panels.
-- Care plan pane: Service, Tasks, Care days, Essential transportation (CDS and ILW only).
-- Schedule pane: Status, Weekly schedule, Month, Checks, footnote on unit math.
-- Inside `/app/quick` the same page renders inside the app shell; public `/quick` renders inside
-  the public layout with a "Create agency account" call to action in the header.
+- Page intro: `h1` "Quick Schedule"; "Paste a care plan from Fusion or open its PDF. You get a
+  ready schedule that follows Missouri's rules, and you can change it within them."; actions
+  "New care plan" (only while a pasted plan is showing) and "Print schedule".
+- **Import panel** (shown until a real plan is built, and again after "New care plan"), two
+  columns at ≥ 860px:
+  - Left: `h2` "Paste the care plan from Fusion"; numbered steps (a real sequence): "In
+    Fusion, open the participant's care plan." / "Select from the participant's name down to
+    the last task, and copy." / "Paste it here. If Fusion shows the tasks on two pages, paste
+    one page at a time."; a textarea (no spellcheck); button "Build schedule"; "Examples:
+    5-day plan · 7-day plan" (fixtures A and B).
+  - Right: `h2` "Or open the care plan PDF"; a drop zone "Choose the PDF / or drop it here"
+    (a `<label>` around a hidden file input, `accept="application/pdf,.pdf"`); "The PDF is read
+    on this computer. It isn't uploaded."; "No care plan handy? Build a schedule by hand".
+  - Below both: the import issues (IMPORT-SPEC 3.1), `aria-live="polite"`.
+- **Read summary** (after a plan is built from Fusion): participant name as `h2` (focused
+  after import), "Read from Fusion · DCN <dcn>"; facts: Service, Plan, Fusion units, Tasks,
+  Provider, Prior authorization; the checksum line (IMP-15): "**Every task read.** Our total
+  from these tasks matches Fusion's 466 units a month." or "**Our total doesn't match
+  Fusion's 402 units.** From these tasks we get 374 in a 28-day month, 391 in a 30-day month,
+  401 in a 31-day month. Check that every row came through; Fusion's figure is the one we
+  schedule against."; then warnings (unread rows, unknown tasks, odd minutes, "Built from 10
+  of the plan's 14 rows"); buttons "Review what we read" (a table: task, minutes a day, days
+  a week, units in the viewed month, plus transportation) and "New care plan". For the
+  example the title is "Example care plan" with "This is what a pasted Fusion plan looks
+  like. Paste one above to make your own."
+- Notice (info style): "Nothing you paste or open is uploaded or saved to our servers. It
+  stays in this browser tab, and the participant's name and DCN are gone when you close it."
+- Two panes at ≥ 1060px: Care plan (360–400px) left, Schedule right; one column below.
+- First visit in a tab: the import panel with the 5-day example already built beneath it.
+- Inside `/app/quick` the page renders in the app shell; public `/quick` in the public layout.
 
-### 5.2 Inputs and their rules
+### 5.2 Care plan pane
+
+From Fusion:
+- "Care plan" section: Service name, Plan dates, and "Minutes and days come from Fusion and
+  can't be changed here." with a lock icon.
+- Tasks: name, "<n> units in <Mon>", the locked line "45 min a day · 5 days a week", and the
+  task's DayToggle (QS-07). No add or remove.
+- Care days (QS-08). Essential transportation: "<m> minutes a month from Fusion (<u> units),
+  about <w> minutes a week. This time comes off the monthly units before tasks." and "Usual
+  day" select (default from IMPORT-SPEC 4). No Fusion-units field in the month view (the
+  figure comes from the plan).
+
+By hand: the inputs below. Every input change goes through the guard (5.7).
 
 | ID | Input | Rule |
 |---|---|---|
 | QS-01 | Service | Native select of every rule-pack service with `unit === "15min"`, grouped: Consumer Directed Services (T1019U2), Independent Living Waiver (T1019U6), Agency model (T1019, T1019TF), Aged and Disabled Waiver (S5130, S5120, S5150, S5150TF). Option text `<name> · <code>`. Default T1019U2. Nurse visits (T1001) are not offered: they are visits, not tasks. |
 | QS-02 | Changing service | Removes tasks whose `taskCode` isn't available to the new program, clears minute changes, keeps care days. Toast: "Removed 2 tasks that aren't part of Homemaker (ADW)" when any are removed. |
-| QS-03 | Plan starts | `<input type="month">`, default next calendar month. Plan ends = start + 11 months, shown read-only. Changing it clears Fusion units. Plans always start on the 1st in Phase 2. |
+| QS-03 | Plan starts | `<input type="month">`, default next calendar month. Plan ends = start + 11 months, shown read-only. Changing it clears Fusion units. |
 | QS-04 | Add a task | Combobox. Options: `pack.tasks` where `programs` includes the service's program, `isTransport` is not true, and not already added; matches name or any alias, case-insensitive. Enter adds the highlighted option. New task: 15 min/day, every day, not pinned; focus moves to its minutes field with the value selected. No match: "No Homemaker (ADW) task matches "xyz"". All used: "Every task for this service is already added". |
-| QS-05 | Minutes per day | Integer 1–1440, step 5. Empty or invalid: error "Enter whole minutes, like 15 or 30." and the task is left out of the schedule (not treated as 0) until fixed. A value that isn't a multiple of 5 is allowed (Fusion allows it) but shows the hint "Most care plans use 5-minute steps." |
+| QS-05 | Minutes per day | Integer 1–1440, step 5. Empty or invalid: error "Enter whole minutes, like 15 or 30." and the task is left out of the schedule (not treated as 0) until fixed. Not a multiple of 5: allowed, hint "Most care plans use 5-minute steps." |
 | QS-06 | Days per week | Select 1–7, 7 shown as "Every day". Lowering it below the number of pinned days drops the latest pinned days. |
-| QS-07 | Task days | DayToggle per task. Unpinned: shows the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days currently shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). A day that isn't a care day is disabled. **New:** a pinned set can't exceed Days per week: selecting one more shows the inline hint "Bathing is authorized for 3 days. Unselect a day first." and changes nothing. |
-| QS-08 | Care days | DayToggle, default all seven. Turning a day off removes it from every pinned set and clears minute changes. None selected: error "Choose at least one care day." |
-| QS-09 | Transportation | Minutes per trip (integer ≥ 0, step 5), trips per week (1–7), usual day (Sunday–Saturday, default Monday). Blank or 0 minutes = no transportation. Summary under the fields from `transportAllowance`: "300 minutes a month = 20 units. These come off the monthly units before tasks." plus ", 10 minutes left over" when `unallocatedMinutes > 0`. |
-| QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn-colored underline; a value above the task's minutes per day gets the warn background. "Undo my minute changes" appears in the panel header while any change exists. Changing a task's minutes, days, or pins clears that task's cell changes. |
-| QS-11 | Fusion units this month | Integer ≥ 0, optional, stored per month in the plan. Hint: "If you have the authorized units from the Fusion care plan, enter them. Fusion's figure is always the one we check against." |
-| QS-12 | Load example plan / Start blank | Example = CDS State Plan, next month: Bathing 30 × 3 pinned Mon/Wed/Fri; Assistance with Toileting 15 × 7; Meal Prep/Eating 45 × 7; Laundry (Home) 30 × 2 pinned Tue/Thu; Clean Kitchen 10 × 2 pinned Sun/Sat (ENGINE-SPEC TC-01). The page opens with the example the first time in a tab, and the notice says so until the first change. Start blank keeps the service and dates. |
+| QS-09 | Transportation | Minutes per trip (integer ≥ 0, step 5), trips per week (1–7), usual day (default Monday). Blank or 0 = none. Summary from `transportAllowance`: "300 minutes a month = 20 units. These come off the monthly units before tasks." plus ", 10 minutes left over" when `unallocatedMinutes > 0`. |
+| QS-11 | Fusion units this month | Integer ≥ 0, optional, per month (by hand only). Hint: "If you have the authorized units from the Fusion care plan, enter them. Fusion's figure is always the one we check against." |
 
-### 5.3 Engine adapter (`features/quick-schedule/model.ts`, pure)
+Both modes:
+
+| ID | Input | Rule |
+|---|---|---|
+| QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. A refused change (5.7) shows its sentence in the same place. |
+| QS-08 | Care days | DayToggle, default from the import (IMPORT-SPEC 4) or all seven by hand. Turning a day off removes it from every pinned set and clears minute changes. None selected: "Choose at least one care day." |
+| QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes. |
+| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples). "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
+
+### 5.3 Model (`features/quick-schedule/model.ts`, pure; reference `quick-model.js`)
 `buildQuickModel(state, pack): QuickModel`:
-1. `tasks`: valid tasks (QS-05) mapped to `AuthorizedTask` with `serviceAuthId: "quick"`.
-2. `allowance`: `transportAllowance(minPerTrip, tripsPerWeek)` when the program is CDS or ILW
-   and minutes > 0; otherwise `null`.
-3. `composeWeek({ tasks, activeDays, overrides: pinned sets, weeklyTransportMinutes:
-   allowance ? minPerTrip × tripsPerWeek : 0, transportDay })`.
-4. `entries`: composed entries with cell changes applied (`"<taskId>:<weekday>"` → minutes),
-   entries with 0 minutes removed. Transportation is never a template entry.
-5. `auth`: `{ id: "quick", participantId: "quick", program, serviceCode, start: <start>-01,
-   end: <last day of start + 11>, state: "active", suspensions: [], revision: 1, tasks,
-   transportMinutesPerMonth: allowance?.minutesPerMonth }` (omit the key when no allowance).
-6. `template`: `{ id: "quick-template", participantId: "quick", start, end, entries,
-   rulePackVersion: pack.id }`.
-7. `monthlyAuthorizations`: one `{ source: "fusion", revision: 1 }` per month with Fusion units.
-8. `results`: `validateSchedule({ pack, authorizations: [auth], monthlyAuthorizations,
-   template, exceptions: [], visits: [], caregivers: [], enrollments: [], months: all 12 plan
-   months, tenantWorkweekStart: 0 })`, or `[]` when there are no valid tasks.
-9. Per-month figures for the month view: `expandMonth(template, [], y, m, start, end)`;
-   `authorizedUnits = fusion ?? derivedServiceMonthUnits(auth, y, m)`;
-   `transportUnits = monthTransportUnits(auth)`;
-   `taskBudgetMinutes = max(0, authorizedUnits − transportUnits) × 15`;
-   `scheduledTaskMinutes = Σ expanded minutes`; over when scheduled > budget (same test as
-   SCH-08, so the meter and the checks always agree).
+1. `tasks`: valid tasks mapped to `AuthorizedTask` (`serviceAuthId: "quick"`, unmatched Fusion
+   tasks get taskCode `FUSION:<name>`).
+2. Transportation: from Fusion, `transportMinutesPerMonth` = Fusion minutes and the weekly
+   hint `floor(floor(minutes/15)/5) × 15`; by hand, `transportAllowance(minPerTrip,
+   tripsPerWeek)` and weekly `minPerTrip × tripsPerWeek`. CDS and ILW only.
+3. `composeWeek({ tasks, activeDays, overrides: pinned sets, weeklyTransportMinutes: weekly,
+   transportDay })`. This is the **pattern**.
+4. `entries`: pattern with cell changes applied, 0-minute entries removed.
+5. `months`: every month from plan start to plan end.
+6. `auth`: `{ id: "quick", participantId: "quick", program, serviceCode, start, end,
+   state: "active", suspensions: [], revision: 1, tasks, transportMinutesPerMonth? }`.
+7. `monthlyAuthorizations`: from Fusion, the header units for every full plan month
+   (IMP-10); by hand, QS-11 entries.
+8. `trims = fitToAuthorization(patternTemplate, auth, monthlyAuthorizations, months)`
+   (ENGINE-SPEC SCH-17). Trims come from the **pattern**, never from cell changes, so a
+   person's changes are never silently cut.
+9. `results = validateSchedule({ pack, authorizations: [auth], monthlyAuthorizations,
+   template (with entries), exceptions: trims, visits: [], caregivers: [], enrollments: [],
+   months, tenantWorkweekStart: 0 })`, or `[]` with no valid tasks.
+10. `checksum` (from Fusion): IMP-15.
+11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
+   derived; budget = `max(0, authorized − transportUnits) × 15`; scheduled; over; trims in
+   that month and their minutes. Same test as SCH-08, so meter and checks always agree.
 
-Memoize with `useMemo` on the state object; recompute on every input change (it takes
-< 5 ms for 12 months).
+Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
 
 ### 5.4 Schedule pane
-- **Status** (`aria-live="polite"`): no tasks → "Add tasks to start". Any BLOCK group →
-  "N things to fix" (block icon) and "This schedule breaks a Missouri rule. Details are in
-  Checks." Otherwise "Ready to use" (check icon) with "N items are worth a look in Checks." or
-  "Every check passed for all 12 months." Figures: minutes a week, units in the viewed month
-  (Fusion or calculated), care days a week.
-- **Weekly schedule**: table with a row per task (name + "30 min · 3 days a week"), a
-  transportation row on its day when set (italic, "Set aside, not a task"), and a Day total
-  footer: minutes, "6 units" or "4 units + 10 min", and the **unit tiles**: one 10px square
-  per whole 15-minute unit, four per row, plus a partly filled square for leftover minutes.
-  Days that aren't care days show "Off". Header meta: "590 minutes a week · 39 units + 5 min".
-  Legend: "One square = one 15-minute unit · Scheduled · Select a cell to change its minutes".
-  Wider than its panel on phones → scrolls inside its own container.
-- **Month**: previous/next buttons limited to the 12 plan months, month name between them.
-  Meter: "<scheduled> units (+ <r> min) scheduled for tasks of <available> available", source
-  chip "Fusion: 177 units" or "Calculated: 177 units" with " − 20 transportation" when set,
-  bar in tile colors, the overflow part in block red, and "270 minutes over. See Checks below."
-  when over. Then the Fusion units field (QS-11), then a calendar: weekday header, one cell
-  per date with day number, minutes and units; days with no care are dashed and empty.
-- **Checks**: section 5.5.
-- Footnote: "Unit math follows DHSS rules for 15-minute units: weekly frequency factors,
-  short-month proration for daily tasks, and whole units only. Every check names the rule it
-  comes from. Checks marked "Needs review" use a rule DHSS hasn't confirmed yet, so they never
-  count as passing." Link "See every rule and its source" → `/rules`.
-- **Print**: "Print schedule" button in the page intro calls `window.print()`. Print styles:
-  hide navigation, inputs and buttons; print the service, plan dates, weekly grid with day
-  totals, the viewed month's calendar, the status line and the Must fix / Needs review checks;
-  footer "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>". Fits US Letter
-  landscape.
+- **Status** (`aria-live="polite"`): no tasks → "Add tasks to start". Any BLOCK group (only
+  possible when the imported plan itself breaks a rule) → "N things to fix" and "This care
+  plan itself breaks a Missouri rule. Details are in Checks." Otherwise "Ready to use" with
+  "Follows every rule we check, for all N months." or "Follows every rule we check. N items
+  are worth a look in Checks." Figures: minutes a week, units in the viewed month, care days.
+- **Weekly schedule**: rows per task ("45 min · every day"), the transportation row on its
+  day ("Set aside, not a task"), Day total footer with minutes, units and **unit tiles** (one
+  10px square per whole unit, four per row, a partly filled square for leftover minutes);
+  non-care days show "Off". Header meta "1465 minutes a week · 97 units + 10 min". Legend:
+  "One square = one 15-minute unit · Scheduled · Select a cell to change its minutes". The
+  refusal box (5.7) sits under the table. Scrolls inside its panel on phones.
+- **Month**: previous/next limited to the plan's months. Meter: "<n> units (+ r min)
+  scheduled for tasks of <available> available", chip "Fusion: 455 units − 23
+  transportation" or "Calculated: …", bar in tile colors (block red for any overflow). When
+  the month was trimmed: "This month's tasks need more than Fusion's 455 units, so the
+  schedule stops 95 minutes early, starting Dec 31, 2025. Those days are marked below."
+  Calendar: one cell per date with minutes and units; trimmed dates get a warn border and
+  "−95 min"; dates outside the plan and days without care are dashed.
+- **Checks**: 5.5. Footnote: "Unit math follows DHSS rules for 15-minute units: weekly
+  frequency factors, short-month proration for daily tasks, and whole units only. A change
+  that would break a rule isn't accepted; you'll see the limit instead. Checks marked "Needs
+  review" use a rule DHSS hasn't confirmed yet, so they never count as passing." Link "See
+  every rule and its source" → `/rules`.
+- **Print**: "Print schedule" → `window.print()`. Print: participant name and DCN (if read),
+  service, plan dates, PA number, weekly grid with day totals, the viewed month's calendar
+  (with trims), status line, Must fix / Needs review checks; footer "Checked with CarePlan
+  Scheduler under rule pack mo-2026-07 on <date>". US Letter landscape.
 
 ### 5.5 Checks: grouping and copy (`grouping.ts`, `ruleCopy.ts`)
-- Group results by `ruleId + severity + refs.taskId`. Each group keeps its months in order.
-  One group = one card. Group counts (not raw results) drive the status line.
-- Order: Must fix, Needs review, Check (each with a heading and count), then "Good to know"
-  collapsed in a `<details>`.
-- Card: plain title from the copy table + context ("Bathing, every month of the plan",
-  "November 2026", "9 of 12 months"), one-line what-to-do, and a `<details>` with: "Months:
-  Nov 2026, Dec 2026, …" (when more than one), "Rule SCH-08 · <engine message>", "Source:
-  <RULE_CATALOG source>", "Checked under mo-2026-07".
-- When a card refers to a task, a "Show in week" button scrolls to and highlights that task's
-  row for 2 seconds.
+- Group results by `ruleId + severity + refs.taskId`; each group keeps its months in order.
+  One group = one card; group counts drive the status line.
+- Order: Must fix, Needs review, Check (heading + count each), then "Good to know" collapsed.
+- Card: title from the copy table + context ("Bathing, every month of the plan", "November
+  2026", "8 of 11 months"), one-line what-to-do, and details: "Months: …" (more than one),
+  "Rule SCH-08 · <engine message>", "Source: <RULE_CATALOG source>", "Checked under
+  mo-2026-07". A card about a task has "Show in week" (scroll to and highlight the row 2 s).
 - SCH-08 results with `refs.taskId` use the copy key `SCH-08/task`.
 - No "No problems found" while any Needs review group exists.
 
-Copy table (`ruleCopy.ts`, exported as `RULE_COPY`). A unit test checks every rule ID ×
-severity in `RULE_CATALOG` has an entry (AUTH-13 and SCH-15 emit nothing and are exempt).
+Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity in
+`RULE_CATALOG` has an entry (AUTH-13, SCH-15 and SCH-17 emit nothing and are exempt).
 
 | Key | Severity | Title | What to do |
 |---|---|---|---|
@@ -322,7 +374,7 @@ severity in `RULE_CATALOG` has an entry (AUTH-13 and SCH-15 emit nothing and are
 | AUTH-03 | INFO | Task units calculated | Units for this task use the DHSS worksheet formula. |
 | AUTH-05 | INFO | How monthly units are figured | Daily tasks are prorated by the days in each month. Other tasks use the DHSS weekly frequency factor. |
 | AUTH-06 | WARN | Monthly figures are calculated, not imported | This plan came from the old web tool, so each month's units are our calculation. Check them against Fusion. |
-| AUTH-07 | REVIEW | Our total doesn't match Fusion | We keep Fusion's number. Check the minutes and days per week you entered against the care plan. |
+| AUTH-07 | REVIEW | Fusion's monthly figure differs from this month's task units | We always use Fusion's figure. In longer months the schedule stops when the units run out; see the month view. |
 | AUTH-08 | INFO | Transportation time is set aside | Transportation minutes come off the monthly units before tasks are counted. |
 | AUTH-09 | BLOCK | Respite is over its combined monthly limit | Basic and Advanced Respite together can't go over the monthly limit. |
 | AUTH-09 | REVIEW | Fusion units are above the program limit | The units entered are higher than this service's monthly limit. Confirm the number with Fusion. |
@@ -330,11 +382,11 @@ severity in `RULE_CATALOG` has an entry (AUTH-13 and SCH-15 emit nothing and are
 | AUTH-12 | BLOCK | ILW isn't approved yet | Don't schedule ILW units until the ILW authorization is approved. |
 | SCH-02 | BLOCK | A task is on more days than authorized | Unselect the extra day, or check the days per week on the care plan. |
 | SCH-02 | WARN | A task is on fewer days than authorized | Add care days or choose more days for this task so it gets all its authorized days. |
-| SCH-03 | WARN | A day has more minutes than the task allows | One day's minutes for this task are above its minutes per day. |
+| SCH-03 | WARN | A day has more minutes than the task allows | One day's minutes for this task are above its minutes per day. That's allowed while the month stays within its units. |
 | SCH-08 | BLOCK | The schedule goes over the month's authorization | Lower some minutes or days, or check the monthly units against Fusion. |
-| SCH-08/task | BLOCK | A task goes over its monthly units | Lower this task's minutes on the longer days, or check its minutes per day on the care plan. |
+| SCH-08/task | BLOCK | A task goes over its monthly units | Lower this task's minutes on the longer days. |
 | SCH-11 | WARN | Same one-time change two months running | If this keeps happening, the care plan may need a change request. |
-| SCH-12 | REVIEW | Partial month without a Fusion figure | The plan starts or ends mid-month. Enter that month's units from Fusion. |
+| SCH-12 | REVIEW | Partial month without a Fusion figure | The plan starts or ends mid-month, so Fusion's monthly figure doesn't apply. Check that month's units in Fusion. |
 | SCH-14 | BLOCK | A visit falls outside the authorization | Move the visit to a date the authorization covers. |
 | SCH-14 | INFO | Future authorization | Visits for this authorization are drafts until it starts. |
 | CON-01 | BLOCK | Two visits for the same service overlap | A participant can't get the same CDS or ILW service twice at once. Change one visit's time. |
@@ -357,20 +409,39 @@ severity in `RULE_CATALOG` has an entry (AUTH-13 and SCH-15 emit nothing and are
 | CON-16 | REVIEW | No waiver enrollment on file | This waiver service needs an enrollment record. |
 | CON-17 | REVIEW | Caregiver details are missing | Add the caregiver's relationship and qualifications so we can check eligibility. |
 
-Unknown rule ID or severity: show the engine message as the title and "Rule <id>" as detail,
-and log nothing (no console noise in production).
+Unknown rule ID or severity: the engine message is the title and "Rule <id>" the detail; log
+nothing.
 
 ### 5.6 State and storage (`state.ts`)
-- One reducer (`useReducer`) owns `QuickState`: `serviceCode`, `startMonth`, `tasks[]`
-  (`id`, `taskCode`, `name`, `minPerDay: number | null`, `daysPerWeek`, `pinned: Weekday[] |
-  null`), `activeDays: boolean[7]`, `transport { minPerTrip, tripsPerWeek, day }`, `edits`,
-  `fusion: Record<YYYY-MM, number>`, `viewMonth`, `isExample`.
-- Task ids are `qt-1`, `qt-2`, … from a counter kept in state (no module-level mutable state).
-- Persist to `sessionStorage` key `cps.quick.v1` on every change (debounced 300ms), restore on
-  load if the shape validates; otherwise load the example. All storage access in try/catch.
+- One reducer owns `QuickState`: `source` ("fusion" | "manual"), `identity` ({ name, dcn } |
+  null, **memory only**), `provider`, `pa`, `serviceLabel`, `serviceCode`, `plan` { start,
+  end }, `headerUnits`, `tasks[]` (`id`, `taskCode`, `name`, `minPerDay`, `daysPerWeek`,
+  `pinned`, `locked`), `nextId`, `activeDays`, `transport`, `edits`, `fusion`, `viewMonth`,
+  `isExample`, `notes`, `rowsRead`.
+- Persist everything **except `identity`** to `sessionStorage` key `cps.quick.v2` (debounced
+  300 ms); restore if the shape validates, else show the example. After a reload the read
+  summary title is "Care plan from Fusion". All storage access in try/catch.
 - Never write Quick Schedule state to `localStorage`, Firestore, the URL, or the console.
 
----
+### 5.7 Guard: no change can break a rule (`guard.ts`)
+- `tryChange(next, pack) → { ok: true, model } | { ok: false, blocks, model }`: build the model
+  for the changed state; accept only if it has **zero BLOCK results**. The reducer dispatch
+  for every person-made change (cell, task days, unpin, care days, transportation day or
+  amounts, minutes or days by hand) goes through it. Loading a plan does not (an imported
+  plan's own problems are shown, not hidden).
+- `maxCellMinutes(state, key, requested, pack)`: the largest value ≤ requested, in 5-minute
+  steps, that keeps zero BLOCK (binary search; adding minutes never removes a BLOCK).
+- Refusal sentence from the first BLOCK, preferring the viewed month and a task result:
+  - SCH-08 task: "That would put Bathing over its 93 units in December 2025."
+  - SCH-08 service: "That would put December 2025 over the 455 units Fusion authorizes."
+    (by hand: "…the plan allows.")
+  - SCH-02: "Bathing is authorized for 3 days a week."
+  - other: the copy-table title.
+- Cell refusal box (role `alert`, under the grid): "**Not changed.** <sentence> The most
+  Bathing can have on Tuesday is 55 minutes." + button "Use 55 minutes"; or, when nothing more
+  fits: "Bathing can't have more than 45 minutes on Monday. To add time here, take it from
+  another day first." The box clears on the next accepted change.
+- Other refusals show their sentence next to the control (task days) or in a toast.
 
 ## 6. Accounts
 
@@ -690,7 +761,7 @@ Rules tests (`apps/web/rules-test/firestore.rules.test.ts`, emulator) cover at l
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
         { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com; frame-src https://care-plan-scheduler.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com; frame-src https://care-plan-scheduler.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" }
       ]
     },
     {
@@ -712,57 +783,73 @@ percentages, meter widths). No inline scripts are allowed.
   reads `dist/.vite/manifest.json` (enable `build.manifest`), sums gzip sizes of the entry chunk
   and its static imports, fails above the budget, and fails if any of those chunks' source
   module ids include `node_modules/firebase` or `node_modules/@firebase`. `npm run build` runs it.
-- Quick Schedule recomputes in < 16 ms after an input change on a mid-range laptop (one frame);
-  a unit test times `buildQuickModel` for the example plan and fails above 50 ms in CI.
+- pdf.js is never in the entry chunk or its static imports: check-bundle also fails if any of
+  those chunks contains `pdfjs-dist` code (search for `GlobalWorkerOptions`). It loads only
+  through `import()` when a PDF is chosen.
+- Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
+  times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
+  pasted plan takes under 20 ms.
 - Fonts: one variable font file (latin subset) preloaded.
 
 ---
 
 ## 11. Acceptance checks
 
+Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
+(`page.clock.setFixedTime`), so "the viewed month" for fixture B is October 2026.
+
 | ID | Check | How |
 |---|---|---|
-| AC-01 | `/quick` opens with the example plan and shows day totals Sun..Sat `70,90,90,90,90,90,70`, "590 minutes a week · 39 units + 5 min", and "Ready to use". | Playwright |
-| AC-02 | For the example plan, the month view shows 181 units in 31-day months, 177 in 30-day months, 169 in a 28-day February (ENGINE-SPEC TC-01). | unit (model) + Playwright |
-| AC-03 | Changing Monday's Bathing cell to 60 shows "2 things to fix": the over-the-month card and the Bathing card ("every month of the plan"), plus the "A day has more minutes than the task allows" check. "Undo my minute changes" restores "Ready to use". | Playwright |
-| AC-04 | Entering 150 Fusion units for the first month shows the over-meter, "270 minutes over", a SCH-08 Must fix for that month, and an AUTH-07 Needs review. | Playwright |
-| AC-05 | Turning Sunday off moves the 7-day tasks to 6 days and shows three "fewer days than authorized" checks, one per affected task. | Playwright |
-| AC-06 | Adding "dress" through the picker with the keyboard only adds Dressing/Grooming and focuses its minutes field. | Playwright |
-| AC-07 | 60-minute transportation once a week shows "300 minutes a month = 20 units" and the meter's " − 20 transportation". | Playwright |
-| AC-08 | Switching to Homemaker (ADW) keeps only Clean Kitchen from the example, hides transportation, and shows the removal toast. | Playwright |
-| AC-09 | Selecting a fourth day for Bathing (3 days a week, pinned) shows the inline hint and changes nothing. | component test |
-| AC-10 | Reloading `/quick` keeps the plan; a new tab starts with the example. | Playwright |
-| AC-11 | `/quick`, `/`, `/rules` load no Firebase code and make no requests to Google domains. | check-bundle + Playwright request log |
-| AC-12 | Sign up → verify (emulator) → set up agency → invite a scheduler → second user accepts → both see each other on Team. | Playwright against emulators |
-| AC-13 | Firestore rules tests R-01 to R-17 pass. | `npm run test:rules` |
-| AC-14 | axe: zero violations on `/`, `/quick`, `/rules`, `/sign-in`, `/sign-up`, `/app`, `/app/quick`, `/app/agency/members`, in light and dark. | Playwright |
-| AC-15 | Everything works at 390 × 844 (phone) with no horizontal page scroll; the weekly grid scrolls inside its panel. | Playwright |
-| AC-16 | After 30 minutes idle (fake timers) the session signs out with the timeout message; activity in a second tab prevents it. | component test |
-| AC-17 | `/rules` lists every rule in `RULE_CATALOG` with ID, status, severities and source, and the services table shows each ceiling from `MO_2026_07`. | component test |
-| AC-18 | Engine: `RULE_CATALOG` matches ENGINE-SPEC section 5 exactly; engine tests still 112+ passing. | engine test |
-| AC-19 | Root `npm run typecheck`, `npm test`, `npm run build` pass; `.github/workflows/ci.yml` runs them plus e2e and rules tests. | CI / local |
+| AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon..Fri `290, 285, 275, 270, 195`, "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
+| AC-02 | Pasting fixture B into the box builds the schedule with no button press: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line, import panel hidden, "Ready to use", and one Needs review card "Fusion's monthly figure differs from this month's task units · 8 of 11 months". | Playwright |
+| AC-03 | With B in December 2025: the meter says "the schedule stops 95 minutes early, starting Dec 31, 2025", and the Dec 31 cell shows "−95 min". | Playwright |
+| AC-04 | With B: changing Monday's Bathing to 60 is refused: "Not changed. That would put Bathing over its 93 units in October 2026." and "Bathing can't have more than 45 minutes on Monday."; the week is unchanged. | Playwright |
+| AC-05 | With B: Monday's Bathing 45 → 30 is accepted (SCH-03 not involved); Tuesday's 45 → 60 is refused with "The most Bathing can have on Tuesday is 55 minutes."; "Use 55 minutes" applies 55 and the status stays "Ready to use". | Playwright |
+| AC-06 | Fixture D shows "This copy has 10 of the plan's 14 rows"; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
+| AC-07 | Pasting B-page1 then B-page2 builds one plan with 15 tasks and the 455 match line. | Playwright |
+| AC-08 | Opening `fusion-table-with-banner.pdf` with the file input gives the same result as AC-02. Opening `fusion-table-only.pdf` asks for the plan dates; entering 2026-01-01 and 2026-12-31 builds it. | Playwright |
+| AC-09 | Pasting text with no care plan shows "We couldn't find care plan tasks in that text". | Playwright |
+| AC-10 | Selecting a second day for Clean Bath (1 day a week) shows "Clean Bath is authorized for 1 day a week. Unselect a day first." and changes nothing. | component test |
+| AC-11 | Reloading keeps the plan, but the summary title becomes "Care plan from Fusion" and the DCN is gone. A new tab starts with the example. | Playwright |
+| AC-12 | By hand: "Build a schedule by hand" opens the inputs; keyboard-only "dress" + Enter adds Dressing/Grooming and focuses its minutes; 60-minute transportation once a week shows "300 minutes a month = 20 units"; switching to Homemaker (ADW) removes tasks with the toast. | Playwright |
+| AC-13 | By hand, the ENGINE-SPEC TC-01 tasks give day totals Sun..Sat `70, 90, 90, 90, 90, 90, 70` and month units 181 / 177 / 169 for 31-, 30- and 28-day months. | unit (model) |
+| AC-14 | `/quick`, `/`, `/rules` load no Firebase and no pdf.js code until a PDF is chosen, and make no requests to Google domains. Opening a PDF requests only same-origin files. | check-bundle + Playwright request log |
+| AC-15 | Privacy: during AC-02 to AC-08, `sessionStorage`, `localStorage` and the console never contain "10000002" or "SAMPLE PARTICIPANT". | Playwright |
+| AC-16 | Sign up → verify (emulator) → set up agency → invite a scheduler → second user accepts → both see each other on Team. | Playwright against emulators |
+| AC-17 | Firestore rules tests R-01 to R-17 pass. | `npm run test:rules` |
+| AC-18 | axe: zero violations on `/`, `/quick` (example, an import issue showing, and a built plan), `/rules`, `/sign-in`, `/sign-up`, `/app`, `/app/quick`, `/app/agency/members`, in light and dark. | Playwright |
+| AC-19 | Everything works at 390 × 844 with no horizontal page scroll; the weekly grid scrolls inside its panel; the import panel stacks to one column. | Playwright |
+| AC-20 | After 30 minutes idle (fake timers) the session signs out with the timeout message; activity in a second tab prevents it. | component test |
+| AC-21 | `/rules` lists every rule in `RULE_CATALOG` (including SCH-17) with ID, status, severities and source, and the services table shows each ceiling from `MO_2026_07`. | component test |
+| AC-22 | Engine: `RULE_CATALOG` matches ENGINE-SPEC section 5; TC-38 to TC-40 pass; all earlier engine tests pass. Import: IMP-T01 to IMP-T19 pass. | engine + import tests |
+| AC-23 | Root `npm run typecheck`, `npm test`, `npm run build` pass; `.github/workflows/ci.yml` runs them plus e2e and rules tests. | CI / local |
 
 ---
 
 ## 12. Landing, Rules and Privacy pages
 
 **Landing (`/`)** for agency owners and state reviewers. Left-aligned, no stock photos.
-- Headline (40px, 700): "Care plan schedules that follow Missouri's rules."
-- Lead (17px, ink-2, ≤ 60ch): "Enter the tasks from a Fusion care plan. CarePlan Scheduler
-  builds the week from those tasks, figures the units for every month the way DHSS does, and
-  checks the schedule against each rule, naming the policy it comes from."
+- Headline (40px, 700): "Paste a Fusion care plan. Get a schedule that follows Missouri's rules."
+- Lead (17px, ink-2, ≤ 60ch): "Copy the care plan from Fusion or open its PDF. CarePlan
+  Scheduler reads every task, checks its total against Fusion's, builds the week, and won't let
+  anyone change it in a way that breaks a rule. Every check names the policy it comes from."
 - Actions: primary "Try Quick Schedule" (`/quick`), secondary "Create agency account".
-  Small line: "Quick Schedule needs no account and saves nothing."
+  Small line: "Quick Schedule needs no account. Nothing you paste is uploaded."
 - Live figure beside the headline (stacks below on phones): the example plan's Day total row
   with unit tiles and "Ready to use", computed by the engine on the page (no screenshot).
   This is the page's one memorable element.
-- Three short sections, each a heading + 2 sentences + one concrete figure:
-  1. "Built from tasks, not averages" — monthly units are never spread evenly across days;
+- Four short sections, each a heading + 2 sentences + one concrete figure. Figures 1, 2
+  and 4 are computed on the page by the engine and the import package (fixture A, TC-01,
+  RULE_CATALOG); figure 3 is a static example of the refusal box, styled exactly like the
+  real one:
+  1. "Reads Fusion the way you copy it" — paste or PDF, one page or two; figure: the match
+     line "Every task read. Our total from these tasks matches Fusion's 466 units a month."
+  2. "Built from tasks, not averages" — monthly units are never spread evenly across days;
      figure: the TC-01 week `70 · 90 · 90 · 90 · 90 · 90 · 70`.
-  2. "Every check names its source" — figure: one SCH-08 card from the Checks list with its
-     source line.
-  3. "Fusion's number wins" — imported authorizations are never recalculated; figure: the
-     meter with "Fusion: 177 units".
+  3. "Can't be edited out of compliance" — a change that breaks a rule is refused with the
+     limit; figure: the refusal box "Not changed. … The most Bathing can have on Tuesday is
+     55 minutes."
+  4. "Every check names its source" — figure: one card with its source line.
 - For state reviewers: one paragraph and a link "See every rule and its source" → `/rules`.
 - Footer: "© 2026 CarePlan Scheduler", links Privacy, Rules and sources, and
   "Questions: support@thecdscloud.com" as selectable text.
@@ -776,15 +863,16 @@ Then "Services and monthly limits" from `MO_2026_07.services` (code, name, unit,
 ceiling or "—", weekly hour limit, source) and "Days-per-month factors" from
 `daysPerMonthFactor` (1 → 5 … 7 → 31).
 
-**Privacy (`/privacy`)**: plain-language page: Quick Schedule keeps everything in the browser
-tab; accounts store name, email and agency details in Google Firebase (United States); no
+**Privacy (`/privacy`)**: plain-language page: Quick Schedule reads pasted text and PDFs in
+the browser and keeps everything in that tab (the participant's name and DCN only until the
+page is reloaded or closed); accounts store name, email and agency details in Google Firebase (United States); no
 advertising or analytics trackers; participant data arrives in a later release and will be
 covered by a business associate agreement before any agency enters it; contact email.
 
 ---
 
 ## 13. Out of scope for Phase 2
-Saved participants, care plan import, caregivers, visits, the caregiver calendar, exports
-other than print, billing, MFA, App Check, audit logs, Cloud Functions, custom email sending.
+Saving participants or their imported plans, caregivers, visits, the caregiver calendar,
+exports other than print, billing, MFA, App Check, audit logs, Cloud Functions, custom email sending.
 These start in Phase 3 or later. Phase 3 must add App Check and an audit log before any
 participant data is stored, and a signed Google Cloud BAA must be in place first.

@@ -4,9 +4,14 @@ Paste these into Cline **one at a time, in order**. Start the next prompt only a
 reports every check in the prompt's "Finish" list passing. Every prompt works on the branch
 `phase-2-app`, which already holds the Phase 2 docs.
 
-Read first, in this order: `.clinerules`, `docs/APP-SPEC.md`, `docs/ENGINE-SPEC.md`, then
-open `docs/design/quick-schedule-prototype.html` in a browser. That page runs the real
-engine and is the look and behavior every Quick Schedule prompt is aiming at.
+Read first, in this order: `.clinerules`, `docs/APP-SPEC.md`, `docs/IMPORT-SPEC.md`,
+`docs/ENGINE-SPEC.md`, then open `docs/design/quick-schedule-prototype.html` in a browser and
+paste one of `docs/fixtures/fusion/*.txt` into it. That page runs the real engine, the Fusion
+reader and the guard; it is the look and behavior every Quick Schedule prompt is aiming at.
+
+Order: 1 engine · 2 import package · 3 web scaffold and UI kit · 4 public site ·
+5 Quick Schedule logic · 6–7 Quick Schedule screens · 8 sign-in · 9 agencies · 10 team ·
+11 accessibility, phones and the pull request.
 
 ---
 
@@ -31,7 +36,7 @@ engine and is the look and behavior every Quick Schedule prompt is aiming at.
 **Vercel** (team "jasonhgriffin-6085's projects")
 6. Add New → Project → import `E7104z/careplan-scheduler`. Project name
    `careplan-scheduler`. Leave Root Directory as the repo root and Framework as "Other";
-   `vercel.json` (added in Prompt 2) supplies the install, build and output settings.
+   `vercel.json` (added in Prompt 3) supplies the install, build and output settings.
    The first deploy of `main` fails until Phase 2 is merged. That's expected.
 7. Note the production domain Vercel gives you (normally `careplan-scheduler.vercel.app`) and
    the branch domain for `phase-2-app`
@@ -58,20 +63,20 @@ open the "Browser key (auto created by Firebase)" → Application restrictions �
     npm ci
     npx firebase login
     ```
-    (`firebase-tools` arrives with Prompt 2; if `npx firebase login` asks to install it,
-    run it again after Prompt 2.)
+    (`firebase-tools` arrives with Prompt 3; if `npx firebase login` asks to install it,
+    run it again after Prompt 3.)
 
 ---
 
-## Prompt 1 — Engine: rule catalog
+## Prompt 1 — Engine: rule catalog and Amendment A
 
 ```
-Read .clinerules, docs/APP-SPEC.md (D-12, section 12 "Rules and sources") and
-docs/ENGINE-SPEC.md section 5 first.
+Read .clinerules, docs/ENGINE-SPEC.md (Amendment A at the top, section 5 including SCH-17,
+section 7 TC-38 to TC-40) and docs/APP-SPEC.md D-12 first.
 
-Task: add RULE_CATALOG to the engine. No app code yet.
+Task: four engine changes. No app code.
 
-1. packages/engine/src/rulepacks/catalog.ts exports:
+1. RULE_CATALOG. packages/engine/src/rulepacks/catalog.ts exports:
      export type RuleArea = "Authorization" | "Schedule" | "Conflicts and eligibility";
      export type RuleStatus = "VERIFIED" | "VERIFIED (CDS)" | "VERIFIED basis" | "PARTIAL" | "APPROVED" | "OPEN";
      export interface RuleCatalogEntry {
@@ -79,31 +84,105 @@ Task: add RULE_CATALOG to the engine. No app code yet.
        status: RuleStatus; source: string;
      }
      export const RULE_CATALOG: readonly RuleCatalogEntry[]
-   One entry per row of ENGINE-SPEC section 5, in table order, with `rule`, `status` and
-   `source` copied character for character. `severities` comes from the Severity column
-   ("BLOCK / WARN" → ["BLOCK", "WARN"]; "per matrix" → ["BLOCK", "REVIEW"]; "—" → []).
-   Also export ruleById(id): RuleCatalogEntry | undefined.
-2. Export both from packages/engine/src/index.ts.
-3. packages/engine/test/catalog.test.ts:
-   - Parse the three tables under "## 5. Rules" in docs/ENGINE-SPEC.md (read the file with
-     node:fs relative to the test file) and assert RULE_CATALOG has the same IDs in the same
-     order, and identical rule text, status and source for each.
-   - Assert severities for: AUTH-09 ["BLOCK","REVIEW"], CON-02 ["BLOCK","REVIEW"],
-     SCH-15 [], CON-17 ["REVIEW"].
-   - Assert every ruleId that appears in a `ruleId: "..."` literal in src/rules/*.ts is in
-     RULE_CATALOG.
-4. Add catalog.ts to docs/RULE-MAP.md under a new "Catalog" heading (one line).
+     export function ruleById(id: string): RuleCatalogEntry | undefined
+   One entry per row of ENGINE-SPEC section 5, in table order, with rule, status and source
+   copied character for character. severities from the Severity column ("BLOCK / WARN" →
+   ["BLOCK","WARN"]; "per matrix" → ["BLOCK","REVIEW"]; "—" → []).
+2. CalendarException gains `kind?: "change" | "fit"` (src/types.ts, exactly as ENGINE-SPEC
+   section 2). ruleSCH11RepeatedExceptions skips exceptions with kind "fit".
+3. SCH-17. packages/engine/src/rules/fit.ts exports
+     fitToAuthorization(template: ScheduleTemplate, auth: ServiceAuthorization,
+       monthlyAuthorizations: MonthlyAuthorization[], months: string[]): CalendarException[]
+   with JSDoc `@rule SCH-17` and `@source Product decision approved Oct 21, 2026 (schedules
+   never exceed SCH-08)`, implementing the SCH-17 row exactly:
+   - only months that have a MonthlyAuthorization with source "fusion" for auth.id;
+   - budget = max(0, fusion units − monthTransportUnits(auth)) × 15;
+   - scheduled = all template minutes on dates inside [auth.start, auth.end] in that month
+     (expandMonth with no exceptions);
+   - while over > 0, walk the month's dates from last to first; on each date order the
+     entries by task daysPerWeek descending, then minutes descending, then taskId
+     ascending; cut min(over, entry minutes) from each;
+   - each cut → { id: `fit-${date}-${taskId}`, participantId: auth.participantId, date,
+     taskId, minutesDelta: −cut, reason: "Units for the month run out",
+     author: "CarePlan Scheduler", createdAt: "", kind: "fit" }.
+   Export it from src/index.ts. It is not called by validateSchedule (the app passes its
+   result as exceptions).
+4. Rule pack: add alias "Essential Correspond" to ESSENTIAL_CORRESPONDENCE.
 
-Do not change any existing test or any rule function.
+Tests:
+- test/catalog.test.ts: parse the three tables under "## 5. Rules" in docs/ENGINE-SPEC.md
+  (read the file with node:fs relative to the test file) and assert RULE_CATALOG has the same
+  IDs in order and identical rule text, status and source; severities for AUTH-09
+  ["BLOCK","REVIEW"], CON-02 ["BLOCK","REVIEW"], SCH-15 [], SCH-17 [], CON-17 ["REVIEW"];
+  every ruleId literal in src/rules/*.ts is in RULE_CATALOG.
+- test/fit.test.ts: TC-38, TC-39 and TC-40 exactly as ENGINE-SPEC section 7. For TC-38 build
+  the 15 tasks and transport of docs/fixtures/fusion/B-tabbed-7day-455.txt by hand in the
+  test (do not parse the file here): Assistance with Toileting 10×7, Bathing 45×7, Change
+  Linens 10×7, Clean Bath 20×1, Clean Floors 20×1, Clean Kitchen 20×1, Dressing/Grooming 15×7,
+  Essential Correspondence 30×1, Laundry (Off Site) 140×1, Meal Prep/Eating 60×7,
+  Medications 5×7, Mobility/Transfer 10×7, Tidy and Dust 10×1, Trash 5×7, Wash Dishes 15×7,
+  in that order with ids t1…t15; transportMinutesPerMonth 345.
+  Also: a month without a Fusion figure is never trimmed; trims never make a minute count
+  negative.
+- test/sources.test.ts: add "SCH-17": "Product decision approved Oct 21, 2026 (schedules
+  never exceed SCH-08)" to SOURCES. Change nothing else in that file.
+- docs/RULE-MAP.md: add SCH-17 → rules/fit.ts → fitToAuthorization → test/fit.test.ts →
+  TC-38, TC-39; add catalog.ts under a "Catalog" heading.
+
+Do not change any other existing test or rule function.
 
 Finish:
 1. In packages/engine: npx tsc --noEmit and npx vitest run. Paste both summary lines.
-2. Commit: "feat(engine): RULE_CATALOG with spec-parity test". Push.
+2. Commit: "feat(engine): RULE_CATALOG, SCH-17 fit to authorization, fit exceptions". Push.
 ```
 
 ---
 
-## Prompt 2 — Web workspace, design tokens, UI kit, deploy config
+---
+
+## Prompt 2 — Import package: read Fusion care plans
+
+```
+Read .clinerules (Import rules), docs/IMPORT-SPEC.md (all of it), and the reference
+implementation docs/design/reference/fusion-parse.js first. Open every file in
+docs/fixtures/fusion/.
+
+Task: packages/import (@careplan/import), a pure TypeScript port of fusion-parse.js that
+meets IMPORT-SPEC exactly. The reference shows the intended behavior; the spec wins.
+
+1. packages/import/package.json: name "@careplan/import", version "0.1.0", type module,
+   main "src/index.ts", scripts test "vitest run" and typecheck "tsc --noEmit".
+   dependencies: "@careplan/engine": "0.1.0". devDependencies (exact): typescript 5.9.3,
+   vitest 3.2.4, @types/node 22.20.5, pdfjs-dist 4.10.38. tsconfig and vitest config the same
+   as packages/engine.
+2. src/ (one concept per file, < 300 lines each):
+   normalize.ts (IMP-01), banner.ts (IMP-02), paging.ts (IMP-03), serviceHeader.ts (IMP-04),
+   rows.ts (IMP-05 to IMP-08), taskMatch.ts (IMP-09, uses the rule pack), services.ts (IMP-11
+   label map), parse.ts (parseFusionText), merge.ts (mergeFusionText, IMP-12),
+   pdfLines.ts (textItemsToLines, IMP-14; pure, takes PdfTextItem[][]), types.ts (section 3),
+   index.ts (exports the public API only).
+3. Issues exactly as IMPORT-SPEC 3.1 (codes, levels, message text as in the reference).
+4. Tests in packages/import/test/, one file per area, covering IMP-T01 to IMP-T15 and IMP-T19
+   exactly. For IMP-T14/T15 load the PDF fixtures with pdfjs-dist's legacy build
+   ("pdfjs-dist/legacy/build/pdf.mjs", getDocument({ data, isEvalSupported: false })), map each
+   text item to { str, x: transform[4], y: transform[5], width, height: |transform[3]| }, and
+   call textItemsToLines. Fixture paths are resolved relative to the test file.
+   For IMP-T19 spy on console.* and on globalThis.localStorage/sessionStorage (create stub
+   objects if absent) and assert none were called across a full parse of every fixture.
+5. Root package.json: the root "test" and "typecheck" scripts run every workspace
+   (`npm run test --workspaces --if-present`, same for typecheck), if they don't already.
+
+Finish:
+1. From the root: npm install, npm run typecheck, npm test. Paste the summary lines for
+   packages/engine and packages/import.
+2. Commit: "feat(import): Fusion care plan reader with fixture tests". Push.
+```
+
+---
+
+---
+
+## Prompt 3 — Web workspace, design tokens, UI kit, deploy config
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 1, 2, 4, 9 and 10 first.
@@ -119,13 +198,13 @@ component gallery.
    devDependencies (exact): firebase-tools 14.27.0.
 2. apps/web/package.json: name "@careplan/web", private, type module. Dependencies and
    devDependencies pinned exactly as in APP-SPEC section 1 (the "web" rows), plus
-   "@careplan/engine": "0.1.0". Scripts:
+   "@careplan/engine": "0.1.0" and "@careplan/import": "0.1.0". Scripts:
      "dev": "vite", "build": "tsc --noEmit && vite build && node scripts/check-bundle.mjs",
      "preview": "vite preview", "typecheck": "tsc --noEmit", "test": "vitest run",
      "test:e2e": "playwright test --pass-with-no-tests",
      "test:e2e:emulated": "playwright test --pass-with-no-tests",
      "test:rules": "vitest run --config vitest.rules.config.ts"
-   (Prompts 6 and 7 narrow the two e2e scripts to their projects.)
+   (Prompts 7 and 8 narrow the two e2e scripts to their projects.)
 3. apps/web/tsconfig.json: target ES2022, lib [ES2022, DOM, DOM.Iterable], module ESNext,
    moduleResolution Bundler, jsx react-jsx, strict, noUncheckedIndexedAccess, skipLibCheck,
    noEmit, types ["vite/client", "@testing-library/jest-dom"], include ["src", "test",
@@ -152,7 +231,7 @@ component gallery.
    state (including disabled, busy, error), with a light/dark/system switch. main.tsx renders
    it at /dev/ui only when import.meta.env.DEV; production builds must not include it
    (dynamic import inside the DEV branch).
-   Until Prompt 3, main.tsx renders the gallery in dev and a plain "CarePlan Scheduler"
+   Until Prompt 4, main.tsx renders the gallery in dev and a plain "CarePlan Scheduler"
    heading in production.
 9. Tests (apps/web/test):
    - ui.test.tsx: each component renders with the right role and accessible name;
@@ -174,7 +253,7 @@ component gallery.
     `npx firebase emulators:exec --only auth,firestore --project demo-careplan "npm run test:rules -w @careplan/web && npm run test:e2e -w @careplan/web && npm run test:e2e:emulated -w @careplan/web"`.
     The e2e and rules tests arrive in later prompts. Until then: vitest.rules.config.ts sets
     passWithNoTests, and the two e2e scripts are "playwright test --pass-with-no-tests" with a
-    minimal playwright.config.ts (testDir e2e) that Prompt 6 and Prompt 7 extend.
+    minimal playwright.config.ts (testDir e2e) that Prompt 7 and Prompt 8 extend.
 13. .gitignore: add apps/web/dist, apps/web/test-results, apps/web/playwright-report,
     .env.local, firebase-debug.log, firestore-debug.log, ui-debug.log.
 
@@ -188,7 +267,7 @@ Finish:
 
 ---
 
-## Prompt 3 — Public site: layout, landing, rules and sources, privacy
+## Prompt 4 — Public site: layout, landing, rules and sources, privacy
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 3, 4 and 12 first.
@@ -197,9 +276,9 @@ Task: the public pages and the router. No Firebase.
 
 1. src/router.tsx: createBrowserRouter (react-router 7, library mode) with the public routes
    from APP-SPEC section 3 (/, /rules, /privacy, and *). Public routes use PublicLayout.
-   /quick arrives in Prompt 5 and the sign-in and /app routes in Prompt 7; leave them out
+   /quick arrives in Prompt 6 and the sign-in and /app routes in Prompt 8; leave them out
    now. Unknown paths render NotFound. The header's "Sign in" and "Create agency account"
-   links point at /sign-in and /sign-up and show NotFound until Prompt 7.
+   links point at /sign-in and /sign-up and show NotFound until Prompt 8.
 2. PublicLayout: SkipLink; header (Logo linking to /, nav "Quick Schedule", "Rules and
    sources", right side "Sign in" (quiet) and "Create agency account" (primary) linking to
    /sign-in and /sign-up); main#main; footer per APP-SPEC section 12. Sticky header with
@@ -210,15 +289,21 @@ Task: the public pages and the router. No Firebase.
    TC-01 example week with composeWeek and render the Day total row with UnitTiles
    (create ui/UnitTiles.tsx: one 10px square per whole 15-minute unit, 4 per row, plus a
    partial square filled bottom-up by remainder/15; aria-hidden, with the minutes and units
-   as visible text). The three sections' figures are real engine output, not typed numbers.
+   as visible text). Section figures 1, 2 and 4 are real output: section 1 parses fixture A
+   (`?raw` import; add the resolve alias "@fixtures" → ../../docs/fixtures to vite.config.ts
+   and tsconfig paths, and a `declare module "*?raw"` type if vite/client lacks it) with
+   @careplan/import and compares
+   its derived 30-day units with Fusion's 466 through the engine; section 2 is the composed
+   TC-01 week; section 4 is one ruleById card. Section 3 is the static example refusal box
+   from APP-SPEC section 12.
 5. pages/Rules.tsx: APP-SPEC section 12, generated from RULE_CATALOG and MO_2026_07.
    Tables scroll horizontally inside their own container on phones.
 6. pages/Privacy.tsx and pages/NotFound.tsx (h1 "We can't find that page", links to / and
    /quick).
 7. Tests:
-   - pages.test.tsx: Landing shows the headline and the engine-computed week
-     "70 · 90 · 90 · 90 · 90 · 90 · 70"; Rules lists every RULE_CATALOG id and every
-     15-minute service with its ceiling (AC-17); NotFound renders for /nope.
+   - pages.test.tsx: Landing shows the headline, the match line with 466, and the
+     engine-computed week "70 · 90 · 90 · 90 · 90 · 90 · 70"; Rules lists every RULE_CATALOG id and every
+     15-minute service with its ceiling (AC-21); NotFound renders for /nope.
    - router.test.tsx: title and focus move on navigation.
 
 Finish:
@@ -229,99 +314,125 @@ Finish:
 
 ---
 
-## Prompt 4 — Quick Schedule: model, state, checks grouping and copy (no UI)
+## Prompt 5 — Quick Schedule logic: model, guard, import flow, state (no UI)
 
 ```
-Read .clinerules and docs/APP-SPEC.md section 5 (all of it) first. Open
-docs/design/quick-schedule-prototype.html and read its script: buildQuickModel must
-produce the same numbers as its model() function.
+Read .clinerules, docs/APP-SPEC.md section 5 (all of it), docs/IMPORT-SPEC.md sections 2–5,
+and docs/design/reference/quick-model.js first. buildQuickModel must produce the same
+numbers as the reference build().
 
 Task: the pure logic behind Quick Schedule, fully tested. No components.
 
-Files in apps/web/src/features/quick-schedule/:
-1. types.ts: QuickState, QuickTask, QuickModel, CheckGroup.
-2. model.ts: buildQuickModel(state, pack) exactly as APP-SPEC 5.3 steps 1–8, and
-   monthFigures(model, month) for step 9 returning { expanded, authorizedUnits,
-   authorizedSource: "fusion" | "calculated", calculatedUnits, transportUnits,
-   taskBudgetMinutes, scheduledTaskMinutes, over }.
-3. state.ts: reducer + action types for every input in APP-SPEC 5.2 (QS-01 to QS-12),
-   including the side effects listed there (clearing cell changes, dropping pinned days,
-   removing tasks on service change and returning their names for the toast, refusing a
-   pinned set larger than daysPerWeek and returning a hint). exampleState(today: Date) and
-   blankState(from: QuickState). Ids from a counter in state.
-4. persistence.ts: load/save QuickState in sessionStorage key cps.quick.v1 with a shape
-   validator (reject anything that doesn't validate; never throw).
-5. grouping.ts: groupResults(results, taskNames) per APP-SPEC 5.5, returning groups
-   ordered BLOCK, REVIEW, WARN, INFO with months in order and a context string
-   ("Bathing, every month of the plan", "November 2026", "9 of 12 months").
-6. ruleCopy.ts: RULE_COPY from the APP-SPEC 5.5 table, verbatim, and copyFor(group).
-7. format.ts (src/lib): formatUnits(minutes) → "6 units" / "4 units + 10 min" / "1 unit";
-   monthName("2026-11") → "November 2026"; shortMonth → "Nov 2026".
+Files in apps/web/src/features/:
+1. quick-schedule/types.ts: QuickState (APP-SPEC 5.6), QuickModel, MonthFigures, CheckGroup.
+2. quick-schedule/model.ts: buildQuickModel(state, pack) per APP-SPEC 5.3 steps 1–10, using
+   fitToAuthorization from @careplan/engine for step 8; monthFigures(model, ym) per step 11.
+3. quick-schedule/guard.ts: tryChange and maxCellMinutes per APP-SPEC 5.7, and
+   refusalText(blocks, state, model) with the four sentence forms.
+4. quick-schedule/state.ts: reducer + actions for every input in APP-SPEC 5.2 (QS-01 to
+   QS-12) in both modes, with their side effects (clearing cell changes, dropping pinned days,
+   removing tasks on service change and returning their names, refusing a pinned set larger
+   than daysPerWeek with its hint). Person-made actions return either the next state or a
+   refusal from the guard; the reducer never commits a refused change.
+   manualState(today) and the example states (fixtures A and B imported, isExample true).
+5. quick-schedule/persistence.ts: load/save in sessionStorage key cps.quick.v2 without
+   `identity`; validate shape; never throw.
+6. quick-schedule/grouping.ts and ruleCopy.ts: APP-SPEC 5.5, copy table verbatim.
+7. import/fromFusion.ts: IMPORT-SPEC section 4 (care days, transport day, weekly hint, view
+   month) → QuickState with source "fusion".
+8. import/importFlow.ts: a small pure state machine for the import panel: pages[] (IMP-12),
+   choices { acceptPartial, serviceCode, serviceIndex, plan }, and next(): either
+   { kind: "needs", issues } (hard stops from IMPORT-SPEC 3.1 still open) or
+   { kind: "ready", state } (built through fromFusion, notes = the non-stopping issues plus
+   "incomplete" when accepted). Duplicate tasks are dropped, keeping the first.
+9. lib/format.ts: formatUnits, monthName, shortMonth, niceDate ("Dec 31, 2025").
 
-Tests (apps/web/test/quick/), with numbers from ENGINE-SPEC and the prototype:
-- model.test.ts (build the example with exampleState(new Date("2026-10-20T12:00:00")), so the
-  plan runs Nov 2026 – Oct 2027): example plan → day totals [70,90,90,90,90,90,70], week 590; month units
-  181 / 177 / 169 for a 31-day, 30-day and 28-day month (pick months inside the plan);
-  results contain no BLOCK, REVIEW or WARN. Bathing Monday edited to 60 → SCH-08 BLOCK
-  groups: one without taskId (9 months for a plan starting Nov 2026) and one for Bathing
-  (12 months), plus SCH-03 WARN. Fusion 150 for the first month → monthFigures over with
-  scheduled − budget = 270 minutes, SCH-08 BLOCK for that month, AUTH-07 REVIEW.
-  Sunday off → three SCH-02 WARN groups. Transport 60 × 1 → allowance 300 / 20 units and
-  calculated units for Nov 2026 = 197 (177 + 20). Empty/invalid minutes → task left out.
-  Timing: buildQuickModel for the example plan runs in under 50 ms.
-- state.test.ts: every QS rule's side effect, including the pin limit (AC-09) and
-  service change removing tasks (AC-08 data part).
-- grouping.test.ts and ruleCopy.test.ts: grouping/order/context; every
-  RULE_CATALOG id × severity has copy except AUTH-13 and SCH-15.
-- persistence.test.ts: round trip; corrupt JSON → null; storage throwing → null.
+Example fixtures A and B are imported as text with Vite's `?raw` import through the
+"@fixtures" alias from Prompt 4. They are de-identified; they are the only built-in plans.
+
+Tests (apps/web/test/quick/), clock fixed at 2026-10-21T12:00:00-05:00:
+- model.test.ts: IMP-T16, IMP-T17, IMP-T18 from IMPORT-SPEC; AC-13 (TC-01 by hand: day
+  totals Sun..Sat [70,90,90,90,90,90,70]; 181 / 177 / 169 for 31-, 30-, 28-day months);
+  fixture C checksum does not match; timing: buildQuickModel for fixture B under 50 ms.
+- guard.test.ts: with fixture B, Bathing Monday 45→60 refused with "That would put Bathing over
+  its 93 units in October 2026." and maxCellMinutes = 45; Monday 45→30 accepted, then Tuesday
+  45→60 refused and maxCellMinutes = 55; Clean Bath second day refused by the pin limit;
+  every accepted change in these tests leaves zero BLOCK.
+- state.test.ts: each QS rule's side effect; service change removes tasks (AC-12 data part).
+- importFlow.test.ts: fixture D needs "incomplete"; accepting builds with the note; B-page1
+  then B-page2 builds 15 tasks; table-only text needs "no-plan-dates" then builds after dates;
+  junk needs "no-rows"; an unknown service label needs "unknown-service" then builds after a
+  choice.
+- persistence.test.ts: round trip drops identity; corrupt JSON → null; throwing storage → null.
+- grouping.test.ts and ruleCopy.test.ts: grouping, order, context strings ("8 of 11 months");
+  every RULE_CATALOG id × severity has copy except AUTH-13, SCH-15 and SCH-17.
 
 Finish:
 1. npm run typecheck and npm test from the root. Paste summaries.
-2. Commit: "feat(web): Quick Schedule model, state, checks grouping and copy". Push.
+2. Commit: "feat(web): Quick Schedule model, guard, import flow and state". Push.
 ```
 
 ---
 
-## Prompt 5 — Quick Schedule UI: page frame and care plan pane
+---
+
+## Prompt 6 — Quick Schedule UI: import panel, read summary, care plan pane
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 4 and 5 first. Use
-docs/design/quick-schedule-prototype.html as the visual reference for spacing, sizes,
-colors and copy.
+docs/design/quick-schedule-prototype.html as the visual and behavioral reference (open it in a
+browser and paste a fixture into it).
 
-Task: the /quick page with the care plan pane wired to the reducer from Prompt 4. The
-schedule pane in this prompt is ONLY the Status panel (APP-SPEC 5.4 "Status"); Prompt 6
-adds the rest.
+Task: the /quick page with the import panel, read summary, care plan pane (both modes) and
+the Status panel, wired to the logic from Prompt 5. Prompt 7 adds the week, month and checks.
 
-1. features/quick-schedule/QuickSchedule.tsx: page intro (h1, description, "Print schedule",
-   "Load example plan", "Start blank"), the notice from APP-SPEC 5.1 plus the example
-   sentence while isExample, the two-pane layout and breakpoints from APP-SPEC 5.1.
-   useReducer + persistence (restore on mount, save debounced 300 ms).
-   Model via useMemo(buildQuickModel).
-2. Care plan pane components (one file each): ServiceSection, TaskList, TaskRow,
-   TaskPicker (ARIA 1.2 combobox: role combobox on the input, listbox, aria-activedescendant,
-   arrow keys, Enter, Escape, mouse; matches name and aliases), CareDaysSection,
-   TransportSection. Every rule in APP-SPEC 5.2 QS-01 to QS-09 and QS-12. Focus moves exactly
-   as the spec says (new task → its minutes field selected; remove → the picker).
-   Removal toast for service change (QS-02).
-3. StatusPanel: APP-SPEC 5.4 Status, aria-live polite.
-4. Route /quick in router.tsx renders QuickSchedule in PublicLayout.
+1. features/import/ImportPanel.tsx: APP-SPEC 5.1 import panel. The Textarea's onPaste builds
+   immediately (no button press); "Build schedule" reads typed text (empty → "Paste the care
+   plan first" with how). Examples buttons. FileDrop for PDFs. Issues rendered from
+   importFlow (IMPORT-SPEC 3.1) with their controls; "Build with the N rows I have"; next-page
+   pasting relabels the box "Care plan text, page 2" and its placeholder "Paste page 2 here".
+2. features/import/readPdf.ts: loaded with import() only when a file is chosen. Uses
+   pdfjs-dist 4.10.38: `import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url"`,
+   GlobalWorkerOptions.workerSrc = workerUrl, getDocument({ data, isEvalSupported: false }),
+   maps items to PdfTextItem and calls textItemsToLines. Messages: not a PDF → "That isn't a
+   PDF" / "Choose the care plan PDF you saved from Fusion."; no text → "This PDF has no
+   readable text" / "It may be a scan or a photo. Paste the care plan from Fusion instead.";
+   any other failure → "We couldn't read that PDF" / "Check that it's the care plan PDF from
+   Fusion and not password-protected. You can also paste the care plan instead." While
+   reading: spinner + "Reading the PDF…".
+3. features/import/ReadSummary.tsx: APP-SPEC 5.1 read summary with the checksum line, notes,
+   "Review what we read" table and "New care plan". Focus its h2 after a real import.
+4. Care plan pane components: FusionPlanSection (locked), ServiceSection (by hand), TaskList,
+   TaskRow (locked values or inputs), TaskPicker (ARIA 1.2 combobox), CareDaysSection,
+   TransportSection (Fusion or by hand). Every person-made change dispatches through the
+   guard; a refused task-day change shows its sentence in that task's hint line.
+5. StatusPanel: APP-SPEC 5.4 Status (aria-live polite).
+6. QuickSchedule.tsx: page intro, ImportPanel, ReadSummary, notice, two-pane layout; useReducer
+   with persistence (restore on mount, save debounced 300 ms). First visit: example A built
+   under an open import panel.
+7. Route /quick in router.tsx renders QuickSchedule in PublicLayout.
 
-Tests (apps/web/test/quick/ui-*.test.tsx, Testing Library + user-event):
-- Example loads and Status reads "Ready to use" with 590 minutes a week.
-- Picker: typing "dress" + Enter adds Dressing/Grooming and focuses its minutes (AC-06).
-- Pin limit hint (AC-09). Care day off disables that day's task toggles.
-- Minutes field: "abc"/empty shows the error and Status reflects the task being left out.
-- Service change to S5130 shows the toast and keeps only Clean Kitchen (AC-08).
+Tests (apps/web/test/quick/ui-*.test.tsx, Testing Library + user-event; mock readPdf):
+- First render: import panel visible, read summary "Example care plan", Status "Ready to use".
+- Pasting fixture B text into the Textarea (user.paste) shows "SAMPLE PARTICIPANT B" and hides
+  the import panel; "New care plan" brings it back.
+- Fixture D: incomplete message and "Build with the 10 rows I have".
+- Mocked PDF text without dates shows the date fields; entering dates builds.
+- Pin limit hint (AC-10); refused task-day change shows its sentence.
+- By hand: picker "dress" + Enter adds Dressing/Grooming and focuses its minutes.
+- The participant's name never appears in sessionStorage after a paste (AC-15 unit part).
 
 Finish:
-1. npm run typecheck, npm test, npm run build. Paste summaries and the check-bundle table.
-2. Commit: "feat(web): Quick Schedule page and care plan inputs". Push.
+1. npm run typecheck, npm test, npm run build. Paste summaries and the check-bundle table
+   (no firebase and no pdfjs in the entry).
+2. Commit: "feat(web): Quick Schedule import panel, read summary and care plan pane". Push.
 ```
 
 ---
 
-## Prompt 6 — Quick Schedule UI: week, month, checks, print, e2e
+---
+
+## Prompt 7 — Quick Schedule UI: week, month, checks, print, e2e
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 4, 5 and 11 first. Use the prototype as the
@@ -329,26 +440,31 @@ visual reference.
 
 Task: the rest of the schedule pane and the Quick Schedule end-to-end tests.
 
-1. WeeklyPanel: APP-SPEC 5.4 Weekly schedule and QS-10 (cell editing, underline, warn
-   background, "Undo my minute changes"), transportation row, Day total footer with
-   UnitTiles, legend, header meta, horizontal scroll inside the panel.
-2. MonthPanel: month navigation limited to the plan, the meter (bar, source chip,
-   transportation, over message), Fusion units field (QS-11), calendar.
-3. ChecksPanel: APP-SPEC 5.5 (grouped cards, headings with counts, Good to know collapsed,
-   details with months, rule, source from ruleById, rule pack), "Show in week" scrolls to
-   and highlights the task row for 2 s (respect reduced motion: no smooth scroll).
-4. Footnote with the /rules link.
-5. Print: "Print schedule" → window.print(); print CSS per APP-SPEC 5.4 Print, including the
-   "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>" footer.
-6. Playwright: apps/web/playwright.config.ts (webServer: npm run build && npx vite preview
+1. WeeklyPanel: APP-SPEC 5.4 and QS-10. Cell editing dispatches through the guard; a refusal
+   renders the refusal box (APP-SPEC 5.7) under the table with "Use N minutes" when a larger
+   value fits. Transportation row, Day total footer with UnitTiles (ui/UnitTiles.tsx from
+   Prompt 4), legend, header meta, horizontal scroll inside the panel.
+2. MonthPanel: navigation limited to the plan's months; meter with source chip, transport,
+   trim sentence and over message; Fusion units field only by hand (QS-11); calendar with
+   trimmed dates marked ("−95 min", warn border, aria-label naming the trim).
+3. ChecksPanel: APP-SPEC 5.5 (grouped cards, counts, Good to know collapsed, details with
+   months, rule, source from ruleById, rule pack; "Show in week").
+4. Footnote with the /rules link. Print per APP-SPEC 5.4 (including name, DCN and PA when read,
+   and trimmed dates).
+5. Playwright: apps/web/playwright.config.ts (webServer: npm run build && npx vite preview
    --port 4173; projects "desktop" 1280×800 and "phone" 390×844, both testDir e2e/public,
-   baseURL http://127.0.0.1:4173). Script "test:e2e": "playwright test --project=desktop
-   --project=phone". e2e/public/quick-schedule.spec.ts covering AC-01 to AC-08, AC-10,
-   AC-11 (record every request; assert none goes to a Google domain and none loads a
-   firebase chunk) and AC-15 for /quick (document.scrollingElement.scrollWidth <=
-   innerWidth). e2e/public/a11y.spec.ts: axe (@axe-core/playwright, tags wcag2a, wcag2aa,
-   wcag21aa, wcag22aa) on /, /quick, /rules in light and dark (set data-theme), zero
-   violations.
+   baseURL http://127.0.0.1:4173; use page.clock.setFixedTime for 2026-10-21 12:00 CT).
+   Script "test:e2e": "playwright test --project=desktop --project=phone".
+   e2e/public/quick-schedule.spec.ts: AC-01 to AC-09, AC-11, AC-14 (record every request;
+   none to Google domains; no firebase or pdfjs chunk before a PDF is chosen; only same-origin
+   requests after), AC-15 (read sessionStorage, localStorage and captured console messages and
+   assert neither "10000002" nor "SAMPLE PARTICIPANT" appears), AC-19 for /quick.
+   Paste by focusing the textarea and using page.keyboard.insertText + dispatching a paste
+   event, or Playwright's clipboard permission and Control+V; choose whichever works in
+   Chromium and keep it in one helper. PDF fixtures via setInputFiles on the hidden input.
+   e2e/public/a11y.spec.ts: axe (@axe-core/playwright, tags wcag2a, wcag2aa, wcag21aa,
+   wcag22aa) on /, /quick (example; fixture D's issue showing; fixture B built), /rules, in
+   light and dark (set data-theme), zero violations.
 
 Finish:
 1. npm run typecheck, npm test, npm run build; then in apps/web: npx playwright install
@@ -358,7 +474,7 @@ Finish:
 
 ---
 
-## Prompt 7 — Firebase, sign-in, account pages, session timeout
+## Prompt 8 — Firebase, sign-in, account pages, session timeout
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 3, 6 and 7 first.
@@ -374,7 +490,7 @@ users/{uid} in this prompt.
    "firestore.indexes.json" }, emulators { auth { port 9099 }, firestore { port 8080 },
    ui { enabled false }, singleProjectMode true }. .firebaserc default
    "care-plan-scheduler". firestore.indexes.json: { "indexes": [], "fieldOverrides": [] }.
-   firestore.rules: APP-SPEC section 8 verbatim (rules tests arrive in Prompt 8).
+   firestore.rules: APP-SPEC section 8 verbatim (rules tests arrive in Prompt 9).
 3. features/auth/firebase.ts: APP-SPEC 6.1. When VITE_USE_EMULATORS is "true", connect to
    the emulators. Never import firebase/analytics.
 4. AuthProvider (onAuthStateChanged; exposes user, loading, emailVerified, signOut),
@@ -387,9 +503,9 @@ users/{uid} in this prompt.
 6. users/{uid} doc: create on sign-up and on first Google sign-in (if missing) with
    serverTimestamp createdAt; update displayName with serverTimestamp updatedAt.
 7. Session timeout: APP-SPEC 6.5 (features/auth/useIdleTimeout.ts + IdleDialog).
-8. Temporary /app route (until Prompt 8): AppLayout shell with header (Logo, account menu
+8. Temporary /app route (until Prompt 9): AppLayout shell with header (Logo, account menu
    with name, email, "Your account", "Sign out") and a Home page that says
-   "Signed in as <email>". Prompt 8 replaces Home's body.
+   "Signed in as <email>". Prompt 9 replaces Home's body.
 9. Routes added lazily so the public bundle stays Firebase-free (check-bundle must pass).
 
 Tests:
@@ -397,7 +513,7 @@ Tests:
 - guards.test.tsx: signed-out → /sign-in?next=…; unverified → /verify-email; bad `next`
   values (https://evil.example, //evil, /sign-in) go to /app.
 - idle.test.tsx (fake timers): warning at 28 min, sign-out at 30, activity resets, storage
-  event from another tab resets (AC-16).
+  event from another tab resets (AC-20).
 - e2e/auth.spec.ts (emulated): sign up → verify by reading the link from
   GET http://127.0.0.1:9099/emulator/v1/projects/demo-careplan/oobCodes and opening it →
   reaches /app; sign out; sign in again; reset password shows the neutral message.
@@ -420,7 +536,7 @@ Finish:
 
 ---
 
-## Prompt 8 — Agencies: rules tests, set-up, shell, home, agency details
+## Prompt 9 — Agencies: rules tests, set-up, shell, home, agency details
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 3, 6.3, 7 and 8 first.
@@ -442,17 +558,17 @@ Task: Firestore rules tests, agency set-up and the signed-in app shell.
    greeting with first name, agency name, primary action "Start a Quick Schedule" (/app/quick),
    and a "Get your agency ready" checklist with two items that tick from real data:
    "Invite your team" (done when the agency has another member or a pending invite; links to
-   Team) and "Try Quick Schedule" (done when sessionStorage has cps.quick.v1; links to
+   Team) and "Try Quick Schedule" (done when sessionStorage has cps.quick.v2; links to
    /app/quick). No "coming soon" content.
 4. AppLayout: left navigation on ≥ 1024px (Home, Quick Schedule, Team, Agency), top bar with
    agency name (switcher menu when more than one agency) and the account menu; under 1024px
    the navigation moves into a menu button. /app/quick renders QuickSchedule inside
    AppLayout (no public header).
-5. RequireMembership in this prompt: no membership → /app/new-agency. Prompt 9 adds the
+5. RequireMembership in this prompt: no membership → /app/new-agency. Prompt 10 adds the
    invite banner to that page; nothing about invites is built here.
 
 Tests:
-- npm run test:rules inside emulators:exec: all R-xx pass (AC-13).
+- npm run test:rules inside emulators:exec: all R-xx pass (AC-17).
 - agency.test.tsx (mock the agency service module): NewAgency validation messages; owner vs
   scheduler view of AgencyDetails; Home checklist states.
 - e2e/emulated/agency.spec.ts: new verified user → /app/new-agency → "Set up agency" →
@@ -469,7 +585,7 @@ Finish:
 
 ---
 
-## Prompt 9 — Team and invites
+## Prompt 10 — Team and invites
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 6.4 and 8 first.
@@ -489,43 +605,43 @@ Task: the Team page, invites, joining, and the invite banner.
    address, expired with date, revoked/used, not found). Signed-out visitors go to
    /sign-in?next=/join/<id>; after joining, go to /app with toast "Joined <agency>".
 4. Invite banner on /app and /app/new-agency listing pending invites with "Review invite".
-   Fill the pending-invite check from Prompt 8 so a person with an invite and no agency sees
+   Fill the pending-invite check from Prompt 9 so a person with an invite and no agency sees
    the banner on /app/new-agency instead of only the set-up form.
 
 Tests:
 - team.test.tsx (mocked services): owner and scheduler views; invite dialog validation
   ("Enter an email address like name@agency.com"); remove confirmation text.
 - join.test.tsx: each Join state's copy.
-- e2e/emulated/team.spec.ts: AC-12 end to end with two browser contexts: owner signs up,
+- e2e/emulated/team.spec.ts: AC-16 end to end with two browser contexts: owner signs up,
   verifies, sets up the agency, invites scheduler@example.com, copies the link; second user
   signs up as scheduler@example.com, verifies, opens the link, joins; both see each other on
   Team; owner changes the scheduler to Viewer; owner removes them; they land on
   /app/new-agency.
 
 Finish:
-1. npm run typecheck, npm test, npm run build, then the emulators:exec command from Prompt 8.
+1. npm run typecheck, npm test, npm run build, then the emulators:exec command from Prompt 9.
    Paste all summaries.
 2. Commit: "feat(web): team, invites and joining". Push.
 ```
 
 ---
 
-## Prompt 10 — Accessibility, phones, budgets, pull request
+## Prompt 11 — Accessibility, phones, budgets, pull request
 
 ```
 Read .clinerules and docs/APP-SPEC.md sections 4.4, 10 and 11 first.
 
 Task: verify every acceptance check, fix what fails, and open the pull request.
 
-1. Accessibility: extend e2e/public/a11y.spec.ts to the public routes in AC-14 and add
+1. Accessibility: extend e2e/public/a11y.spec.ts to the public routes in AC-18 and add
    e2e/emulated/a11y.spec.ts for the signed-in routes; light and dark; zero violations.
-2. e2e/public/phone.spec.ts and e2e/emulated/phone.spec.ts (viewport 390×844): AC-15 for every route in AC-14 at 390×844; touch targets ≥ 44px for
+2. e2e/public/phone.spec.ts and e2e/emulated/phone.spec.ts (viewport 390×844): AC-19 for every route in AC-18 at 390×844; touch targets ≥ 44px for
    buttons and toggles under 640px (measure boundingBox).
 3. Confirm check-bundle passes with the final code and paste its table.
-4. Go through APP-SPEC section 11 AC-01 to AC-19 and make a table: ID, test file and test
+4. Go through APP-SPEC section 11 AC-01 to AC-23 and make a table: ID, test file and test
    name, result. Any AC without an automated test: add one.
-5. Fix anything that fails. Do not change APP-SPEC, ENGINE-SPEC, tokens.css or
-   firestore.rules; if one of them is wrong, stop and report it.
+5. Fix anything that fails. Do not change APP-SPEC, IMPORT-SPEC, ENGINE-SPEC, docs/fixtures, tokens.css
+   or firestore.rules; if one of them is wrong, stop and report it.
 
 Finish:
 1. npm run typecheck, npm test, npm run build, and the emulators:exec command. Paste all
@@ -538,10 +654,10 @@ Finish:
 
 ---
 
-## After Prompt 10 (you)
+## After Prompt 11 (you)
 
-1. Open the Vercel preview link on the pull request. Try Quick Schedule on your phone and
-   computer, sign up with a real email, set up a test agency, and invite a second email of
+1. Open the Vercel preview link on the pull request. Paste a real care plan from Fusion into
+   Quick Schedule on your computer and phone, and open a real Fusion PDF; then sign up with a real email, set up a test agency, and invite a second email of
    yours.
 2. Send Claude the pull request link. Claude reviews it against APP-SPEC before you merge.
 3. Merge after that review. Then point a domain at the Vercel project if you want one for
