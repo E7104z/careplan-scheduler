@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { Button } from "../ui/Button";
 import { DayToggle } from "../ui/DayToggle";
 import { Dialog } from "../ui/Dialog";
@@ -83,8 +84,11 @@ export function Gallery() {
         <div>
           <h1 className="text-[28px] font-bold text-ink">UI gallery</h1>
           <p className="text-sm text-ink-2">
-            Development-only preview of the component kit. Open at /dev/ui.
+            Development-only preview of the component kit. Open at /?gallery.
           </p>
+          <Link to="/" className="mt-1 inline-block rounded-sm font-semibold text-brand hover:underline">
+            Back to app
+          </Link>
         </div>
 
         <Section title="Buttons">
@@ -136,7 +140,7 @@ export function Gallery() {
         <Section title="Panel">
           <Panel
             title="Week of Nov 3, 2026"
-            meta="590 min · 39 units"
+            meta="590 min, 39 units"
             tools={<Button size="sm" variant="secondary">Edit</Button>}
           >
             <p className="text-sm text-ink-2">A section with a header row and a body.</p>

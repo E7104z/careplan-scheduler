@@ -43,7 +43,7 @@ export function Field({
 
   const hintText = [hint, required ? "Required" : null]
     .filter((part): part is string => part !== null)
-    .join(" · ");
+    .join(", ");
 
   const describedBy =
     [hintText ? hintId : null, error ? errorId : null]

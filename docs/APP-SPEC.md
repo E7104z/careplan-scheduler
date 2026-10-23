@@ -152,7 +152,7 @@ Routing rules:
 - `/app` routes, `/sign-in`, `/sign-up` and `/join` are code-split (`React.lazy`) so the public
   bundle never contains Firebase (D-06, budget in section 10).
 - On every route change, move focus to the page's `<h1>` and update `document.title` to
-  `<Page> · CarePlan Scheduler`.
+  `<Page> | CarePlan Scheduler`.
 
 ---
 
@@ -847,10 +847,11 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   1. "Reads Fusion the way you copy it" — paste or PDF, one page or two; figure: the match
      line "Every task read. Our total from these tasks matches Fusion's 466 units a month."
   2. "Built from tasks, not averages" — monthly units are never spread evenly across days;
-     figure: the TC-01 week `70 · 90 · 90 · 90 · 90 · 90 · 70`.
+     figure: the TC-01 week `70, 90, 90, 90, 90, 90, 70`.
   3. "Can't be edited out of compliance" — a change that breaks a rule is refused with the
-     limit; figure: the refusal box "Not changed. … The most Bathing can have on Tuesday is
-     55 minutes."
+     limit; figure: the refusal box "Not changed. That would put Bathing over its 69 units in
+     October 2025. Bathing can't have more than 45 minutes on Tuesday. To add time here, take
+     it from another day first."
   4. "Every check names its source" — figure: one card with its source line.
 - For state reviewers: one paragraph and a link "See every rule and its source" → `/rules`.
 - Footer: "© 2026 CarePlan Scheduler", links Privacy, Rules and sources, and

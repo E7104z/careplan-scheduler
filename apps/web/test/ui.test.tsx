@@ -53,7 +53,7 @@ describe("Field", () => {
       expect(document.getElementById(id)).not.toBeNull();
     }
 
-    expect(screen.getByText("Whole minutes · Required")).toBeInTheDocument();
+    expect(screen.getByText("Whole minutes, Required")).toBeInTheDocument();
     expect(screen.getByText("Enter a number")).toBeInTheDocument();
   });
 });

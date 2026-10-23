@@ -9,6 +9,10 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@fixtures/*": ["../../docs/fixtures/*"]
+    },
     "types": ["vite/client", "@testing-library/jest-dom"]
   },
   "include": ["src", "test", "e2e", "rules-test", "scripts", "*.ts"]

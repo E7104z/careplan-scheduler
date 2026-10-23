@@ -289,7 +289,7 @@ Task: the public pages and the router. No Firebase.
    /sign-in and /sign-up); main#main; footer per APP-SPEC section 12. Sticky header with
    safe-area top inset. Under 720px: nav collapses into a menu button (Radix DropdownMenu).
 3. Focus and titles: on every navigation, focus the page's h1 (tabIndex -1) and set
-   document.title "<Page> · CarePlan Scheduler" (Landing: "CarePlan Scheduler").
+   document.title "<Page> | CarePlan Scheduler" (Landing: "CarePlan Scheduler").
 4. pages/Landing.tsx: APP-SPEC section 12. The live figure uses the engine: compose the
    TC-01 example week with composeWeek and render the Day total row with UnitTiles
    (create ui/UnitTiles.tsx: one 10px square per whole 15-minute unit, 4 per row, plus a
@@ -307,7 +307,7 @@ Task: the public pages and the router. No Firebase.
    /quick).
 7. Tests:
    - pages.test.tsx: Landing shows the headline, the match line with 466, and the
-     engine-computed week "70 · 90 · 90 · 90 · 90 · 90 · 70"; Rules lists every RULE_CATALOG id and every
+     engine-computed week "70, 90, 90, 90, 90, 90, 70"; Rules lists every RULE_CATALOG id and every
      15-minute service with its ceiling (AC-21); NotFound renders for /nope.
    - router.test.tsx: title and focus move on navigation.
 
