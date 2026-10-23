@@ -714,7 +714,7 @@ Schedule behave exactly as on the web.
      plain page, "You're offline", "CarePlan Scheduler needs an internet connection to open.
      Check your connection, then try again.", and a "Try again" button that reloads APP_URL.
      Use only system fonts and inline CSS with no new color values beyond black, white and
-     the pine green already in tokens.css (copy those three values; this file is the one
+     the Signature blue (--brand) already in tokens.css (copy those three values; this file is the one
      allowed exception to the hex rule, because it can't load the web bundle).
    - Menu: File (Print, Quit), Edit, View (Reload, Actual size, Zoom in, Zoom out, Full
      screen), Help (Open privacy page, which loads APP_URL + "/privacy" in the window). No

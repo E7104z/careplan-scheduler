@@ -185,7 +185,7 @@ export function Gallery() {
         </Section>
 
         <Section title="Spinner and logo">
-          <Spinner className="h-6 w-6 text-pine" />
+          <Spinner className="h-6 w-6 text-brand" />
           <Logo />
           <Logo showWordmark={false} />
         </Section>

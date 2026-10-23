@@ -44,12 +44,12 @@ export function FileDrop({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-line-2 bg-surface px-6 py-8 text-center transition-colors focus-within:border-pine",
-        dragOver && "border-pine bg-pine-tint",
+        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-line-2 bg-surface px-6 py-8 text-center transition-colors focus-within:border-brand",
+        dragOver && "border-brand bg-brand-tint",
         className,
       )}
     >
-      <Upload className="h-6 w-6 text-pine" aria-hidden="true" />
+      <Upload className="h-6 w-6 text-brand" aria-hidden="true" />
       <span className="text-sm font-medium text-ink">{title}</span>
       <span className="text-[13px] text-ink-3">{acceptLabel}</span>
       {hint ? <span className="text-[13px] text-ink-3">{hint}</span> : null}

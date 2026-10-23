@@ -43,8 +43,8 @@ export function DayToggle({
             onClick={() => onChange?.(index)}
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-sm border text-sm font-semibold transition-colors",
-              selected && isAuto && "border-pine bg-pine-tint text-pine",
-              selected && !isAuto && "border-pine bg-pine text-pine-on",
+              selected && isAuto && "border-brand bg-brand-tint text-brand",
+              selected && !isAuto && "border-brand bg-brand text-brand-on",
               !selected && "border-line-2 bg-surface text-ink-2 hover:bg-sunk",
             )}
           >

@@ -12,10 +12,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-pine text-pine-on hover:bg-pine-hover",
+  primary: "bg-brand text-brand-on hover:bg-brand-hover",
   secondary: "border border-line-2 bg-surface text-ink hover:bg-sunk",
-  quiet: "bg-transparent text-pine hover:bg-pine-tint",
-  danger: "bg-block text-pine-on hover:opacity-90",
+  quiet: "bg-transparent text-brand hover:bg-brand-tint",
+  danger: "bg-block text-block-on hover:opacity-90",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

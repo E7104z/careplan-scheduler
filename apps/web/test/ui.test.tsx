@@ -24,6 +24,11 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Save changes" })).toBeInTheDocument();
   });
 
+  it("renders primary with the brand class", () => {
+    render(<Button variant="primary">Save changes</Button>);
+    expect(screen.getByRole("button", { name: "Save changes" })).toHaveClass("bg-brand");
+  });
+
   it("sets aria-busy and keeps the label for screen readers while busy", () => {
     render(<Button busy>Save changes</Button>);
     const button = screen.getByRole("button", { name: "Save changes" });

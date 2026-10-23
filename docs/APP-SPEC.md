@@ -167,7 +167,9 @@ Routing rules:
 - Spacing: 4px grid. Panels pad 20px (16px under 640px). Page gutter
   `max(16px, env(safe-area-inset-left))`. Content max width 1440px.
 - Radius: 6px controls, 10px panels and dialogs, pill for status pills only.
-- Panels: `bg-surface border border-line rounded-md shadow-panel`. Not everything is a panel:
+- Panels: `bg-surface border border-line rounded-md`.
+- Panels have a border and no shadow; only dialogs, menus and toasts float (shadow-pop).
+- Not everything is a panel:
   page intros, notices and inline lists sit on the paper background.
 - Motion: only in answer to an action (dialog open, toast, meter change), 150–250ms, and none
   under `prefers-reduced-motion`.
@@ -180,11 +182,11 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 
 | Component | Spec |
 |---|---|
-| Button | Variants `primary` (pine), `secondary` (surface + line-2 border), `quiet` (no border), `danger` (block). Sizes `md` 40px, `sm` 32px; 44px min height under 640px. Shows a spinner and keeps its width while `busy`; `aria-busy` set. |
+| Button | Variants `primary` (brand), `secondary` (surface + line-2 border), `quiet` (no border), `danger` (block). Sizes `md` 40px, `sm` 32px; 44px min height under 640px. Shows a spinner and keeps its width while `busy`; `aria-busy` set. |
 | Field | Label above input, hint below, error below hint in `text-block` with `aria-describedby` and `aria-invalid`. Required fields say "Required" in the hint, not an asterisk. |
 | NumberField | `inputmode="numeric"`, integer only, `min`/`max`/`step`; never coerces an empty field to 0. |
 | Select | Native `<select>` styled with tokens (best for mobile and screen readers). |
-| DayToggle | Seven toggle buttons Su Mo Tu We Th Fr Sa, `aria-pressed`, full day name as `aria-label`. Variants: `chosen` (solid pine), `auto` (pine tint with pine border = "we chose this day"), `off`. |
+| DayToggle | Seven toggle buttons Su Mo Tu We Th Fr Sa, `aria-pressed`, full day name as `aria-label`. Variants: `chosen` (solid brand), `auto` (brand tint with brand border = "we chose this day"), `off`. |
 | Panel | Section with `h2` header row (title, meta text, tools slot) and body. |
 | SeverityPill | Icon + word, never color alone: BLOCK `OctagonX` "Must fix"; REVIEW `CircleHelp` "Needs review"; WARN `TriangleAlert` "Check"; INFO `Info` "Good to know". |
 | Dialog | Radix Dialog; title required; focus returns to the trigger; Escape closes; overlay `bg-overlay`. |
@@ -192,7 +194,7 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Menu | Radix DropdownMenu for the account menu and agency switcher. |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
 | Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPaste` hands the pasted text up after the browser inserts it. |
-| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (pine border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
+| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
 | SkipLink | First focusable element: "Skip to main content". |
 | Logo | The four-square mark from the prototype (three filled squares, one outlined) + "CarePlan Scheduler". The outlined square is the unit still to be scheduled. |
 

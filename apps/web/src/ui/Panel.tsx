@@ -13,7 +13,7 @@ export function Panel({ title, meta, tools, children, className }: PanelProps) {
   return (
     <section
       className={cn(
-        "rounded-md border border-line bg-surface shadow-panel",
+        "rounded-md border border-line bg-surface",
         className,
       )}
     >

@@ -15,7 +15,7 @@ export function NumberField({ className, ...rest }: NumberFieldProps) {
       pattern="[0-9]*"
       autoComplete="off"
       className={cn(
-        "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 text-ink placeholder:text-ink-3 focus:border-pine",
+        "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 text-ink placeholder:text-ink-3 focus:border-brand",
         className,
       )}
       {...rest}

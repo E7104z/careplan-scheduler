@@ -11,7 +11,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
       <svg
         viewBox="0 0 32 32"
         aria-hidden="true"
-        className="h-7 w-7 text-pine"
+        className="h-7 w-7 text-brand"
         fill="currentColor"
       >
         <rect x="2" y="2" width="13" height="13" rx="2" />
