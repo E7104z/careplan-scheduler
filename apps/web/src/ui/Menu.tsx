@@ -12,7 +12,7 @@ export interface MenuItem {
 export interface MenuProps {
   trigger: ReactNode;
   items: MenuItem[];
-  label?: string;
+  label?: ReactNode;
 }
 
 export function Menu({ trigger, items, label }: MenuProps) {

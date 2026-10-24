@@ -5,7 +5,8 @@ import { type ReactNode } from "react";
 export interface DialogProps {
   title: string;
   description?: string;
-  trigger: ReactNode;
+  /** The button that opens it. Leave it out for a dialog opened by state (e.g. a timer). */
+  trigger?: ReactNode;
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -21,7 +22,7 @@ export function Dialog({
 }: DialogProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger>
+      {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay" />
         <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-md border border-line bg-surface p-5 shadow-pop">

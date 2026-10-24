@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function tenantPath(t) { return /databases/$(database)/documents/tenants/$(t); }
+    function memberPath(t, uid) { return /databases/$(database)/documents/tenants/$(t)/members/$(uid); }
+    function invitePath(id) { return /databases/$(database)/documents/invites/$(id); }
+    function isMember(t) { return signedIn() && exists(memberPath(t, request.auth.uid)); }
+    function isOwner(t) { return isMember(t) && get(memberPath(t, request.auth.uid)).data.role == 'owner'; }
+    function validRole(r) { return r in ['owner', 'scheduler', 'viewer']; }
+    function changedOnly(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function validTenantFields(d) {
+      return d.name is string && d.name.size() >= 2 && d.name.size() <= 120
+        && d.state == 'MO' && d.timeZone == 'America/Chicago'
+        && d.workweekStart is int && d.workweekStart >= 0 && d.workweekStart <= 6;
+    }
+
+    function foundingOwner(t, u) {
+      return !exists(tenantPath(t))
+        && getAfter(tenantPath(t)).data.createdBy == u
+        && request.resource.data.role == 'owner'
+        && !('inviteId' in request.resource.data);
+    }
+    function acceptingInvite(t, u) {
+      let inv = get(invitePath(request.resource.data.inviteId)).data;
+      let after = getAfter(invitePath(request.resource.data.inviteId)).data;
+      return verified()
+        && inv.tenantId == t
+        && inv.email == myEmail()
+        && inv.status == 'pending'
+        && inv.expiresAt > request.time
+        && request.resource.data.role == inv.role
+        && after.status == 'accepted'
+        && after.acceptedBy == u;
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'createdAt', 'updatedAt', 'lastTenantId'])
+        && request.resource.data.email == myEmail()
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 120
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn() && request.auth.uid == uid
+        && changedOnly(['displayName', 'updatedAt', 'lastTenantId', 'email'])
+        && request.resource.data.email == myEmail()
+        && request.resource.data.updatedAt == request.time
+        && (!('lastTenantId' in request.resource.data)
+            || exists(memberPath(request.resource.data.lastTenantId, uid))
+            || existsAfter(memberPath(request.resource.data.lastTenantId, uid)));
+      allow delete: if false;
+    }
+
+    match /tenants/{tenantId} {
+      allow read: if isMember(tenantId);
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly(['name', 'state', 'timeZone', 'workweekStart', 'createdAt', 'createdBy'])
+        && validTenantFields(request.resource.data)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && getAfter(memberPath(tenantId, request.auth.uid)).data.role == 'owner';
+      allow update: if isOwner(tenantId)
+        && changedOnly(['name', 'workweekStart'])
+        && validTenantFields(request.resource.data);
+      allow delete: if false;
+
+      match /members/{uid} {
+        allow read: if isMember(tenantId) || (signedIn() && request.auth.uid == uid);
+
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid', 'role', 'email', 'displayName', 'joinedAt', 'inviteId'])
+          && request.resource.data.uid == uid
+          && request.resource.data.email == myEmail()
+          && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 120
+          && request.resource.data.joinedAt == request.time
+          && validRole(request.resource.data.role)
+          && (foundingOwner(tenantId, uid) || acceptingInvite(tenantId, uid));
+
+        allow update: if isOwner(tenantId) && request.auth.uid != uid
+          && changedOnly(['role'])
+          && validRole(request.resource.data.role);
+
+        allow delete: if signedIn() && (
+          (isOwner(tenantId) && request.auth.uid != uid)
+          || (request.auth.uid == uid && resource.data.role != 'owner'));
+
+      }
+    }
+
+    // Collection-group read of my own memberships.
+    match /{path=**}/members/{uid} {
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /invites/{inviteId} {
+      allow read: if signedIn() && (
+        isOwner(resource.data.tenantId)
+        || (verified() && resource.data.email == myEmail()));
+
+      allow create: if isOwner(request.resource.data.tenantId)
+        && request.resource.data.keys().hasOnly(['tenantId', 'tenantName', 'email', 'role', 'status', 'createdAt', 'createdBy', 'expiresAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(15, 'd')
+        && request.resource.data.email is string
+        && request.resource.data.email == request.resource.data.email.lower()
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && validRole(request.resource.data.role)
+        && request.resource.data.tenantName == get(tenantPath(request.resource.data.tenantId)).data.name;
+
+      allow update: if signedIn() && resource.data.status == 'pending' && (
+        (isOwner(resource.data.tenantId)
+          && changedOnly(['status'])
+          && request.resource.data.status == 'revoked')
+        || (verified()
+          && resource.data.email == myEmail()
+          && resource.data.expiresAt > request.time
+          && changedOnly(['status', 'acceptedBy', 'acceptedAt'])
+          && request.resource.data.status == 'accepted'
+          && request.resource.data.acceptedBy == request.auth.uid
+          && request.resource.data.acceptedAt == request.time
+          && existsAfter(memberPath(resource.data.tenantId, request.auth.uid))));
+
+      allow delete: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

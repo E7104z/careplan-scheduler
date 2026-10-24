@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:emulated": "vite --mode emulator",
     "build": "tsc --noEmit && vite build && node scripts/check-bundle.mjs",
+    "build:emulated": "vite build --mode emulator --outDir dist-emulated",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --project=desktop --project=phone",
-    "test:e2e:emulated": "playwright test --pass-with-no-tests",
+    "test:e2e:emulated": "playwright test --project=emulated",
     "test:rules": "vitest run --config vitest.rules.config.ts"
   },
   "dependencies": {

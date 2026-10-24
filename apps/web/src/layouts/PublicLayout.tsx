@@ -1,19 +1,18 @@
-import { Suspense, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Outlet, Link, useLocation } from "react-router";
 import { Menu as MenuIcon, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Logo } from "../ui/Logo";
+import { PageLoading } from "../ui/PageLoading";
 import { SkipLink } from "../ui/SkipLink";
-import { Spinner } from "../ui/Spinner";
 
-/** Shown for the moment a page's chunk is loading. */
-function PageLoading() {
-  return (
-    <div role="status" className="flex justify-center px-4 py-16 text-ink-3">
-      <Spinner className="h-6 w-6" />
-      <span className="sr-only">Loading the page</span>
-    </div>
-  );
+// A message handed over by navigation ("Signed out"). Radix Toast loads only then, so it stays
+// out of the public pages' bundles.
+const FlashToast = lazy(() => import("../ui/FlashToast").then((module) => ({ default: module.FlashToast })));
+
+function flashMessage(state: unknown): string | null {
+  if (typeof state !== "object" || state === null || !("toast" in state)) return null;
+  return typeof state.toast === "string" ? state.toast : null;
 }
 
 const primaryLink =
@@ -41,6 +40,7 @@ export function PublicLayout() {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
   useEffect(() => setMenuOpen(false), [location.pathname]);
+  const flash = flashMessage(location.state);
 
   const closeOnEscape = (event: KeyboardEvent) => {
     if (event.key === "Escape" && menuOpen) {
@@ -138,6 +138,12 @@ export function PublicLayout() {
           </p>
         </div>
       </footer>
+
+      {flash !== null ? (
+        <Suspense fallback={null}>
+          <FlashToast key={location.key} message={flash} />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

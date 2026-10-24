@@ -5,6 +5,7 @@ coverage
 
 # apps/web build and test output
 apps/web/dist
+apps/web/dist-emulated
 apps/web/test-results
 apps/web/playwright-report
 
