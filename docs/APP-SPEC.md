@@ -76,6 +76,13 @@ acceptance check in section 11 passes.
 Do not use newer majors (Vite 8, React Router 8, Vitest 5, TypeScript 7, Firebase 13). They
 were not verified with the engine.
 
+Known advisories (decided in the Oct 23, 2026 review): `npm audit` reports vitest 3.x
+(`@vitest/mocker`, `tinypool`; fixed only in vitest 4.1.12+), firebase-tools' own dependencies,
+and `@grpc/grpc-js` under firebase (Node only; the browser build doesn't use it). None of it is
+in the browser bundle. Phase 2 stays on these versions. Never run vitest with `--ui`, `--api`
+or browser mode, and never expose a vitest or Vite dev server beyond localhost. Moving to
+vitest 4 is its own change after Phase 2 merges, before Phase 3 stores participant data.
+
 ---
 
 ## 2. Repository layout (end of Phase 2)
@@ -150,7 +157,9 @@ Routing rules:
 - Signed in, verified, no membership and no pending invite → `/app/new-agency`.
 - Signed in with a pending invite for their email → `/app` shows the invite banner (section 6.4).
 - `/app` routes, `/sign-in`, `/sign-up` and `/join` are code-split (`React.lazy`) so the public
-  bundle never contains Firebase (D-06, budget in section 10).
+  bundle never contains Firebase (D-06, budget in section 10). The public pages (`/`, `/quick`,
+  `/rules`, `/privacy`) are lazy too, so the entry is only the shell (section 10); Not found is
+  not.
 - On every route change, move focus to the page's `<h1>` and update `document.title` to
   `<Page> | CarePlan Scheduler`.
 
@@ -186,14 +195,14 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Field | Label above input, hint below, error below hint in `text-block` with `aria-describedby` and `aria-invalid`. Required fields say "Required" in the hint, not an asterisk. |
 | NumberField | `inputmode="numeric"`, integer only, `min`/`max`/`step`; never coerces an empty field to 0. |
 | Select | Native `<select>` styled with tokens (best for mobile and screen readers). |
-| DayToggle | Seven toggle buttons Su Mo Tu We Th Fr Sa, `aria-pressed`, full day name as `aria-label`. Variants: `chosen` (solid brand), `auto` (brand tint with brand border = "we chose this day"), `off`. |
+| DayToggle | Seven toggle buttons Su Mo Tu We Th Fr Sa, `aria-pressed`, full day name as `aria-label`. The group's name is its `label` prop: "Care days" by default, "<task> days" (e.g. "Bathing days") for a task. Variants: `chosen` (solid brand), `auto` (brand tint with brand border = "we chose this day"), `off`. 44px buttons under 640px. |
 | Panel | Section with `h2` header row (title, meta text, tools slot) and body. |
 | SeverityPill | Icon + word, never color alone: BLOCK `OctagonX` "Must fix"; REVIEW `CircleHelp` "Needs review"; WARN `TriangleAlert` "Check"; INFO `Info` "Good to know". |
 | Dialog | Radix Dialog; title required; focus returns to the trigger; Escape closes; overlay `bg-overlay`. |
 | Toast | Radix Toast, bottom-right (bottom-center on phones), 5s, `role="status"`. Message names the result of the action ("Invite link copied"). |
-| Menu | Radix DropdownMenu for the account menu and agency switcher. |
+| Menu | Radix DropdownMenu for the account menu and agency switcher. Not for site navigation: the public header's phone navigation is a disclosure (a button with `aria-expanded` showing a `nav` of plain links). |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
-| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPaste` hands the pasted text up after the browser inserts it. |
+| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPasteText` hands the box's text up after the browser inserts a paste (the `input` event with `inputType` "insertFromPaste"). |
 | FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
 | SkipLink | First focusable element: "Skip to main content". |
 | Logo | The four-square mark from the prototype (three filled squares, one outlined) + "CarePlan Scheduler". The outlined square is the unit still to be scheduled. |
@@ -294,9 +303,9 @@ Both modes:
 
 | ID | Input | Rule |
 |---|---|---|
-| QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. A refused change (5.7) shows its sentence in the same place. |
+| QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. Unselecting a task's last day leaves it pinned with no days (off the week, SCH-02 "fewer days"), so the next day selected is where it goes; this is how a 1-day task moves. A care day turned off that empties a pinned set returns the task to our days. A refused change (5.7) shows its sentence in the same place. |
 | QS-08 | Care days | DayToggle, default from the import (IMPORT-SPEC 4) or all seven by hand. Turning a day off removes it from every pinned set and clears minute changes. None selected: "Choose at least one care day." |
-| QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes. |
+| QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes, and a change whose task moves off that day (another task's pins, transportation day, adding or removing a task) is dropped, so it can't come back later. |
 | QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples). "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
 
 ### 5.3 Model (`features/quick-schedule/model.ts`, pure; reference `quick-model.js`)
@@ -426,13 +435,21 @@ nothing.
 - Never write Quick Schedule state to `localStorage`, Firestore, the URL, or the console.
 
 ### 5.7 Guard: no change can break a rule (`guard.ts`)
-- `tryChange(next, pack) → { ok: true, model } | { ok: false, blocks, model }`: build the model
-  for the changed state; accept only if it has **zero BLOCK results**. The reducer dispatch
-  for every person-made change (cell, task days, unpin, care days, transportation day or
-  amounts, minutes or days by hand) goes through it. Loading a plan does not (an imported
-  plan's own problems are shown, not hidden).
+- `tryChange(next, pack, current) → { ok: true, model } | { ok: false, blocks, model }`: build
+  the model for the changed state; accept only if it adds **no new BLOCK result** (decided in
+  the Oct 23, 2026 review). A BLOCK the current state already has (only possible when the care
+  plan itself breaks a rule, e.g. Respite above 868 units) may stay exactly as it was (same rule,
+  refs and message); any other BLOCK, including a changed existing one, refuses. `blocks` holds
+  only the new results, so the sentence names what the change would break. For a plan with no
+  BLOCK this is the same as "zero BLOCK". The reducer dispatch for every person-made change
+  (service, plan start, adding or removing a task, cell, task days, unpin, care days,
+  transportation day or amounts, minutes or days by hand) goes through it. Loading a plan does
+  not (an imported plan's own problems are shown, not hidden), and neither do Fusion units by
+  hand (QS-11, the plan's own figure) or "Undo my minute changes" (back to the pattern).
 - `maxCellMinutes(state, key, requested, pack)`: the largest value ≤ requested, in 5-minute
-  steps, that keeps zero BLOCK (binary search; adding minutes never removes a BLOCK).
+  steps, that adds no new BLOCK (binary search; adding minutes never removes a BLOCK).
+- `cellRefusal(state, key, requested, pack)`: null when the cell change fits, else the sentence
+  below and the box's second sentence (and the "Use N minutes" value when a larger value fits).
 - Refusal sentence from the first BLOCK, preferring the viewed month and a task result:
   - SCH-08 task: "That would put Bathing over its 93 units in December 2025."
   - SCH-08 service: "That would put December 2025 over the 455 units Fusion authorizes."
@@ -780,18 +797,24 @@ percentages, meter widths). No inline scripts are allowed.
 ---
 
 ## 10. Performance budgets
-- Public routes (`/`, `/quick`, `/rules`): JavaScript loaded by `index.html` ≤ **180 KB gzip**
-  total, and no chunk containing `firebase` is loaded. `apps/web/scripts/check-bundle.mjs`
-  reads `dist/.vite/manifest.json` (enable `build.manifest`), sums gzip sizes of the entry chunk
-  and its static imports, fails above the budget, and fails if any of those chunks' source
-  module ids include `node_modules/firebase` or `node_modules/@firebase`. `npm run build` runs it.
-- pdf.js is never in the entry chunk or its static imports: check-bundle also fails if any of
-  those chunks contains `pdfjs-dist` code (search for `GlobalWorkerOptions`). It loads only
-  through `import()` when a PDF is chosen.
+- Public routes (`/`, `/quick`, `/rules`, `/privacy`): the JavaScript a page needs ≤ **180 KB
+  gzip** total, and no chunk containing `firebase` is loaded. `apps/web/scripts/check-bundle.mjs`
+  reads `dist/.vite/manifest.json` (enable `build.manifest`) and walks the manifest from the
+  `index.html` key through each chunk's `imports`. It checks (1) the entry chunk and its static
+  imports ≤ 180 KB, and (2) for each public page listed in its `PUBLIC_PAGES` (the page's source
+  file, a lazy chunk), the entry plus that page's chunk and its static imports ≤ 180 KB. It fails
+  if any of those chunks' source module ids include `node_modules/firebase` or
+  `node_modules/@firebase`, or their code references the Firebase SDK. `npm run build` runs it.
+  Decided in the Oct 23, 2026 review: React alone is about 100 KB, so a page-by-page budget is
+  the one Quick Schedule can meet; the public header's phone navigation is a disclosure, not a
+  Radix menu, which keeps Radix out of every public page.
+- pdf.js is never in those chunks: check-bundle also fails if any of them contains `pdfjs-dist`
+  code (search for `GlobalWorkerOptions`). It loads only through `import()` when a PDF is chosen.
 - Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
   times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
   pasted plan takes under 20 ms.
-- Fonts: one variable font file (latin subset) preloaded.
+- Fonts: one variable font file (latin subset) preloaded (`vite.config.ts` adds the
+  `<link rel="preload">` for the hashed file at build time and fails the build if it's missing).
 
 ---
 
@@ -839,7 +862,10 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   Small line: "Quick Schedule needs no account. Nothing you paste is uploaded."
 - Live figure beside the headline (stacks below on phones): the example plan's Day total row
   with unit tiles and "Ready to use", computed by the engine on the page (no screenshot).
-  This is the page's one memorable element.
+  This is the page's one memorable element. The example plan is fixture A built by the Quick
+  Schedule model (Mon..Fri 290, 285, 275, 270, 195; Sunday and Saturday "Off"); the status is
+  that model's status line, so it says "Ready to use" only because the checks pass. Caption:
+  "Day totals for the example care plan, built and checked on this page."
 - Four short sections, each a heading + 2 sentences + one concrete figure. Figures 1, 2
   and 4 are computed on the page by the engine and the import package (fixture A, TC-01,
   RULE_CATALOG); figure 3 is a static example of the refusal box, styled exactly like the
@@ -860,7 +886,9 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 **Rules and sources (`/rules`)**: intro sentence; rule pack name, ID and effective date;
 tables grouped Authorization / Schedule / Conflicts and eligibility, generated from
 `RULE_CATALOG` (ID, rule text, severities as pills, status, source); status explained in plain
-words: VERIFIED "Checked against the cited DHSS source", PARTIAL "Partly confirmed; results
+words: VERIFIED "Checked against the cited DHSS source", VERIFIED (CDS) "Checked for CDS; for
+other programs, results show as Needs review", VERIFIED basis "The cited source supports the
+check; how strictly it applies is a product decision", PARTIAL "Partly confirmed; results
 show as Needs review", APPROVED "Product decision, documented", OPEN "Waiting on DHSS".
 Then "Services and monthly limits" from `MO_2026_07.services` (code, name, unit, monthly
 ceiling or "—", weekly hour limit, source) and "Days-per-month factors" from

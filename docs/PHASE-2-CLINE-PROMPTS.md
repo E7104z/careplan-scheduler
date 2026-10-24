@@ -13,6 +13,25 @@ Order: 1 engine · 2 import package · 3 web scaffold and UI kit · 4 public sit
 5 Quick Schedule logic · 6–7 Quick Schedule screens · 8 sign-in · 9 agencies · 10 team ·
 11 accessibility, phones and the pull request · 12 Windows desktop app (after the merge).
 
+**Review decisions (Oct 23, 2026, after Prompt 5).** Already built on `phase-2-app` and written
+into APP-SPEC; Prompts 6 and 7 below were adjusted to match.
+- Guard: a change is refused only if it adds a **new** Must-fix result (APP-SPEC 5.7). A plan
+  that itself breaks a rule can still be edited; the edit can't add a break of its own.
+- Every person-made change goes through the guard, including service, plan start and adding or
+  removing a task. A plan read from Fusion ignores the by-hand-only actions.
+- QS-07 / QS-10: unselecting a task's last day takes it off the week (so a 1-day task can be
+  moved); a minute change is dropped when its task moves to another day.
+- Public pages are lazy chunks. check-bundle measures the entry and each public page (entry +
+  page chunk) against 180 KB, and walks the manifest's real import graph. The header's phone
+  navigation is a disclosure, not a Radix menu. The font is preloaded.
+- Ready for the screens: `checksumLines` (quick-schedule/checksumText.ts), `cellRefusal`
+  (guard.ts), Textarea `onPasteText`, DayToggle `label`, UnitTiles `activeDays` ("Off").
+- Landing headline figure = the example plan's Day total row with its computed status.
+- The unrequested APP-SPEC edits in the Prompt 4 commit (title separator "|", the landing
+  refusal text, the week figure written with commas) are accepted as they are.
+- npm audit: vitest 3.2.7 doesn't clear the vitest advisories (fixed in 4.1.12+). Phase 2 stays
+  on 3.2.7 (dev only; see APP-SPEC section 1); upgrading is its own change after the merge.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)
@@ -392,7 +411,7 @@ browser and paste a fixture into it).
 Task: the /quick page with the import panel, read summary, care plan pane (both modes) and
 the Status panel, wired to the logic from Prompt 5. Prompt 7 adds the week, month and checks.
 
-1. features/import/ImportPanel.tsx: APP-SPEC 5.1 import panel. The Textarea's onPaste builds
+1. features/import/ImportPanel.tsx: APP-SPEC 5.1 import panel. The Textarea's onPasteText builds
    immediately (no button press); "Build schedule" reads typed text (empty → "Paste the care
    plan first" with how). Examples buttons. FileDrop for PDFs. Issues rendered from
    importFlow (IMPORT-SPEC 3.1) with their controls; "Build with the N rows I have"; next-page
@@ -406,17 +425,23 @@ the Status panel, wired to the logic from Prompt 5. Prompt 7 adds the week, mont
    any other failure → "We couldn't read that PDF" / "Check that it's the care plan PDF from
    Fusion and not password-protected. You can also paste the care plan instead." While
    reading: spinner + "Reading the PDF…".
-3. features/import/ReadSummary.tsx: APP-SPEC 5.1 read summary with the checksum line, notes,
-   "Review what we read" table and "New care plan". Focus its h2 after a real import.
+3. features/import/ReadSummary.tsx: APP-SPEC 5.1 read summary with the checksum line (from
+   checksumLines in quick-schedule/checksumText.ts; lead in bold), notes, "Review what we
+   read" table and "New care plan". Focus its h2 after a real import.
 4. Care plan pane components: FusionPlanSection (locked), ServiceSection (by hand), TaskList,
-   TaskRow (locked values or inputs), TaskPicker (ARIA 1.2 combobox), CareDaysSection,
-   TransportSection (Fusion or by hand). Every person-made change dispatches through the
-   guard; a refused task-day change shows its sentence in that task's hint line.
+   TaskRow (locked values or inputs; its DayToggle has label "<task> days"), TaskPicker
+   (ARIA 1.2 combobox), CareDaysSection, TransportSection (Fusion or by hand). Every
+   person-made change dispatches through the reducer, which applies the guard; a refused
+   task-day change shows its sentence in that task's hint line. A task with an empty pinned
+   set (QS-07) shows no days and the "Your days · Let us choose" hint.
 5. StatusPanel: APP-SPEC 5.4 Status (aria-live polite).
 6. QuickSchedule.tsx: page intro, ImportPanel, ReadSummary, notice, two-pane layout; useReducer
    with persistence (restore on mount, save debounced 300 ms). First visit: example A built
    under an open import panel.
-7. Route /quick in router.tsx renders QuickSchedule in PublicLayout.
+7. Route /quick in router.tsx renders QuickSchedule in PublicLayout, lazily like the other
+   public pages (React.lazy), and scripts/check-bundle.mjs gets "/quick" in PUBLIC_PAGES with
+   the page's source file. Toasts (QS-02) mount inside the Quick Schedule page, not the layout,
+   so Radix Toast stays out of the other public pages.
 
 Tests (apps/web/test/quick/ui-*.test.tsx, Testing Library + user-event; mock readPdf):
 - First render: import panel visible, read summary "Example care plan", Status "Ready to use".
@@ -430,7 +455,7 @@ Tests (apps/web/test/quick/ui-*.test.tsx, Testing Library + user-event; mock rea
 
 Finish:
 1. npm run typecheck, npm test, npm run build. Paste summaries and the check-bundle table
-   (no firebase and no pdfjs in the entry).
+   (entry and every public page, /quick included, under 180 KB; no firebase and no pdfjs).
 2. Commit: "feat(web): Quick Schedule import panel, read summary and care plan pane". Push.
 ```
 
@@ -446,10 +471,11 @@ visual reference.
 
 Task: the rest of the schedule pane and the Quick Schedule end-to-end tests.
 
-1. WeeklyPanel: APP-SPEC 5.4 and QS-10. Cell editing dispatches through the guard; a refusal
-   renders the refusal box (APP-SPEC 5.7) under the table with "Use N minutes" when a larger
-   value fits. Transportation row, Day total footer with UnitTiles (ui/UnitTiles.tsx from
-   Prompt 4), legend, header meta, horizontal scroll inside the panel.
+1. WeeklyPanel: APP-SPEC 5.4 and QS-10. Cell editing dispatches through the reducer (guard);
+   a refusal renders the refusal box (APP-SPEC 5.7) under the table from cellRefusal in
+   guard.ts, with "Use N minutes" when it returns a value. Transportation row, Day total footer
+   with UnitTiles (ui/UnitTiles.tsx; pass activeDays so non-care days show "Off"), legend,
+   header meta, horizontal scroll inside the panel.
 2. MonthPanel: navigation limited to the plan's months; meter with source chip, transport,
    trim sentence and over message; Fusion units field only by hand (QS-11); calendar with
    trimmed dates marked ("−95 min", warn border, aria-label naming the trim).
