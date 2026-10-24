@@ -4,12 +4,12 @@ import type {
   DaysPerWeek,
   MonthlyAuthorization,
   ScheduleTemplate,
+  ScheduleValidationResult,
   ServiceAuthorization,
   ServiceCode,
   ServiceDef,
   Severity,
   TemplateEntry,
-  ValidationResult,
   Weekday,
 } from "@careplan/engine";
 import type { ImportIssue } from "@careplan/import";
@@ -26,6 +26,7 @@ export interface QuickTask {
   /** null = left out of the schedule until a valid number is entered (QS-05). */
   minPerDay: number | null;
   daysPerWeek: DaysPerWeek;
+  /** null = we choose the days; [] = the person unselected every day (off the week for now). */
   pinned: Weekday[] | null;
   locked: boolean;
 }
@@ -81,6 +82,8 @@ export interface QuickChecksum {
 export interface QuickModel {
   svc: ServiceDef;
   tasks: AuthorizedTask[];
+  /** The composed week before the person's cell changes (APP-SPEC 5.3 step 3). */
+  pattern: TemplateEntry[];
   entries: TemplateEntry[];
   auth: ServiceAuthorization;
   template: ScheduleTemplate;
@@ -88,7 +91,7 @@ export interface QuickModel {
   allowance: QuickAllowance | null;
   months: string[];
   monthlyAuthorizations: MonthlyAuthorization[];
-  results: ValidationResult[];
+  results: ScheduleValidationResult[];
   checksum: QuickChecksum | null;
 }
 

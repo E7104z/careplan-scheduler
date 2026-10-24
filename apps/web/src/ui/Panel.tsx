@@ -17,14 +17,15 @@ export function Panel({ title, meta, tools, children, className }: PanelProps) {
         className,
       )}
     >
-      <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
+      <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-4 max-sm:px-4">
         <h2 className="text-[17px] font-bold text-ink">{title}</h2>
         <div className="flex items-center gap-3">
           {meta ? <span className="text-sm text-ink-3">{meta}</span> : null}
           {tools}
         </div>
       </header>
-      <div className="px-5 py-4">{children}</div>
+      {/* APP-SPEC 4.1: panels pad 20px, 16px under 640px. */}
+      <div className="p-5 max-sm:p-4">{children}</div>
     </section>
   );
 }

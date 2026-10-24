@@ -1,5 +1,5 @@
 import { MO_2026_07, RULE_CATALOG, type RuleArea, type RuleStatus } from "@careplan/engine";
-import { formatDate } from "../lib/format";
+import { niceDate } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
 import { SeverityPill } from "../ui/SeverityPill";
 
@@ -7,6 +7,8 @@ const AREAS: RuleArea[] = ["Authorization", "Schedule", "Conflicts and eligibili
 
 const STATUS_LEGEND: { status: RuleStatus; text: string }[] = [
   { status: "VERIFIED", text: "Checked against the cited DHSS source" },
+  { status: "VERIFIED (CDS)", text: "Checked for CDS; for other programs, results show as Needs review" },
+  { status: "VERIFIED basis", text: "The cited source supports the check; how strictly it applies is a product decision" },
   { status: "PARTIAL", text: "Partly confirmed; results show as Needs review" },
   { status: "APPROVED", text: "Product decision, documented" },
   { status: "OPEN", text: "Waiting on DHSS" },
@@ -29,7 +31,7 @@ export function Rules() {
       </p>
       <p className="mt-2 text-ink-2">
         Rule pack: Missouri home and community-based services, {MO_2026_07.id}, effective{" "}
-        {formatDate(MO_2026_07.effectiveDate)}.
+        {niceDate(MO_2026_07.effectiveDate)}.
       </p>
 
       <section className="mt-8">
@@ -133,7 +135,9 @@ export function Rules() {
                   <td className={CELL}>{service.name}</td>
                   <td className={CELL}>{service.unit === "15min" ? "15 minutes" : "visit"}</td>
                   <td className={CELL}>{service.monthlyCeiling ?? "—"}</td>
-                  <td className={CELL}>{service.weeklyHourLimit ?? "—"}</td>
+                  <td className={CELL}>
+                    {service.weeklyHourLimit === undefined ? "—" : `${service.weeklyHourLimit} hours`}
+                  </td>
                   <td className={CELL}>{service.source}</td>
                 </tr>
               ))}

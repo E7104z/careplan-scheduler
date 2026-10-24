@@ -31,7 +31,8 @@ describe("no color literals outside tokens.css", () => {
     it(`keeps ${rel} free of hex, rgb() and hsl() literals`, () => {
       const lines = readFileSync(file, "utf8").split(/\r?\n/);
       const offenders = lines.filter((line) => {
-        if (/^\s*(import|export)\s/.test(line)) return false;
+        // Import paths may contain "#"; an `export const x = "#fff"` must still be caught.
+        if (/^\s*import\s/.test(line) || /^\s*export\s.*\sfrom\s+["']/.test(line)) return false;
         if (/^\s*@import\s/.test(line)) return false;
         if (/url\(/.test(line)) return false;
         return HEX.test(line) || RGB_HSL.test(line);

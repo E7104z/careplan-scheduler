@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { MO_2026_07, RULE_CATALOG } from "@careplan/engine";
 import {
+  exampleDayTotals,
   exampleMatchLine,
   exampleRefusal,
   exampleWeek,
@@ -59,6 +60,22 @@ describe("Landing", () => {
     expect(screen.getByText(refusalSentence)).toBeInTheDocument();
     expect(screen.getByText(refusalFix)).toBeInTheDocument();
   });
+
+  it("APP-SPEC 12: the headline figure is the example plan's Day total row, with its checked status", () => {
+    // The 5-day example (fixture A), as Quick Schedule builds it (AC-01: Mon..Fri 290, 285, 275, 270, 195).
+    const figure = exampleDayTotals();
+    expect(figure.dayTotals).toEqual([0, 290, 285, 275, 270, 195, 0]);
+    expect(figure.activeDays).toEqual([false, true, true, true, true, true, false]);
+    expect(figure.status).toBe("Ready to use");
+
+    render(<Landing />, { wrapper: MemoryRouter });
+    const hero = screen.getByRole("figure", { name: /Day totals for the example care plan/ });
+    for (const minutes of ["290 min", "285 min", "275 min", "270 min", "195 min"]) {
+      expect(within(hero).getByText(minutes)).toBeInTheDocument();
+    }
+    expect(within(hero).getAllByText("Off")).toHaveLength(2);
+    expect(within(hero).getByText("Ready to use")).toBeInTheDocument();
+  });
 });
 
 describe("Rules", () => {
@@ -74,6 +91,14 @@ describe("Rules", () => {
     }
     // SCH-17 (October 2025 end-of-month trim) is part of the catalog.
     expect(screen.getByText("SCH-17")).toBeInTheDocument();
+    // Every status a rule has is explained in the legend (APP-SPEC 12).
+    const legend = screen.getByRole("heading", { name: "Statuses" }).parentElement!;
+    for (const status of new Set(RULE_CATALOG.map((rule) => rule.status))) {
+      expect(within(legend).getByText(status, { selector: "dt" })).toBeInTheDocument();
+    }
+    // APP-SPEC 4.3: dates read "Nov 3, 2026"; numbers carry their unit.
+    expect(screen.getByText(/effective Jul 1, 2026\./)).toBeInTheDocument();
+    expect(screen.getAllByText("49 hours").length).toBeGreaterThan(0);
 
     for (const service of MO_2026_07.services) {
       expect(screen.getByText(service.code)).toBeInTheDocument();

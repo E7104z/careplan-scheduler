@@ -82,6 +82,29 @@ describe("DayToggle", () => {
     expect(screen.getByRole("button", { name: "Monday" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Wednesday" })).toHaveAttribute("aria-pressed", "true");
   });
+
+  it("names its group, so a task's days aren't announced as the care days", () => {
+    render(
+      <>
+        <DayToggle value={[false, true, true, true, true, true, false]} />
+        <DayToggle label="Bathing days" value={[false, true, false, false, false, false, false]} />
+      </>,
+    );
+    expect(screen.getByRole("group", { name: "Care days" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Bathing days" })).toBeInTheDocument();
+  });
+});
+
+describe("Textarea paste", () => {
+  it("hands the box's text up once the browser has inserted the paste (APP-SPEC 4.2)", async () => {
+    const user = userEvent.setup();
+    const pasted: string[] = [];
+    render(<Textarea aria-label="Care plan" onPasteText={(text) => pasted.push(text)} />);
+    await user.click(screen.getByRole("textbox", { name: "Care plan" }));
+    await user.paste("455 units\tBathing\t45\t7");
+    await user.type(screen.getByRole("textbox", { name: "Care plan" }), "x");
+    expect(pasted).toEqual(["455 units\tBathing\t45\t7"]);
+  });
 });
 
 describe("SeverityPill", () => {

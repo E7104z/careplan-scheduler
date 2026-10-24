@@ -38,17 +38,18 @@ describe("Quick Schedule state", () => {
       (t) => t.programs.includes("CDS") && !t.programs.includes("HOMEMAKER") && !t.isTransport,
     )!;
     const homemaker = pack.services.find((s) => s.program === "HOMEMAKER")!;
-    const homemakerOnly = pack.tasks.find(
-      (t) => t.programs.includes("HOMEMAKER") && !t.programs.includes("CDS") && !t.isTransport,
+    // QS-04 only offers tasks of the plan's program, so the kept task is one CDS shares with Homemaker.
+    const shared = pack.tasks.find(
+      (t) => t.programs.includes("HOMEMAKER") && t.programs.includes("CDS") && !t.isTransport,
     )!;
 
     let state = manualState(TODAY);
     state = addTask(state, cdsOnly.taskCode, cdsOnly.name);
-    state = addTask(state, homemakerOnly.taskCode, homemakerOnly.name);
+    state = addTask(state, shared.taskCode, shared.name);
 
     const result = reduce(state, { type: "setService", code: homemaker.code }, pack);
     expect(result.removed).toEqual([cdsOnly.name]);
-    expect(result.state.tasks.map((t) => t.name)).toEqual([homemakerOnly.name]);
+    expect(result.state.tasks.map((t) => t.name)).toEqual([shared.name]);
     expect(result.state.serviceCode).toBe(homemaker.code);
   });
 

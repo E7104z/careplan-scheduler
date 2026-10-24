@@ -1,6 +1,6 @@
 import type { Weekday } from "@careplan/engine";
 import type { ImportResult } from "@careplan/import";
-import { MONDAY_FIRST, monthsBetween } from "../quick-schedule/model.js";
+import { MONDAY_FIRST, localMonth, monthsBetween } from "../quick-schedule/model.js";
 import type { QuickState } from "../quick-schedule/types.js";
 
 /**
@@ -24,7 +24,7 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
   for (const day of MONDAY_FIRST.slice(0, maxDaysPerWeek)) activeDays[day] = true;
   const lastActive: Weekday = MONDAY_FIRST.slice(0, maxDaysPerWeek).slice(-1)[0]!;
 
-  const currentMonth = today.toISOString().slice(0, 7);
+  const currentMonth = localMonth(today);
   const months = monthsBetween(plan.start, plan.end);
   let n = 0;
 
@@ -62,6 +62,7 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
     viewMonth: months.includes(currentMonth) ? currentMonth : (months[0] ?? currentMonth),
     isExample: false,
     notes: [],
-    rowsRead: 0,
+    // Rows the schedule is built from (tasks and transportation), for "Built from 10 of 14 rows".
+    rowsRead: service.tasks.length + (service.transport ? 1 : 0),
   };
 }

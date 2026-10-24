@@ -44,7 +44,8 @@ export function FileDrop({
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-line-2 bg-surface px-6 py-8 text-center transition-colors focus-within:border-brand",
+        // The input is visually hidden, so the label shows the keyboard focus ring for it.
+        "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-line-2 bg-surface px-6 py-8 text-center transition-colors focus-within:border-brand has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-focus",
         dragOver && "border-brand bg-brand-tint",
         className,
       )}

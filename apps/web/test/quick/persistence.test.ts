@@ -1,31 +1,58 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { exampleStateB } from "../../src/features/quick-schedule/state";
+import { MO_2026_07 } from "@careplan/engine";
+import { exampleStateB, manualState, reduce } from "../../src/features/quick-schedule/state";
 import { loadQuickState, saveQuickState } from "../../src/features/quick-schedule/persistence";
+import { buildQuickModel } from "../../src/features/quick-schedule/model";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
+const KEY = "cps.quick.v2";
 
 afterEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
 });
 
+/** The saved JSON with one field replaced, as if the stored copy were old or edited by hand. */
+function storedWith(change: (saved: Record<string, unknown>) => void): void {
+  saveQuickState(exampleStateB(TODAY));
+  const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "{}") as Record<string, unknown>;
+  change(saved);
+  sessionStorage.setItem(KEY, JSON.stringify(saved));
+}
+
 describe("Quick Schedule persistence", () => {
-  it("round trip drops identity and marks the plan as not an example", () => {
+  it("round trip drops identity and keeps everything else", () => {
     const state = exampleStateB(TODAY);
     expect(state.identity).not.toBeNull();
 
     saveQuickState(state);
+    expect(sessionStorage.getItem(KEY)).not.toContain("SAMPLE PARTICIPANT");
+    expect(sessionStorage.getItem(KEY)).not.toContain("10000002");
     const loaded = loadQuickState();
 
-    expect(loaded).not.toBeNull();
-    expect(loaded!.identity).toBeNull();
-    expect(loaded!.isExample).toBe(false);
-    expect(loaded!.source).toBe("fusion");
-    expect(loaded!.tasks).toHaveLength(state.tasks.length);
+    expect(loaded).toEqual({ ...state, identity: null });
+    expect(() => buildQuickModel(loaded!, MO_2026_07)).not.toThrow();
+  });
+
+  it("a reloaded example is still the example; a reloaded plan is still a plan", () => {
+    saveQuickState(exampleStateB(TODAY));
+    expect(loadQuickState()!.isExample).toBe(true);
+
+    saveQuickState({ ...exampleStateB(TODAY), isExample: false });
+    expect(loadQuickState()!.isExample).toBe(false);
+  });
+
+  it("round trips a by-hand plan with tasks, changes and Fusion units", () => {
+    let state = manualState(TODAY);
+    state = reduce(state, { type: "addTask", taskCode: "BATHING", name: "Bathing" }, MO_2026_07).state;
+    state = reduce(state, { type: "setFusionUnits", month: "2026-11", units: 120 }, MO_2026_07).state;
+    state = reduce(state, { type: "setCell", key: `${state.tasks[0]!.id}:1`, minutes: 0 }, MO_2026_07).state;
+    saveQuickState(state);
+    expect(loadQuickState()).toEqual(state);
   });
 
   it("corrupt JSON -> null", () => {
-    sessionStorage.setItem("cps.quick.v2", "{not json");
+    sessionStorage.setItem(KEY, "{not json");
     expect(loadQuickState()).toBeNull();
   });
 
@@ -37,7 +64,28 @@ describe("Quick Schedule persistence", () => {
   });
 
   it("invalid shape -> null", () => {
-    sessionStorage.setItem("cps.quick.v2", JSON.stringify({ source: "fusion" }));
+    sessionStorage.setItem(KEY, JSON.stringify({ source: "fusion" }));
     expect(loadQuickState()).toBeNull();
   });
+
+  // Each of these would make buildQuickModel throw or compute nonsense, so the page falls back
+  // to the example instead (APP-SPEC 5.6 "restore if the shape validates, else show the example").
+  const broken: Record<string, (saved: Record<string, unknown>) => void> = {
+    "an unknown service code": (s) => { s.serviceCode = "X9999"; },
+    "a plan date that isn't YYYY-MM-DD": (s) => { s.plan = { start: "Dec 1", end: "2026-10-31" }; },
+    "a viewed month that isn't YYYY-MM": (s) => { s.viewMonth = "October"; },
+    "care days that aren't booleans": (s) => { s.activeDays = [1, 1, 1, 1, 1, 1, 1]; },
+    "a task with text minutes": (s) => { (s.tasks as Record<string, unknown>[])[0]!.minPerDay = "45"; },
+    "a task with 9 days a week": (s) => { (s.tasks as Record<string, unknown>[])[0]!.daysPerWeek = 9; },
+    "a task pinned to day 7": (s) => { (s.tasks as Record<string, unknown>[])[0]!.pinned = [7]; },
+    "a cell change that isn't whole minutes": (s) => { s.edits = { "qt-1:1": "30" }; },
+    "Fusion transportation without minutes": (s) => { s.transport = { day: 1 }; },
+    "header units that aren't a number": (s) => { s.headerUnits = "455"; },
+  };
+  for (const [what, change] of Object.entries(broken)) {
+    it(`rejects ${what}`, () => {
+      storedWith(change);
+      expect(loadQuickState()).toBeNull();
+    });
+  }
 });

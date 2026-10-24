@@ -12,9 +12,9 @@ import {
   type MonthlyAuthorization,
   type RulePack,
   type ScheduleTemplate,
+  type ScheduleValidationResult,
   type ServiceAuthorization,
   type TemplateEntry,
-  type ValidationResult,
   type Weekday,
 } from "@careplan/engine";
 import type {
@@ -32,6 +32,14 @@ export const MONDAY_FIRST: Weekday[] = [1, 2, 3, 4, 5, 6, 0];
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
+}
+
+/**
+ * The "YYYY-MM" of a moment on the person's own calendar. Not `toISOString()`, which is UTC:
+ * 10 pm on Oct 31 in Missouri is already November in UTC.
+ */
+export function localMonth(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 }
 
 /** "2026-07" + n months, normalized back to "YYYY-MM". */
@@ -114,13 +122,16 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     }
   }
 
-  // Step 3: compose the weekly pattern (overrides = pinned day sets).
+  // Step 3: compose the weekly pattern (overrides = pinned day sets). A task whose days were all
+  // unselected stays in the plan (so SCH-02 says it is short of days) but is off the week.
   const overrides: Record<string, Weekday[]> = {};
+  const offTheWeek = new Set<string>();
   for (const task of state.tasks) {
     if (task.pinned && task.pinned.length > 0) overrides[task.id] = task.pinned;
+    if (task.pinned && task.pinned.length === 0) offTheWeek.add(task.id);
   }
   const composed = composeWeek({
-    tasks,
+    tasks: tasks.filter((task) => !offTheWeek.has(task.id)),
     activeDays: state.activeDays,
     overrides,
     weeklyTransportMinutes: weeklyTransport,
@@ -156,32 +167,16 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   if (transportMinutesPerMonth > 0) auth.transportMinutesPerMonth = transportMinutesPerMonth;
 
   // Step 7: monthly figures (Fusion header units for full months, else QS-11 entries).
-  const monthlyAuthorizations: MonthlyAuthorization[] = [];
-  if (state.source === "fusion" && state.headerUnits !== null && Number.isInteger(state.headerUnits)) {
-    months.forEach((month) => {
-      if (isFullMonth(month, auth.start, auth.end)) {
-        monthlyAuthorizations.push({
-          serviceAuthId: "quick",
-          month,
-          units: state.headerUnits as number,
-          source: "fusion",
-          revision: 1,
-        });
-      }
-    });
-  } else {
-    for (const [month, units] of Object.entries(state.fusion)) {
-      if (months.includes(month) && Number.isInteger(units) && units >= 0) {
-        monthlyAuthorizations.push({
-          serviceAuthId: "quick",
-          month,
-          units,
-          source: "fusion",
-          revision: 1,
-        });
-      }
-    }
-  }
+  const fusionFigure = (month: string, units: number): MonthlyAuthorization => ({
+    serviceAuthId: "quick", month, units, source: "fusion", revision: 1,
+  });
+  const headerUnits = state.headerUnits;
+  const monthlyAuthorizations: MonthlyAuthorization[] =
+    state.source === "fusion" && headerUnits !== null && Number.isInteger(headerUnits)
+      ? months.filter((month) => isFullMonth(month, auth.start, auth.end)).map((month) => fusionFigure(month, headerUnits))
+      : Object.entries(state.fusion)
+          .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
+          .map(([month, units]) => fusionFigure(month, units));
 
   // Step 8: trims come from the pattern, never from a person's cell changes (SCH-17).
   const pattern: ScheduleTemplate = {
@@ -197,7 +192,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     tasks.length > 0 ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
   // Step 9: validate.
-  const results: ValidationResult[] =
+  const results: ScheduleValidationResult[] =
     tasks.length > 0
       ? validateSchedule({
           pack,
@@ -237,6 +232,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   return {
     svc,
     tasks,
+    pattern: composed.entries,
     entries,
     auth,
     template,

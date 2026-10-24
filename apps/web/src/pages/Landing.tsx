@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { Link } from "react-router";
 import {
+  exampleDayTotals,
   exampleMatchLine,
   exampleRefusal,
   exampleRuleCard,
@@ -38,6 +39,7 @@ function Section({
 
 export function Landing() {
   const headingRef = usePageTitle("CarePlan Scheduler");
+  const hero = exampleDayTotals();
   const matchLine = exampleMatchLine();
   const week = exampleWeek();
   const refusal = exampleRefusal();
@@ -72,11 +74,19 @@ export function Landing() {
             Quick Schedule needs no account. Nothing you paste is uploaded.
           </p>
         </div>
-        <figure className="rounded-md border border-line bg-surface p-5">
-          <UnitTiles dayTotals={week.dayTotals} />
-          <figcaption className="mt-4 flex items-center gap-2 text-sm font-medium text-ink-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-brand" aria-hidden="true" />
-            Ready to use
+        <figure
+          aria-labelledby="hero-caption"
+          className="rounded-md border border-line bg-surface p-5"
+        >
+          <UnitTiles dayTotals={hero.dayTotals} activeDays={hero.activeDays} />
+          <figcaption id="hero-caption" className="mt-4 flex flex-col gap-1">
+            <span className="flex items-center gap-2 text-sm font-medium text-ink-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-brand" aria-hidden="true" />
+              {hero.status}
+            </span>
+            <span className="text-[13px] text-ink-3">
+              Day totals for the example care plan, built and checked on this page.
+            </span>
           </figcaption>
         </figure>
       </section>
@@ -95,7 +105,7 @@ export function Landing() {
         <Section
           heading="Built from tasks, not averages"
           lead="Monthly units are never spread evenly across the days."
-          detail="The week below is the example plan's real day totals, from the tasks and days Fusion authorizes."
+          detail="Each task goes on its own days, so a week's minutes come from the tasks themselves. These day totals were worked out on this page by the same engine that checks every schedule."
           figure={
             <div className="rounded-md border border-line bg-surface p-4">
               <p className="text-[28px] font-bold text-ink">{week.weekText}</p>

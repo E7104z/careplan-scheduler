@@ -1,183 +1,51 @@
 import fixture from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 import { parseFusionText } from "@careplan/import";
-import {
-  MO_2026_07,
-  composeWeek,
-  fitToAuthorization,
-  ruleById,
-  validateSchedule,
-  type AuthorizedTask,
-  type CalendarException,
-  type MonthlyAuthorization,
-  type RuleCatalogEntry,
-  type ScheduleTemplate,
-  type ServiceAuthorization,
-  type ValidationResult,
-  type Weekday,
-} from "@careplan/engine";
-import { formatMonth, weekdayName } from "../../lib/format";
+import { MO_2026_07, composeWeek, ruleById, type AuthorizedTask, type RuleCatalogEntry } from "@careplan/engine";
+import { fromFusion } from "../import/fromFusion";
+import { checksumLines } from "../quick-schedule/checksumText";
+import { cellRefusal } from "../quick-schedule/guard";
+import { groupResults } from "../quick-schedule/grouping";
+import { buildQuickModel } from "../quick-schedule/model";
+import type { QuickState } from "../quick-schedule/types";
 
-export interface ExampleEdit {
-  taskName: string;
-  weekday: Weekday;
-  minutes: number;
+/**
+ * The landing page's figures, computed by the same code Quick Schedule uses (APP-SPEC 12):
+ * fixture A read with @careplan/import and built with the Quick Schedule model and guard.
+ * The example is shown as of October 2025, a month of the plan.
+ */
+function exampleState(): QuickState {
+  const state = fromFusion(parseFusionText(fixture, MO_2026_07), 0, new Date(2025, 9, 1));
+  return { ...state, isExample: true };
 }
 
-interface ExampleModel {
-  tasks: AuthorizedTask[];
-  auth: ServiceAuthorization;
-  template: ScheduleTemplate;
-  monthlyAuthorizations: MonthlyAuthorization[];
-  trims: CalendarException[];
-  months: string[];
-  fusionUnits: number;
+export interface ExampleDayTotals {
+  /** Minutes per weekday, Sunday first. */
   dayTotals: number[];
-  taskByName: Map<string, AuthorizedTask>;
+  activeDays: boolean[];
+  /** The Quick Schedule status (APP-SPEC 5.4): "Ready to use", or how many things to fix. */
+  status: string;
 }
 
-const AUTH_ID = "A-EXAMPLE-01";
-const PARTICIPANT_ID = "P-EXAMPLE-01";
-const TEMPLATE_ID = "TPL-EXAMPLE-01";
-
-function monthsBetween(start: string, end: string): string[] {
-  const startParts = start.slice(0, 7).split("-");
-  const endParts = end.slice(0, 7).split("-");
-  const startYear = Number(startParts[0]);
-  const startMonth = Number(startParts[1]);
-  const endYear = Number(endParts[0]);
-  const endMonth = Number(endParts[1]);
-
-  const months: string[] = [];
-  let year = startYear;
-  let month = startMonth;
-  while (year < endYear || (year === endYear && month <= endMonth)) {
-    months.push(`${year}-${String(month).padStart(2, "0")}`);
-    if (month === 12) {
-      year += 1;
-      month = 1;
-    } else {
-      month += 1;
-    }
-  }
-  return months;
-}
-
-function buildExampleModel(): ExampleModel {
-  const parsed = parseFusionText(fixture, MO_2026_07);
-  const service = parsed.services[0];
-  const plan = parsed.plan;
-  if (!service || !plan) {
-    throw new Error("The example care plan could not be read.");
-  }
-
-  const tasks: AuthorizedTask[] = service.tasks.map((task, index) => ({
-    id: `T-${String(index + 1).padStart(2, "0")}`,
-    serviceAuthId: AUTH_ID,
-    taskCode: task.taskCode ?? "UNKNOWN",
-    name: task.name,
-    minPerDay: task.minPerDay,
-    daysPerWeek: task.daysPerWeek,
-  }));
-
-  const auth: ServiceAuthorization = {
-    id: AUTH_ID,
-    participantId: PARTICIPANT_ID,
-    program: "CDS",
-    serviceCode: service.serviceCode ?? "T1019",
-    start: plan.start,
-    end: plan.end,
-    state: "active",
-    suspensions: [],
-    revision: 1,
-    tasks,
-    transportMinutesPerMonth: service.transport?.minutesPerMonth,
-  };
-
-  const transportMinutes =
-    Math.floor(Math.floor((service.transport?.minutesPerMonth ?? 0) / 15) / 5) * 15;
-
-  const composed = composeWeek({
-    tasks,
-    activeDays: [false, true, true, true, true, true, false],
-    overrides: {},
-    weeklyTransportMinutes: transportMinutes,
-    transportDay: 5,
-  });
-
-  const template: ScheduleTemplate = {
-    id: TEMPLATE_ID,
-    participantId: PARTICIPANT_ID,
-    start: plan.start,
-    end: plan.end,
-    entries: composed.entries,
-    rulePackVersion: MO_2026_07.id,
-  };
-
-  const months = monthsBetween(plan.start, plan.end);
-  const monthlyAuthorizations: MonthlyAuthorization[] = months.map((month) => ({
-    serviceAuthId: AUTH_ID,
-    month,
-    units: service.units,
-    source: "fusion",
-    revision: 1,
-  }));
-
-  const trims = fitToAuthorization(template, auth, monthlyAuthorizations, months);
-  const taskByName = new Map(tasks.map((task) => [task.name, task]));
-
+/** APP-SPEC 12: the headline figure, the example plan's Day total row and its checked status. */
+export function exampleDayTotals(): ExampleDayTotals {
+  const state = exampleState();
+  const model = buildQuickModel(state, MO_2026_07);
+  const dayTotals = [0, 0, 0, 0, 0, 0, 0];
+  for (const entry of model.entries) dayTotals[entry.weekday] = (dayTotals[entry.weekday] ?? 0) + entry.minutes;
+  const toFix = groupResults(model.results).filter((group) => group.severity === "BLOCK").length;
   return {
-    tasks,
-    auth,
-    template,
-    monthlyAuthorizations,
-    trims,
-    months,
-    fusionUnits: service.units,
-    dayTotals: composed.dayTotals,
-    taskByName,
+    dayTotals,
+    activeDays: state.activeDays,
+    status: toFix === 0 ? "Ready to use" : `${toFix} ${toFix === 1 ? "thing" : "things"} to fix`,
   };
 }
 
-function checksFor(model: ExampleModel, edit: ExampleEdit): ValidationResult[] {
-  const task = model.taskByName.get(edit.taskName);
-  const entry = model.template.entries.find(
-    (candidate) =>
-      task !== undefined && candidate.taskId === task.id && candidate.weekday === edit.weekday,
-  );
-  if (!task || !entry) {
-    return [];
-  }
-
-  const entries = model.template.entries.map((candidate) =>
-    candidate.taskId === task.id && candidate.weekday === edit.weekday
-      ? { ...candidate, minutes: edit.minutes }
-      : { ...candidate },
-  );
-  const template: ScheduleTemplate = { ...model.template, entries };
-
-  return validateSchedule({
-    pack: MO_2026_07,
-    authorizations: [model.auth],
-    monthlyAuthorizations: model.monthlyAuthorizations,
-    template,
-    exceptions: model.trims,
-    visits: [],
-    caregivers: [],
-    enrollments: [],
-    months: model.months,
-    tenantWorkweekStart: 0,
-  });
-}
-
-/** Run the engine against the built-in example with one weekday edit applied. */
-export function exampleChecks(edit: ExampleEdit): ValidationResult[] {
-  return checksFor(buildExampleModel(), edit);
-}
-
-/** APP-SPEC 12.1: the match line against Fusion's imported monthly units. */
+/** APP-SPEC 12.1: the checksum line for fixture A, from our total and Fusion's figure. */
 export function exampleMatchLine(): string {
-  const model = buildExampleModel();
-  return `Every task read. Our total from these tasks matches Fusion's ${model.fusionUnits} units a month.`;
+  const checksum = buildQuickModel(exampleState(), MO_2026_07).checksum;
+  if (!checksum) throw new Error("The example care plan has no Fusion figure to check against.");
+  const { lead, detail } = checksumLines(checksum);
+  return `${lead} ${detail}`;
 }
 
 export interface ExampleWeek {
@@ -215,34 +83,16 @@ export interface ExampleRefusal {
 }
 
 /**
- * APP-SPEC 12.3: the refusal box for raising Bathing on Tuesday above its limit.
- * The sentence is built from the engine's SCH-08 block and the fix line from the
- * task's own minutes, so nothing here is a hardcoded sample result.
+ * APP-SPEC 12.3: the refusal box Quick Schedule shows for raising Bathing on Tuesday to 50
+ * minutes in the example plan, from the real guard (APP-SPEC 5.7).
  */
 export function exampleRefusal(): ExampleRefusal {
-  const model = buildExampleModel();
-  const task = model.taskByName.get("Bathing");
-  if (!task) {
-    throw new Error("The example care plan has no Bathing task.");
-  }
-
-  const results = checksFor(model, { taskName: task.name, weekday: 2, minutes: 50 });
-  const block = results.find(
-    (result) =>
-      result.ruleId === "SCH-08" &&
-      result.severity === "BLOCK" &&
-      result.refs.taskId === task.id &&
-      result.refs.month === "2025-10",
-  );
-  if (!block) {
-    throw new Error("The example refusal check produced no October 2025 block for Bathing.");
-  }
-
-  const units = /\((\d+) units\)/.exec(block.message)?.[1] ?? "0";
-  return {
-    sentence: `That would put ${task.name} over its ${units} units in ${formatMonth("2025-10")}.`,
-    fix: `${task.name} can't have more than ${task.minPerDay} minutes on ${weekdayName(2)}. To add time here, take it from another day first.`,
-  };
+  const state = exampleState();
+  const bathing = state.tasks.find((task) => task.name === "Bathing");
+  if (!bathing) throw new Error("The example care plan has no Bathing task.");
+  const refusal = cellRefusal(state, `${bathing.id}:2`, 50, MO_2026_07);
+  if (!refusal) throw new Error("The example change was not refused.");
+  return { sentence: refusal.sentence, fix: refusal.hint };
 }
 
 /** APP-SPEC 12.4: one rule card with its source line. */

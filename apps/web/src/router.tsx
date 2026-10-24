@@ -1,10 +1,14 @@
+import { lazy } from "react";
 import { createBrowserRouter, useSearchParams } from "react-router";
 import { Gallery } from "./dev/Gallery";
 import { PublicLayout } from "./layouts/PublicLayout";
-import { Landing } from "./pages/Landing";
 import { NotFound } from "./pages/NotFound";
-import { Privacy } from "./pages/Privacy";
-import { Rules } from "./pages/Rules";
+
+// APP-SPEC 10: each public page is its own chunk, so the entry holds only the shell and every
+// page loads just what it uses. check-bundle.mjs measures the entry and each of these pages.
+const Landing = lazy(() => import("./pages/Landing").then((module) => ({ default: module.Landing })));
+const Rules = lazy(() => import("./pages/Rules").then((module) => ({ default: module.Rules })));
+const Privacy = lazy(() => import("./pages/Privacy").then((module) => ({ default: module.Privacy })));
 
 function Root() {
   const [searchParams] = useSearchParams();
