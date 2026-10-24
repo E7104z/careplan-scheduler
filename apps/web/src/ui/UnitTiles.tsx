@@ -24,9 +24,9 @@ export function UnitTiles({ dayTotals, activeDays }: UnitTilesProps) {
             key={weekday}
             className="flex flex-col items-center gap-1.5 rounded-md bg-sunk p-2"
           >
-            <span className="text-[13px] font-medium text-ink-3">{DAY_LABELS[weekday]}</span>
+            <span className="text-[13px] font-medium text-ink-2">{DAY_LABELS[weekday]}</span>
             {off ? (
-              <span className="text-[13px] text-ink-3">Off</span>
+              <span className="text-[13px] text-ink-2">Off</span>
             ) : (
               <>
                 <span aria-hidden="true" className="grid grid-cols-4 gap-0.5">
@@ -43,7 +43,7 @@ export function UnitTiles({ dayTotals, activeDays }: UnitTilesProps) {
                   ) : null}
                 </span>
                 <span className="text-sm font-semibold text-ink">{minutes} min</span>
-                <span className="text-[13px] text-ink-3">
+                <span className="text-[13px] text-ink-2">
                   {units} unit{units === 1 ? "" : "s"}
                   {remainder > 0 ? ` + ${remainder} min` : ""}
                 </span>

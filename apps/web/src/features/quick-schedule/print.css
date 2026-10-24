@@ -1,0 +1,5 @@
+/* APP-SPEC 5.4: the printed Quick Schedule is US Letter landscape. */
+@page {
+  size: letter landscape;
+  margin: 12mm;
+}

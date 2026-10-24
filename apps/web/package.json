@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test --pass-with-no-tests",
+    "test:e2e": "playwright test --project=desktop --project=phone",
     "test:e2e:emulated": "playwright test --pass-with-no-tests",
     "test:rules": "vitest run --config vitest.rules.config.ts"
   },
