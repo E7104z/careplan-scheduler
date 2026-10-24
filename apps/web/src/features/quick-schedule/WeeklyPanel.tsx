@@ -20,22 +20,44 @@ interface WeekCellProps {
   taskName: string;
   weekday: Weekday;
   minutes: number;
+  /** QS-10: a person changed this cell (warn underline). */
+  changed: boolean;
+  /** QS-10: more than the task's minutes per day (warn fill; SCH-03 allows it). */
+  over: boolean;
   onCommit: (key: string, value: number) => void;
 }
 
 /** One editable cell of the weekly grid. A click turns it into a number input. */
-function WeekCell({ cellKey, taskName, weekday, minutes, onCommit }: WeekCellProps) {
+function WeekCell({ cellKey, taskName, weekday, minutes, changed, over, onCommit }: WeekCellProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const committed = useRef(false);
+  // Enter and Escape hand focus back to the cell; on blur, focus has already gone elsewhere.
+  const refocus = useRef(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.select();
+    } else if (refocus.current) {
+      refocus.current = false;
+      buttonRef.current?.focus();
+    }
+  }, [editing]);
 
   if (!editing) {
     return (
       <td className="border-t border-line px-1 py-1.5 text-center">
         <button
+          ref={buttonRef}
           type="button"
+          data-cell={cellKey}
           aria-label={`${taskName}, ${weekdayName(weekday)}, ${minutes} minutes. Change minutes`}
-          className="h-9 w-full min-w-[52px] rounded-sm font-semibold text-ink hover:bg-brand-tint"
+          className={cn(
+            "relative h-9 w-full min-w-[52px] rounded-sm border border-dashed border-transparent font-semibold hover:border-line-2",
+            over ? "bg-warn-bg text-warn" : "bg-brand-tint text-ink",
+          )}
           onClick={() => {
             committed.current = false;
             setDraft(String(minutes));
@@ -43,14 +65,22 @@ function WeekCell({ cellKey, taskName, weekday, minutes, onCommit }: WeekCellPro
           }}
         >
           {minutes}
+          {changed ? (
+            <span
+              data-mark="changed"
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-0.5 rounded-b-sm bg-warn"
+            />
+          ) : null}
         </button>
       </td>
     );
   }
 
-  const finish = (save: boolean) => {
+  const finish = (save: boolean, keyboard: boolean) => {
     if (committed.current) return;
     committed.current = true;
+    refocus.current = keyboard;
     if (save) {
       const value = Number(draft);
       if (Number.isInteger(value) && value >= 0 && value !== minutes) onCommit(cellKey, value);
@@ -64,18 +94,19 @@ function WeekCell({ cellKey, taskName, weekday, minutes, onCommit }: WeekCellPro
         type="number"
         min={0}
         step={5}
+        ref={inputRef}
         value={draft}
         autoFocus
         aria-label={`${taskName}, ${weekdayName(weekday)}, ${minutes} minutes. Enter 0 to remove this day.`}
         className="h-9 w-full min-w-[52px] rounded-sm border border-line-2 bg-surface px-1 text-center text-ink"
         onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => finish(true)}
+        onBlur={() => finish(true, false)}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.preventDefault();
-            finish(true);
+            finish(true, true);
           } else if (event.key === "Escape") {
-            finish(false);
+            finish(false, true);
           }
         }}
       />
@@ -101,6 +132,15 @@ interface WeeklyPanelProps {
 export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHighlightDone }: WeeklyPanelProps) {
   const [refusal, setRefusal] = useState<{ key: string; refusal: CellRefusal } | null>(null);
   useEffect(() => setRefusal(null), [seq]);
+
+  // "Use N minutes" removes its own button, so focus goes to the cell it changed.
+  const focusCell = useRef<string | null>(null);
+  useEffect(() => {
+    const key = focusCell.current;
+    if (key === null) return;
+    focusCell.current = null;
+    document.querySelector<HTMLElement>(`[data-cell="${key}"]`)?.focus();
+  });
 
   useEffect(() => {
     if (highlight === null) return;
@@ -132,7 +172,12 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
       className="min-w-0"
       tools={
         hasEdits ? (
-          <Button variant="quiet" size="sm" onClick={() => dispatch({ type: "undoCellChanges" })}>
+          <Button
+            variant="quiet"
+            size="sm"
+            className="print:hidden"
+            onClick={() => dispatch({ type: "undoCellChanges" })}
+          >
             Undo my minute changes
           </Button>
         ) : null
@@ -174,7 +219,8 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
                       const minutes = byTask[task.id]?.[weekday];
                       return minutes === undefined ? (
                         <td key={weekday} className="border-t border-line px-1 py-1.5 text-center text-ink-3">
-                          <span aria-label="Not scheduled">·</span>
+                          <span aria-hidden="true">·</span>
+                          <span className="sr-only">Not scheduled</span>
                         </td>
                       ) : (
                         <WeekCell
@@ -183,6 +229,8 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
                           taskName={task.name}
                           weekday={weekday}
                           minutes={minutes}
+                          changed={`${task.id}:${weekday}` in state.edits}
+                          over={minutes > task.minPerDay}
                           onCommit={commitCell}
                         />
                       );
@@ -190,13 +238,13 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
                   </tr>
                 ))}
                 {model.allowance ? (
-                  <tr>
-                    <th scope="row" className="border-t border-line px-2 py-1.5 text-left font-medium text-ink">
+                  <tr className="italic">
+                    <th scope="row" className="border-t border-line px-2 py-1.5 text-left font-medium text-ink-2">
                       Essential transportation
                       <span className="block text-[12px] font-normal text-ink-3">Set aside, not a task</span>
                     </th>
                     {WEEKDAYS.map((weekday) => (
-                      <td key={weekday} className="border-t border-line px-1 py-1.5 text-center font-semibold text-ink">
+                      <td key={weekday} className="border-t border-line px-1 py-1.5 text-center font-semibold text-ink-2">
                         {weekday === state.transport.day ? model.allowance!.weeklyMinutes : ""}
                       </td>
                     ))}
@@ -217,7 +265,7 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
           {refusal ? (
             <div
               role="alert"
-              className="mt-4 grid gap-2.5 rounded-md border border-block bg-block-bg px-4 py-3 text-sm text-ink"
+              className="mt-4 grid gap-2.5 print:hidden rounded-md border border-block bg-block-bg px-4 py-3 text-sm text-ink"
             >
               <p>
                 <strong>Not changed.</strong> {refusal.refusal.sentence} {refusal.refusal.hint}
@@ -227,9 +275,10 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() =>
-                      dispatch({ type: "setCell", key: refusal.key, minutes: refusal.refusal.useMinutes! })
-                    }
+                    onClick={() => {
+                      focusCell.current = refusal.key;
+                      dispatch({ type: "setCell", key: refusal.key, minutes: refusal.refusal.useMinutes! });
+                    }}
                   >
                     Use {refusal.refusal.useMinutes} minutes
                   </Button>
@@ -254,5 +303,3 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
     </Panel>
   );
 }
-
-

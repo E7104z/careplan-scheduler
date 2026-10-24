@@ -1,5 +1,6 @@
 import { CircleCheck } from "lucide-react";
 import { ruleById, type Severity } from "@careplan/engine";
+import { cn } from "../../lib/cn";
 import { shortMonth } from "../../lib/format";
 import { Panel } from "../../ui/Panel";
 import { SeverityPill } from "../../ui/SeverityPill";
@@ -17,6 +18,14 @@ const GROUP_LABELS: Record<Severity, string> = {
   INFO: "Good to know",
 };
 
+/** The card's left edge in its severity's color, as in the prototype. */
+const SEVERITY_EDGE: Record<Severity, string> = {
+  BLOCK: "border-l-block",
+  REVIEW: "border-l-review",
+  WARN: "border-l-warn",
+  INFO: "border-l-info",
+};
+
 interface CheckCardProps {
   group: CheckGroup;
   taskName: string | undefined;
@@ -32,7 +41,7 @@ function CheckCard({ group, taskName, monthCount, onShowInWeek }: CheckCardProps
   const source = ruleById(group.ruleId)?.source;
 
   return (
-    <details className="rounded-md border border-line bg-surface">
+    <details className={cn("rounded-md border border-l-4 border-line bg-surface", SEVERITY_EDGE[group.severity])}>
       <summary className="grid cursor-pointer gap-1 px-4 py-3">
         <span className="font-semibold text-ink">
           {title}
@@ -107,8 +116,9 @@ export function ChecksPanel({ state, model, onShowInWeek }: ChecksPanelProps) {
         <span className="text-ink-3">({list.length})</span>
       </h3>
     );
+    // APP-SPEC 5.4: print shows the Must fix and Needs review checks only.
     return (
-      <div key={severity} className="grid gap-2">
+      <div key={severity} className={cn("grid gap-2", severity === "WARN" && "print:hidden")}>
         {heading}
         {body}
       </div>
@@ -130,7 +140,7 @@ export function ChecksPanel({ state, model, onShowInWeek }: ChecksPanelProps) {
         {renderGroup("REVIEW")}
         {renderGroup("WARN")}
         {infoGroups.length > 0 ? (
-          <details className="rounded-md border border-line bg-surface">
+          <details className="rounded-md border border-line bg-surface print:hidden">
             <summary className="cursor-pointer px-4 py-3 font-semibold text-ink">
               Good to know ({infoGroups.length})
             </summary>

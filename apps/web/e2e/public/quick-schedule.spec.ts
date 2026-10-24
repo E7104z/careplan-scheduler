@@ -41,8 +41,10 @@ test("AC-02: pasting fixture B builds with no button press", async ({ page }) =>
   await expect(page.getByText("Our total from these tasks matches Fusion's 455 units a month.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeHidden();
   await expect(statusPanel(page)).toContainText("Ready to use");
-  await expect(page.locator("details", { hasText: "Fusion's monthly figure differs" }).first()).toBeVisible();
-  await expect(page.locator("details", { hasText: "8 of 11 months" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: /^Needs review.*\(1\)$/ })).toBeVisible();
+  await expect(
+    page.locator("details", { hasText: "Fusion's monthly figure differs from this month's task units · 8 of 11 months" }),
+  ).toHaveCount(1);
 });
 
 test("AC-03: December 2025 is trimmed, and the Dec 31 cell is marked", async ({ page, isMobile }) => {
@@ -55,7 +57,9 @@ test("AC-03: December 2025 is trimmed, and the Dec 31 cell is marked", async ({ 
   await expect(page.getByText("December 2025")).toBeVisible();
   await expect(page.getByText("This month's tasks need more than Fusion's 455 units")).toBeVisible();
   await expect(page.getByText("95 minutes early, starting Dec 31, 2025")).toBeVisible();
-  await expect(page.locator('[aria-label*="95 minutes trimmed"]')).toContainText("95 min");
+  const dec31 = page.getByText(/^Wednesday 31: \d+ minutes, 95 minutes trimmed because the month's units run out$/);
+  await expect(dec31).toHaveCount(1);
+  await expect(dec31.locator("..")).toContainText("−95 min");
 });
 
 test("AC-04: raising Monday's Bathing to 60 is refused and the week is unchanged", async ({ page }) => {
@@ -150,8 +154,8 @@ test("AC-14: public pages load no Firebase, pdf.js or Google requests", async ({
     await page.waitForLoadState("networkidle");
   }
 
-  const sameOrigin = urls.filter((url) => !url.startsWith("http://127.0.0.1:4173"));
-  expect(sameOrigin).toEqual([]);
+  const external = urls.filter((url) => !url.startsWith("http://127.0.0.1:4173"));
+  expect(external).toEqual([]);
   const forbidden = urls.filter((url) => /firebase|pdf\.worker|readPdf|google|gstatic|googleapis/i.test(url));
   expect(forbidden).toEqual([]);
 });
@@ -174,21 +178,43 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   page.on("console", (message) => consoleText.push(message.text()));
   page.on("pageerror", (error) => consoleText.push(String(error)));
 
+  const expectNothingStored = async () => {
+    await page.waitForTimeout(400); // the 300 ms save debounce (APP-SPEC 5.6)
+    const stored = await page.evaluate(() =>
+      [sessionStorage, localStorage].flatMap((storage) =>
+        Object.keys(storage).map((key) => `${key}=${storage.getItem(key)}`),
+      ),
+    );
+    for (const text of [stored.join("\n"), consoleText.join("\n")]) {
+      expect(text).not.toContain("10000002");
+      expect(text).not.toContain("10000004");
+      expect(text).not.toContain("SAMPLE PARTICIPANT");
+    }
+  };
+
+  // Pasted (AC-02), a cell refused and changed (AC-04, AC-05).
   await page.goto("/quick");
   await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v2")?.includes("Laundry (Off Site)"));
+  await changeCell(page, "Bathing", "Monday", 45, 30);
+  await changeCell(page, "Bathing", "Tuesday", 45, 60);
+  await page.getByRole("button", { name: "Use 55 minutes" }).click();
+  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 55 minutes. Change minutes" })).toBeVisible();
+  await expectNothingStored();
 
-  const stored = await page.evaluate(() =>
-    [sessionStorage, localStorage].flatMap((storage) =>
-      Object.keys(storage).map((key) => `${key}=${storage.getItem(key)}`),
-    ),
-  );
-  const storedText = stored.join("\n");
-  expect(storedText).not.toContain("10000002");
-  expect(storedText).not.toContain("SAMPLE PARTICIPANT");
-  expect(consoleText.join("\n")).not.toContain("10000002");
-  expect(consoleText.join("\n")).not.toContain("SAMPLE PARTICIPANT");
+  // A partial paste (AC-06).
+  await page.getByRole("button", { name: "New care plan" }).first().click();
+  await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
+  await page.getByRole("button", { name: "Build with the 10 rows I have" }).click();
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT D" })).toBeVisible();
+  await expectNothingStored();
+
+  // The PDF (AC-08).
+  await page.getByRole("button", { name: "New care plan" }).first().click();
+  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-with-banner"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+  await expectNothingStored();
 });
 
 test("AC-19: no page scroll at phone size; the grid scrolls inside its panel", async ({ page, isMobile }) => {

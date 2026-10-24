@@ -40,7 +40,7 @@ function FusionUnitsField({
   };
 
   return (
-    <div className="mt-4 grid gap-1.5">
+    <div className="mt-4 grid gap-1.5 print:hidden">
       <Field label="Fusion units this month" hint="Optional">
         <NumberField
           min={0}
@@ -99,14 +99,17 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
     const minutes = Object.values(figures.expanded[date] ?? {}).reduce((sum, value) => sum + value, 0);
     const trim = trimByDate[date];
     const label = `${weekdayName(weekday as Weekday)} ${d}`;
+    // A generic div's aria-label isn't read, so each date says what it holds in screen-reader text.
     if (!inPlan) {
       cells.push(
         <div
           key={date}
           className="flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-sm border border-dashed border-line p-1.5 text-ink-3"
-          aria-label={`${label}: outside the plan`}
         >
-          <span className="text-[13px] font-medium">{d}</span>
+          <span className="sr-only">{`${label}: outside the plan`}</span>
+          <span aria-hidden="true" className="text-[13px] font-medium">
+            {d}
+          </span>
         </div>,
       );
     } else if (minutes || trim) {
@@ -117,11 +120,17 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
             "flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-sm border p-1.5",
             trim ? "border-warn" : "border-line",
           )}
-          aria-label={`${label}: ${minutes} minutes${trim ? `, ${trim} minutes trimmed because the month's units run out` : ""}`}
         >
-          <span className="text-[13px] font-medium text-ink-2">{d}</span>
-          <span className="font-semibold text-ink">{minutes}</span>
-          <span className={cn("text-[12px]", trim ? "font-medium text-warn" : "text-ink-3")}>
+          <span className="sr-only">
+            {`${label}: ${minutes} minutes${trim ? `, ${trim} minutes trimmed because the month's units run out` : ""}`}
+          </span>
+          <span aria-hidden="true" className="text-[13px] font-medium text-ink-2">
+            {d}
+          </span>
+          <span aria-hidden="true" className="font-semibold text-ink">
+            {minutes}
+          </span>
+          <span aria-hidden="true" className={cn("text-[12px]", trim ? "font-medium text-warn" : "text-ink-3")}>
             {trim ? `−${trim} min` : formatUnits(minutes)}
           </span>
         </div>,
@@ -131,9 +140,11 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
         <div
           key={date}
           className="flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-sm border border-dashed border-line p-1.5 text-ink-3"
-          aria-label={`${label}: no care`}
         >
-          <span className="text-[13px] font-medium">{d}</span>
+          <span className="sr-only">{`${label}: no care`}</span>
+          <span aria-hidden="true" className="text-[13px] font-medium">
+            {d}
+          </span>
         </div>,
       );
     }
@@ -148,6 +159,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
             variant="quiet"
             size="sm"
             aria-label="Previous month"
+            className="print:hidden"
             disabled={month === firstMonth}
             onClick={() => dispatch({ type: "setViewMonth", month: addMonths(month, -1) })}
           >
@@ -160,6 +172,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
             variant="quiet"
             size="sm"
             aria-label="Next month"
+            className="print:hidden"
             disabled={month === lastMonth}
             onClick={() => dispatch({ type: "setViewMonth", month: addMonths(month, 1) })}
           >
@@ -211,7 +224,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
 
           {state.source === "manual" ? <FusionUnitsField state={state} month={month} dispatch={dispatch} /> : null}
 
-          <div aria-label="Month calendar" className="mt-4">
+          <div role="group" aria-label="Month calendar" className="mt-4">
             <div className="grid grid-cols-7 gap-1 text-center text-[13px] font-medium text-ink-3">
               {DOW_SHORT.map((label) => (
                 <div key={label} aria-hidden="true">
