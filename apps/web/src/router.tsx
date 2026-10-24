@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, useSearchParams } from "react-router";
 import { Gallery } from "./dev/Gallery";
+import { RequireMembership, RequireNoMembership } from "./features/agency/guards";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { NotFound } from "./pages/NotFound";
 import { PageLoading } from "./ui/PageLoading";
@@ -27,6 +28,11 @@ const ResetPassword = lazy(() =>
 const VerifyEmail = lazy(() => import("./features/auth/VerifyEmail").then((module) => ({ default: module.VerifyEmail })));
 const Account = lazy(() => import("./features/auth/Account").then((module) => ({ default: module.Account })));
 const Home = lazy(() => import("./pages/Home").then((module) => ({ default: module.Home })));
+const AgencyDetails = lazy(() =>
+  import("./features/agency/AgencyDetails").then((module) => ({ default: module.AgencyDetails })),
+);
+const Team = lazy(() => import("./features/agency/Team").then((module) => ({ default: module.Team })));
+const NewAgency = lazy(() => import("./features/agency/NewAgency").then((module) => ({ default: module.NewAgency })));
 
 function Root() {
   const [searchParams] = useSearchParams();
@@ -68,8 +74,12 @@ export const routes = [
         path: "app",
         element: <AppLayout />,
         children: [
-          { index: true, element: <Home /> },
+          { index: true, element: <RequireMembership><Home /></RequireMembership> },
           { path: "account", element: <Account /> },
+          { path: "quick", element: <RequireMembership><QuickSchedule /></RequireMembership> },
+          { path: "agency", element: <RequireMembership><AgencyDetails /></RequireMembership> },
+          { path: "agency/members", element: <RequireMembership><Team /></RequireMembership> },
+          { path: "new-agency", element: <RequireNoMembership><NewAgency /></RequireNoMembership> },
         ],
       },
     ],

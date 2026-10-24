@@ -75,8 +75,9 @@ test("sign up, verify by email, sign out, sign in again, and reset a password", 
 
   await page.goto("/sign-in");
   await signIn(page, email);
-  await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+  // A fresh account has no agency yet, so /app moves on to set-up (APP-SPEC 6.3).
+  await expect(page).toHaveURL(/\/app\/new-agency$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Set up your agency" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Account menu for P-TEST-02" })).toBeVisible();
 
   await page.getByRole("button", { name: /^Account menu for/ }).click();
