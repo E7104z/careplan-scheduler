@@ -16,6 +16,8 @@ export interface DayToggleProps {
   auto?: boolean[];
   onChange?: (index: number) => void;
   disabled?: boolean;
+  /** Days that can't be chosen, Sunday first (a task's non-care days, QS-07). */
+  disabledDays?: boolean[];
   /** The group's accessible name: "Care days", or a task's days ("Bathing days"). */
   label?: string;
   className?: string;
@@ -26,6 +28,7 @@ export function DayToggle({
   auto,
   onChange,
   disabled = false,
+  disabledDays,
   label = "Care days",
   className,
 }: DayToggleProps) {
@@ -42,13 +45,14 @@ export function DayToggle({
             type="button"
             aria-label={name}
             aria-pressed={selected}
-            disabled={disabled}
+            disabled={disabled || disabledDays?.[index] === true}
             onClick={() => onChange?.(index)}
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-sm border text-sm font-semibold transition-colors max-sm:h-11 max-sm:w-11",
               selected && isAuto && "border-brand bg-brand-tint text-brand",
               selected && !isAuto && "border-brand bg-brand text-brand-on",
               !selected && "border-line-2 bg-surface text-ink-2 hover:bg-sunk",
+              "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-surface",
             )}
           >
             {abbr}

@@ -9,6 +9,9 @@ import { NotFound } from "./pages/NotFound";
 const Landing = lazy(() => import("./pages/Landing").then((module) => ({ default: module.Landing })));
 const Rules = lazy(() => import("./pages/Rules").then((module) => ({ default: module.Rules })));
 const Privacy = lazy(() => import("./pages/Privacy").then((module) => ({ default: module.Privacy })));
+const QuickSchedule = lazy(() =>
+  import("./features/quick-schedule/QuickSchedule").then((module) => ({ default: module.QuickSchedule })),
+);
 
 function Root() {
   const [searchParams] = useSearchParams();
@@ -24,6 +27,7 @@ export const routes = [
     element: <Root />,
     children: [
       { index: true, element: <Landing /> },
+      { path: "quick", element: <QuickSchedule /> },
       { path: "rules", element: <Rules /> },
       { path: "privacy", element: <Privacy /> },
       { path: "*", element: <NotFound /> },

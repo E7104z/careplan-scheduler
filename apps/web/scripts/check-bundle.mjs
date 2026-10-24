@@ -18,6 +18,7 @@ const PAGE_BUDGET = 180 * KB;
 // A new public page is lazy (router.tsx) and gets a line here.
 const PUBLIC_PAGES = {
   "/": "src/pages/Landing.tsx",
+  "/quick": "src/features/quick-schedule/QuickSchedule.tsx",
   "/rules": "src/pages/Rules.tsx",
   "/privacy": "src/pages/Privacy.tsx",
 };
