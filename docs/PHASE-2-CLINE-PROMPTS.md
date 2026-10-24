@@ -32,6 +32,11 @@ into APP-SPEC; Prompts 6 and 7 below were adjusted to match.
 - npm audit: vitest 3.2.7 doesn't clear the vitest advisories (fixed in 4.1.12+). Phase 2 stays
   on 3.2.7 (dev only; see APP-SPEC section 1); upgrading is its own change after the merge.
 
+**Review decision (Oct 24, 2026, Prompt 10).** firestore.rules and APP-SPEC section 8: the invites
+`read` rule now checks `verified() && resource.data.email == myEmail()` before
+`isOwner(resource.data.tenantId)`. The verbatim order denied the "pending invites for me" query
+(7.2), so the invite banner couldn't load. Same access either way; rules test R-18 covers it.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)

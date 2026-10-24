@@ -691,8 +691,8 @@ service cloud.firestore {
 
     match /invites/{inviteId} {
       allow read: if signedIn() && (
-        isOwner(resource.data.tenantId)
-        || (verified() && resource.data.email == myEmail()));
+        (verified() && resource.data.email == myEmail())
+        || isOwner(resource.data.tenantId));
 
       allow create: if isOwner(request.resource.data.tenantId)
         && request.resource.data.keys().hasOnly(['tenantId', 'tenantName', 'email', 'role', 'status', 'createdAt', 'createdBy', 'expiresAt'])
@@ -736,6 +736,11 @@ The catch-all `/{document=**}` deny does not override the specific allows above 
 grants access if any matching rule allows it); it documents intent and blocks new paths until
 they get rules.
 
+The invites `read` rule checks the invitee's own email before `isOwner(...)`. In a list query
+filtered on `email`, `resource.data.tenantId` isn't fixed, so evaluating `isOwner` first is a
+type error that denies the whole query (found in Prompt 10; R-18). The order doesn't change who
+may read what.
+
 Rules tests (`apps/web/rules-test/firestore.rules.test.ts`, emulator) cover at least:
 
 | ID | Case | Expect |
@@ -757,6 +762,7 @@ Rules tests (`apps/web/rules-test/firestore.rules.test.ts`, emulator) cover at l
 | R-15 | collection-group query of my memberships; query of someone else's | allowed; denied |
 | R-16 | user writes another user's `users/{uid}` | denied |
 | R-17 | any read or write to an unlisted collection | denied |
+| R-18 | verified invitee lists their pending invites (`email` + `status` query); someone lists another email's | allowed; denied |
 
 ---
 
@@ -841,7 +847,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-14 | `/quick`, `/`, `/rules` load no Firebase and no pdf.js code until a PDF is chosen, and make no requests to Google domains. Opening a PDF requests only same-origin files. | check-bundle + Playwright request log |
 | AC-15 | Privacy: during AC-02 to AC-08, `sessionStorage`, `localStorage` and the console never contain "10000002" or "SAMPLE PARTICIPANT". | Playwright |
 | AC-16 | Sign up → verify (emulator) → set up agency → invite a scheduler → second user accepts → both see each other on Team. | Playwright against emulators |
-| AC-17 | Firestore rules tests R-01 to R-17 pass. | `npm run test:rules` |
+| AC-17 | Firestore rules tests R-01 to R-18 pass. | `npm run test:rules` |
 | AC-18 | axe: zero violations on `/`, `/quick` (example, an import issue showing, and a built plan), `/rules`, `/sign-in`, `/sign-up`, `/app`, `/app/quick`, `/app/agency/members`, in light and dark. | Playwright |
 | AC-19 | Everything works at 390 × 844 with no horizontal page scroll; the weekly grid scrolls inside its panel; the import panel stacks to one column. | Playwright |
 | AC-20 | After 30 minutes idle (fake timers) the session signs out with the timeout message; activity in a second tab prevents it. | component test |

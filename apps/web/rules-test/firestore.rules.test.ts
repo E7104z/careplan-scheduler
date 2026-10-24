@@ -1,4 +1,4 @@
-// Firestore security rules tests R-01 to R-17 (APP-SPEC section 8), one `it` per expectation.
+// Firestore security rules tests R-01 to R-18 (APP-SPEC section 8), one `it` per expectation.
 // Runs against the Firestore emulator: `npm run test:rules` inside `firebase emulators:exec`.
 // The accept cases (R-09 to R-12) all send the same full batch, so each denial comes from the
 // one thing that case changes, not from a missing write.
@@ -275,5 +275,22 @@ describe("R-15 to R-17 memberships, users and everything else", () => {
 
   it("R-17 denies writing an unlisted collection", async () => {
     await assertFails(verified(OWNER).collection("p-test-unlisted").doc("d-test-01").set({ note: "P-TEST" }));
+  });
+});
+
+describe("R-18 listing my pending invites (the invite banner's query)", () => {
+  const myPending = (db: Db, email: string) =>
+    db.collection("invites").where("email", "==", email).where("status", "==", "pending").get();
+
+  it("R-18 allows the verified invitee to list their pending invites", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedInvite("pending", inDays(14));
+    await assertSucceeds(myPending(verified(INVITEE), INVITEE.email));
+  });
+
+  it("R-18 denies listing someone else's pending invites", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedInvite("pending", inDays(14));
+    await assertFails(myPending(verified(OTHER), INVITEE.email));
   });
 });

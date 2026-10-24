@@ -97,8 +97,8 @@ service cloud.firestore {
 
     match /invites/{inviteId} {
       allow read: if signedIn() && (
-        isOwner(resource.data.tenantId)
-        || (verified() && resource.data.email == myEmail()));
+        (verified() && resource.data.email == myEmail())
+        || isOwner(resource.data.tenantId));
 
       allow create: if isOwner(request.resource.data.tenantId)
         && request.resource.data.keys().hasOnly(['tenantId', 'tenantName', 'email', 'role', 'status', 'createdAt', 'createdBy', 'expiresAt'])
