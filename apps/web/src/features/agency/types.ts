@@ -32,7 +32,21 @@ export interface Member {
   role: MemberRole;
   email: string;
   displayName: string;
-  joinedAt: string | null;
+  /** `joinedAt` in epoch milliseconds (null while the server time is pending). */
+  joinedAt: number | null;
+}
+
+export type InviteStatus = "pending" | "accepted" | "revoked";
+
+/** `invites/{id}` (APP-SPEC 7.2), with `expiresAt` in epoch milliseconds. */
+export interface Invite {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  email: string;
+  role: MemberRole;
+  status: InviteStatus;
+  expiresAt: number;
 }
 
 /** Everything the shell and Home need about the person's agencies. */
@@ -42,11 +56,22 @@ export interface AgencyState {
   tenant: Tenant | null;
   role: MemberRole | null;
   members: Member[];
-  pendingInvites: number;
+  /** The current agency's pending invites; owners only (the rules hide them from others). */
+  agencyInvites: Invite[];
+  /** Pending, unexpired invites for the person's email to agencies they aren't in yet. */
+  myInvites: Invite[];
 }
 
 export function agencyInitialState(): AgencyState {
-  return { memberships: [], tenantId: null, tenant: null, role: null, members: [], pendingInvites: 0 };
+  return {
+    memberships: [],
+    tenantId: null,
+    tenant: null,
+    role: null,
+    members: [],
+    agencyInvites: [],
+    myInvites: [],
+  };
 }
 
 export type AgencyAction = { type: "reset" } | { type: "loaded"; state: AgencyState };

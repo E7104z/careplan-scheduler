@@ -11,9 +11,13 @@ import { useAuth } from "../auth/authContext";
 import { errorMessage } from "../auth/errors";
 import { useAgency } from "./agencyContext";
 import { validateAgencyName, WORKWEEK_HINT, WORKWEEK_OPTIONS } from "./agencyFields";
+import { InviteBanner } from "./InviteBanner";
 import { createAgency } from "./tenants";
 
-/** `/app/new-agency`: the one-time set-up that creates the founding tenant (APP-SPEC 6.3). */
+/**
+ * `/app/new-agency`: the one-time set-up that creates the founding tenant (APP-SPEC 6.3). Someone
+ * invited to an agency sees the invite banner above the form (6.4).
+ */
 export function NewAgency() {
   const headingRef = usePageTitle("Set up your agency | CarePlan Scheduler");
   const { user } = useAuth();
@@ -64,6 +68,7 @@ export function NewAgency() {
           Tell us a little about your agency. Missouri and Central time are fixed for everyone right now.
         </p>
       </div>
+      <InviteBanner />
       {formError ? (
         <p role="alert" className="rounded-sm border border-line bg-sunk px-3.5 py-2.5 text-sm text-block">
           {formError}

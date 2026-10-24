@@ -33,7 +33,10 @@ function AgencyLoadProblem({ message, onRetry }: { message: string; onRetry: () 
   );
 }
 
-/** A member-only page: no membership (and no pending invite in Prompt 10) → /app/new-agency. */
+/**
+ * A member-only page: no membership → /app/new-agency, which lists any pending invites above the
+ * set-up form, so an invited person picks between joining and setting up (APP-SPEC 3 and 6.4).
+ */
 export function RequireMembership({ children }: { children: ReactNode }) {
   const { ready, error, state, reload } = useAgency();
   if (!ready) return <PageLoading />;

@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, useSearchParams } from "react-router";
 import { Gallery } from "./dev/Gallery";
-import { RequireMembership, RequireNoMembership } from "./features/agency/guards";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { NotFound } from "./pages/NotFound";
 import { PageLoading } from "./ui/PageLoading";
@@ -33,6 +32,14 @@ const AgencyDetails = lazy(() =>
 );
 const Team = lazy(() => import("./features/agency/Team").then((module) => ({ default: module.Team })));
 const NewAgency = lazy(() => import("./features/agency/NewAgency").then((module) => ({ default: module.NewAgency })));
+const Join = lazy(() => import("./features/agency/Join").then((module) => ({ default: module.Join })));
+// The membership guards load with the signed-in pages, not the public entry.
+const RequireMembership = lazy(() =>
+  import("./features/agency/guards").then((module) => ({ default: module.RequireMembership })),
+);
+const RequireNoMembership = lazy(() =>
+  import("./features/agency/guards").then((module) => ({ default: module.RequireNoMembership })),
+);
 
 function Root() {
   const [searchParams] = useSearchParams();
@@ -68,6 +75,7 @@ export const routes = [
           { path: "sign-up", element: <SignUp /> },
           { path: "reset-password", element: <ResetPassword /> },
           { path: "verify-email", element: <VerifyEmail /> },
+          { path: "join/:inviteId", element: <Join /> },
         ],
       },
       {

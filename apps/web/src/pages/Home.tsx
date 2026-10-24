@@ -1,6 +1,7 @@
 import { Check, Circle } from "lucide-react";
 import { Link } from "react-router";
 import { useAgency } from "../features/agency/agencyContext";
+import { InviteBanner } from "../features/agency/InviteBanner";
 import { useAuth } from "../features/auth/authContext";
 import { readJson } from "../lib/storage";
 import { usePageTitle } from "../lib/usePageTitle";
@@ -14,14 +15,14 @@ interface ChecklistItem {
   done: boolean;
 }
 
-/** `/app`: a greeting, the current agency, and a set-up checklist that ticks from real data. */
+/** `/app`: a greeting, the current agency, invites for me, and a set-up checklist from real data. */
 export function Home() {
   const headingRef = usePageTitle("Home | CarePlan Scheduler");
   const { user } = useAuth();
   const { state } = useAgency();
   const firstName = (user?.displayName ?? "").trim().split(/\s+/)[0] || "there";
   const agencyName = state.tenant?.name ?? "";
-  const invitedSomeone = state.members.length > 1 || state.pendingInvites > 0;
+  const invitedSomeone = state.members.length > 1 || state.agencyInvites.length > 0;
   // Quick Schedule saves this key once it has a plan in this tab (APP-SPEC 5.6).
   const triedQuick = readJson<unknown>("session", "cps.quick.v2") !== null;
 
@@ -38,6 +39,7 @@ export function Home() {
         </h1>
         {agencyName ? <p className="mt-1 text-ink-2">{agencyName}</p> : null}
       </div>
+      <InviteBanner />
       <div>
         <Link to="/app/quick" className={primaryLink}>
           Start a Quick Schedule

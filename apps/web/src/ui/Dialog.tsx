@@ -10,6 +10,11 @@ export interface DialogProps {
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /**
+   * For a dialog opened by state: where focus goes on close (call `event.preventDefault()` and
+   * focus it), since there is no trigger for Radix to return focus to.
+   */
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 export function Dialog({
@@ -19,13 +24,16 @@ export function Dialog({
   children,
   open,
   onOpenChange,
+  onCloseAutoFocus,
 }: DialogProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-overlay" />
-        <DialogPrimitive.Content className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-md border border-line bg-surface p-5 shadow-pop">
+        <DialogPrimitive.Content
+          onCloseAutoFocus={onCloseAutoFocus}
+          className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,480px)] -translate-x-1/2 -translate-y-1/2 rounded-md border border-line bg-surface p-5 shadow-pop">
           <div className="flex items-start justify-between gap-4">
             <DialogPrimitive.Title className="text-[17px] font-bold text-ink">
               {title}

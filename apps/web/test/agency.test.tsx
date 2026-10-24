@@ -10,7 +10,7 @@ import { RequireMembership } from "../src/features/agency/guards";
 import * as memberships from "../src/features/agency/memberships";
 import { NewAgency } from "../src/features/agency/NewAgency";
 import * as tenants from "../src/features/agency/tenants";
-import type { AgencyContextValue, AgencyState, Member } from "../src/features/agency/types";
+import type { AgencyContextValue, AgencyState, Invite, Member } from "../src/features/agency/types";
 import { AuthContext, type AuthContextValue, type AuthUser } from "../src/features/auth/authContext";
 import { Home } from "../src/pages/Home";
 import { ToastHost } from "../src/ui/ToastHost";
@@ -24,6 +24,16 @@ vi.mock("../src/features/agency/memberships", () => ({
   loadAgencyData: vi.fn(),
   setLastTenantId: vi.fn(async () => undefined),
 }));
+
+const INVITE_FOR_ME: Invite = {
+  id: "i-test-09",
+  tenantId: "t-test-09",
+  tenantName: "P-TEST-AGENCY-09",
+  email: "p-test-01@example.com",
+  role: "viewer",
+  status: "pending",
+  expiresAt: Date.UTC(2026, 10, 3, 18, 0),
+};
 
 const USER: AuthUser = {
   uid: "u-test-01",
@@ -51,7 +61,8 @@ function agencyValue(overrides: Partial<AgencyState> = {}, reload = vi.fn(async 
     tenant: null,
     role: null,
     members: [],
-    pendingInvites: 0,
+    agencyInvites: [],
+    myInvites: [],
     ...overrides,
   };
   return { state, ready: true, error: null, reload, switchAgency: vi.fn(async () => undefined) };
@@ -200,7 +211,7 @@ describe("Home checklist", () => {
   });
 
   it("Invite your team is done once an invite is pending", () => {
-    renderPage(<Home />, agencyValue({ pendingInvites: 1 }));
+    renderPage(<Home />, agencyValue({ agencyInvites: [{ ...INVITE_FOR_ME, tenantId: "t-test-01" }] }));
     expect(screen.getByRole("link", { name: "Invite your team" }).closest("li")).toHaveTextContent("Done");
   });
 
@@ -226,6 +237,33 @@ describe("Home checklist", () => {
   });
 });
 
+describe("Invite banner (APP-SPEC 6.4)", () => {
+  function expectBanner() {
+    const banner = screen.getByRole("region", { name: "Invites for you" });
+    expect(banner).toHaveTextContent("P-TEST-AGENCY-09 invited you to join as a Viewer.");
+    expect(screen.getByRole("link", { name: "Review invite from P-TEST-AGENCY-09" })).toHaveAttribute(
+      "href",
+      "/join/i-test-09",
+    );
+  }
+
+  it("Home lists my pending invites with Review invite", () => {
+    renderPage(<Home />, agencyValue({ myInvites: [INVITE_FOR_ME] }));
+    expectBanner();
+  });
+
+  it("set-up shows my pending invites above the form", () => {
+    renderPage(<NewAgency />, agencyValue({ myInvites: [INVITE_FOR_ME] }));
+    expectBanner();
+    expect(screen.getByRole("button", { name: "Set up agency" })).toBeInTheDocument();
+  });
+
+  it("no banner without invites", () => {
+    renderPage(<NewAgency />, agencyValue());
+    expect(screen.queryByRole("region", { name: "Invites for you" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Loading the agency", () => {
   const LOADED: AgencyState = {
     memberships: [{ tenantId: "t-test-01", name: "P-TEST-AGENCY-01", role: "owner" }],
@@ -233,7 +271,8 @@ describe("Loading the agency", () => {
     tenant: { name: "P-TEST-AGENCY-01", state: "MO", timeZone: "America/Chicago", workweekStart: 0 },
     role: "owner",
     members: [],
-    pendingInvites: 0,
+    agencyInvites: [],
+    myInvites: [],
   };
 
   function renderGuarded() {
