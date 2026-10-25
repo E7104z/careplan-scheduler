@@ -30,7 +30,8 @@ const READER_UNAVAILABLE: ImportNotice = {
   detail: "Check your internet connection and try again. You can also paste the care plan instead.",
 };
 
-const linkButton = "rounded-sm font-semibold text-brand underline hover:text-brand-hover";
+const linkButton =
+  "rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center";
 
 /**
  * APP-SPEC 5.1 import panel: paste (builds on paste, no button press), "Build schedule" for typed

@@ -90,7 +90,7 @@ function VerifyEmailPage() {
         Wrong email?{" "}
         <button
           type="button"
-          className="rounded-sm font-semibold text-brand hover:underline"
+          className="rounded-sm font-semibold text-brand hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
           onClick={() => void signOut("/sign-up")}
         >
           Sign out and start again

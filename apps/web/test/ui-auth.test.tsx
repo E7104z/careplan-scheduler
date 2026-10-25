@@ -46,6 +46,35 @@ describe("Dialog without a trigger", () => {
   });
 });
 
+describe("Dialog with a toast showing", () => {
+  it("Escape closes the dialog and leaves the toast, and focus returns to the trigger", async () => {
+    function Copy() {
+      const toast = useToast();
+      return <Button onClick={() => toast("Invite link copied")}>Copy invite link</Button>;
+    }
+    // The toast itself (the li), not Radix's screen-reader copy of its text. The open dialog
+    // hides the rest of the page from screen readers, hence `hidden: true`.
+    const toastItem = () =>
+      screen.getAllByRole("status", { hidden: true }).find((element) => element.tagName === "LI");
+    const user = userEvent.setup();
+    render(
+      <ToastHost>
+        <Dialog title="Invite someone" trigger={<Button>Invite someone</Button>}>
+          <Copy />
+        </Dialog>
+      </ToastHost>,
+    );
+    await user.click(screen.getByRole("button", { name: "Invite someone" }));
+    await user.click(screen.getByRole("button", { name: "Copy invite link" }));
+    expect(toastItem()).toHaveTextContent("Invite link copied");
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(toastItem()).toHaveTextContent("Invite link copied");
+    expect(screen.getByRole("button", { name: "Invite someone" })).toHaveFocus();
+  });
+});
+
 describe("Menu with a two-line label", () => {
   it("shows the label above the items", async () => {
     const user = userEvent.setup();

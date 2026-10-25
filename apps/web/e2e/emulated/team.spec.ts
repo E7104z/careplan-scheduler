@@ -73,9 +73,10 @@ test("AC-16: an owner invites a scheduler, they join, then the owner changes and
   await expect(toast(owner, "Invite link copied")).toBeVisible();
   const link = await owner.evaluate(() => navigator.clipboard.readText());
   expect(link).toBe(await linkBox.inputValue());
-  // While the toast shows, Escape closes the toast first (Radix layers), so use the Close button.
-  await inviteDialog.getByRole("button", { name: "Close" }).click();
+  // Escape closes the dialog even while the toast shows (the toast stays), and focus goes back.
+  await owner.keyboard.press("Escape");
   await expect(inviteDialog).toHaveCount(0);
+  await expect(owner.getByRole("button", { name: "Invite someone" })).toBeFocused();
   await expect(owner.getByRole("table", { name: "Pending invites" })).toContainText(schedulerEmail);
 
   // The scheduler opens the link signed out, creates an account, verifies and joins.

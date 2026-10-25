@@ -37,7 +37,7 @@ export function MembersTable({ members, myUid, canManage, onChangeRole, onRemove
   ];
 
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-md border border-line bg-surface">
       <table aria-label="Members" className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-line bg-sunk text-ink-2">

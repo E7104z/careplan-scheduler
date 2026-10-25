@@ -24,7 +24,7 @@ export function InvitesTable({ invites, busyId, onCopy, onRevoke }: InvitesTable
     return <EmptyState title="Invites you create show here until someone joins or the invite expires." />;
   }
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-md border border-line bg-surface">
       <table aria-label="Pending invites" className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-line bg-sunk text-ink-2">

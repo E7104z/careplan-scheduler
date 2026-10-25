@@ -60,7 +60,7 @@ function CheckCard({ group, taskName, monthCount, onShowInWeek }: CheckCardProps
           <p>
             <button
               type="button"
-              className="rounded-sm font-semibold text-brand underline hover:text-brand-hover"
+              className="rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
               onClick={() => onShowInWeek(group.taskId!)}
             >
               Show in week

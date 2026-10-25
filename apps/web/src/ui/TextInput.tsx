@@ -11,7 +11,7 @@ export const TextInput = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLIn
       ref={ref}
       type={type}
       className={cn(
-        "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 text-ink placeholder:text-ink-3 focus:border-brand read-only:bg-sunk",
+        "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 max-sm:h-11 text-ink placeholder:text-ink-3 focus:border-brand read-only:bg-sunk",
         className,
       )}
       {...rest}

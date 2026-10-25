@@ -55,7 +55,7 @@ function WeekCell({ cellKey, taskName, weekday, minutes, changed, over, onCommit
           data-cell={cellKey}
           aria-label={`${taskName}, ${weekdayName(weekday)}, ${minutes} minutes. Change minutes`}
           className={cn(
-            "relative h-9 w-full min-w-[52px] rounded-sm border border-dashed border-transparent font-semibold hover:border-line-2",
+            "relative h-9 w-full min-w-[52px] max-sm:h-11 rounded-sm border border-dashed border-transparent font-semibold hover:border-line-2",
             over ? "bg-warn-bg text-warn" : "bg-brand-tint text-ink",
           )}
           onClick={() => {
@@ -98,7 +98,7 @@ function WeekCell({ cellKey, taskName, weekday, minutes, changed, over, onCommit
         value={draft}
         autoFocus
         aria-label={`${taskName}, ${weekdayName(weekday)}, ${minutes} minutes. Enter 0 to remove this day.`}
-        className="h-9 w-full min-w-[52px] rounded-sm border border-line-2 bg-surface px-1 text-center text-ink"
+        className="h-9 w-full min-w-[52px] max-sm:h-11 rounded-sm border border-line-2 bg-surface px-1 text-center text-ink"
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => finish(true, false)}
         onKeyDown={(event) => {
@@ -187,7 +187,7 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
         <p className="text-ink-2">Add tasks to see the week.</p>
       ) : (
         <>
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <div className="min-w-[560px]">
               <table className="w-full border-collapse text-sm">
               <thead>

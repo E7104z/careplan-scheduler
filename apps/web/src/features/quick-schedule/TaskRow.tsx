@@ -149,7 +149,7 @@ export function TaskRow({ task, state, placedDays, refusal, seq, dispatch, onRem
             Your days ·{" "}
             <button
               type="button"
-              className="rounded-sm font-semibold text-brand underline hover:text-brand-hover"
+              className="rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
               onClick={() => dispatch({ type: "unpin", taskId: task.id })}
             >
               Let us choose

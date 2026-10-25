@@ -23,7 +23,7 @@ export function Toast({ open, onOpenChange, message }: ToastProps) {
           {message}
         </ToastPrimitive.Description>
         <ToastPrimitive.Close
-          className="rounded-sm p-1 text-ink-2 hover:bg-sunk"
+          className="grid place-items-center rounded-sm p-1 text-ink-2 hover:bg-sunk max-sm:-m-2.5 max-sm:h-11 max-sm:w-11"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />

@@ -145,6 +145,50 @@ test("AC-11: a reload keeps the plan without the DCN; a new tab starts with the 
   await expect(secondTab.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeVisible();
   await expect(secondTab.getByRole("heading", { name: "Example care plan" })).toBeVisible();
 });
+
+test("AC-12: by hand, from the keyboard, with transportation and a service change", async ({ page }) => {
+  await page.goto("/quick");
+  await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
+
+  // Keyboard only: Tab to "Build a schedule by hand" and press Enter; the picker gets focus.
+  const byHand = page.getByRole("button", { name: "Build a schedule by hand" });
+  for (let presses = 0; presses < 40 && !(await byHand.evaluate((el) => el === document.activeElement)); presses++) {
+    await page.keyboard.press("Tab");
+  }
+  await expect(byHand).toBeFocused();
+  await page.keyboard.press("Enter");
+  const picker = page.getByRole("combobox", { name: "Add a task" });
+  await expect(picker).toBeFocused();
+  await expect(page.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeHidden();
+
+  await page.keyboard.type("dress");
+  await expect(page.getByRole("option", { name: "Dressing/Grooming" })).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Enter");
+  const dressing = page.getByRole("group", { name: "Dressing/Grooming", exact: true });
+  await expect(dressing.getByRole("textbox", { name: "Minutes per day" })).toBeFocused();
+
+  await picker.focus();
+  await page.keyboard.type("clean bath");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("group", { name: "Clean Bath", exact: true })).toBeVisible();
+
+  // 60-minute transportation once a week.
+  await expect(page.getByRole("combobox", { name: "Trips per week" })).toHaveValue("1");
+  await page.getByRole("textbox", { name: "Minutes per trip" }).fill("60");
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByText("300 minutes a month = 20 units. These come off the monthly units before tasks."),
+  ).toBeVisible();
+
+  // Homemaker (ADW) has no Dressing/Grooming: it's removed with a toast.
+  await page.getByRole("combobox", { name: "Authorized service" }).selectOption("S5130");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Removed 1 task that isn't part of Homemaker (ADW)" }).first(),
+  ).toBeVisible();
+  await expect(dressing).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Clean Bath", exact: true })).toBeVisible();
+});
+
 test("AC-14: public pages load no Firebase, pdf.js or Google requests", async ({ page }) => {
   const urls: string[] = [];
   page.on("request", (request) => urls.push(request.url()));
@@ -203,6 +247,14 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   await expect(page.getByRole("button", { name: "Bathing, Tuesday, 55 minutes. Change minutes" })).toBeVisible();
   await expectNothingStored();
 
+  // Back to December 2025 (AC-03); the viewed month is saved.
+  for (let i = 0; i < 10; i++) {
+    await page.getByRole("button", { name: "Previous month" }).click();
+  }
+  await expect(page.getByText("December 2025")).toBeVisible();
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v2")?.includes('"2025-12"'));
+  await expectNothingStored();
+
   // A partial paste (AC-06).
   await page.getByRole("button", { name: "New care plan" }).first().click();
   await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
@@ -210,16 +262,34 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT D" })).toBeVisible();
   await expectNothingStored();
 
-  // The PDF (AC-08).
+  // B pasted one page at a time (AC-07).
+  await page.getByRole("button", { name: "New care plan" }).first().click();
+  await pasteCarePlan(page, fixtureText("B-page1-of-2"));
+  await expect(page.getByLabel("Care plan text, page 2")).toBeVisible();
+  await expectNothingStored();
+  await pasteCarePlan(page, fixtureText("B-page2-of-2"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+  await expectNothingStored();
+
+  // The PDFs (AC-08): with the banner, then the table only with the dates entered.
   await page.getByRole("button", { name: "New care plan" }).first().click();
   await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+  await expectNothingStored();
+  await page.getByRole("button", { name: "New care plan" }).first().click();
+  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-only"));
+  await page.getByLabel("Plan starts").fill("2026-01-01");
+  await page.getByLabel("Plan ends").fill("2026-12-31");
+  await page.getByRole("button", { name: "Use these dates" }).click();
+  await expect(page.getByRole("heading", { name: "Care plan from Fusion" })).toBeVisible();
   await expectNothingStored();
 });
 
 test("AC-19: no page scroll at phone size; the grid scrolls inside its panel", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone viewport only");
   await page.goto("/quick");
+  // Measure the page once Quick Schedule (a lazy chunk) has rendered, not the empty shell.
+  await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
 
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   const viewport = page.viewportSize()?.width ?? 0;

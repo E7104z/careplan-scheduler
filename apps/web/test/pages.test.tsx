@@ -109,6 +109,25 @@ describe("Rules", () => {
       }
     }
   });
+
+  it("AC-21: each rule's row shows its text, results, status and source; each service's row its ceiling", () => {
+    render(<Rules />, { wrapper: MemoryRouter });
+    const words = { BLOCK: "Must fix", REVIEW: "Needs review", WARN: "Check", INFO: "Good to know" } as const;
+
+    for (const rule of RULE_CATALOG) {
+      const row = screen.getByRole("rowheader", { name: rule.id }).closest("tr")!;
+      expect(within(row).getAllByRole("cell").map((cell) => cell.textContent)).toEqual([
+        rule.rule,
+        rule.severities.map((severity) => words[severity]).join(""),
+        rule.status,
+        rule.source,
+      ]);
+    }
+    for (const service of MO_2026_07.services) {
+      const row = screen.getByRole("rowheader", { name: service.code }).closest("tr")!;
+      expect(within(row).getAllByRole("cell")[2]!.textContent).toBe(String(service.monthlyCeiling ?? "—"));
+    }
+  });
 });
 
 describe("Privacy", () => {
