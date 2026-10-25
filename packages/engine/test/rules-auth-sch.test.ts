@@ -93,6 +93,21 @@ describe("authorization rules", () => {
     expect(results.some((r) => r.severity === "BLOCK")).toBe(true);
   });
 
+  it("AUTH-09 WARN: a month with no imported figure whose derived units are above the ceiling (Amendment B)", () => {
+    const a = auth({ id: "a-1", program: "CDS", serviceCode: "T1019U2" });
+    // October has Fusion's figure (checked as before); November is over 641; December is at it.
+    const derived = { "a-1:2026-10": 700, "a-1:2026-11": 700, "a-1:2026-12": 641 };
+    const results = ruleAUTH09Ceiling([a], [monthly("a-1", "2026-10", 600)], derived);
+    expect(results).toEqual([
+      {
+        ruleId: "AUTH-09",
+        severity: "WARN",
+        message: "Derived 700 units exceed program ceiling 641",
+        refs: { serviceAuthId: "a-1", month: "2026-11" },
+      },
+    ]);
+  });
+
   it("AUTH-07: REVIEW when derived differs from imported Fusion", () => {
     const results = ruleAUTH07DerivedVsFusion(
       [monthly("a-1", "2026-09", 180)],

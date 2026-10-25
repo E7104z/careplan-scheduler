@@ -393,6 +393,7 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | AUTH-08 | INFO | Transportation time is set aside | Transportation minutes come off the monthly units before tasks are counted. |
 | AUTH-09 | BLOCK | Respite is over its combined monthly limit | Basic and Advanced Respite together can't go over the monthly limit. |
 | AUTH-09 | REVIEW | Fusion units are above the program limit | The units entered are higher than this service's monthly limit. Confirm the number with Fusion. |
+| AUTH-09 | WARN | More units than this service allows | These tasks add up to more units in a month than this service's monthly limit. Check the minutes and days against the care plan. |
 | AUTH-11 | INFO | When ILW starts this month | This projects the day State Plan units run out and ILW units begin. |
 | AUTH-12 | BLOCK | ILW isn't approved yet | Don't schedule ILW units until the ILW authorization is approved. |
 | SCH-02 | BLOCK | A task is on more days than authorized | Unselect the extra day, or check the days per week on the care plan. |

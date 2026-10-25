@@ -9,8 +9,10 @@ that document. Phase 1 = the rules engine package only (`packages/engine`).
 alias, `RULE_CATALOG`, and fixtures TC-38 to TC-40. Nothing else in this file changed.
 
 **Amendment B (Oct 25, 2026, Phase 2 review of Fusion's care plan report):** the entry point
-`validatePlan` (section 5), and agency personal care (AGENCY_PC) gains the seven household
-tasks Fusion lists under PC - Agency (section 3). No rule, formula or expected value changed.
+`validatePlan` (section 5); agency personal care (AGENCY_PC) gains the seven household tasks
+Fusion lists under PC - Agency (section 3); and AUTH-09 also checks a month with no imported
+figure on its derived units, as WARN (a plan built by hand had no ceiling check at all). No
+formula or expected value changed.
 
 ---
 
@@ -201,7 +203,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED | INFO 05-25-03 (May 9, 2025) |
 | AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 (P-02) |
 | AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED | Policy 3.25 (01/26); HCBS-3c cell L88 |
-| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. | BLOCK / REVIEW | VERIFIED | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
+| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. A month with no imported figure whose derived units (AUTH-05) are above the ceiling → WARN (Amendment B). | BLOCK / REVIEW / WARN | VERIFIED | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
 | AUTH-11 | ILW switch projection only when both imported authorizations exist; label "projection". | INFO | PARTIAL | Policy 3.55 (01/26) |
 | AUTH-12 | ILW units scheduled while `state = pending_approval` → BLOCK. Never create a State Plan authorization for an ILW participant. | BLOCK | VERIFIED | Policy 3.55 (01/26); 3.00 Appendix 1 (rev. Jul 2026) |
 | AUTH-13 | Validation results carry the rule-pack version. | INFO | APPROVED | Product decision approved Oct 20, 2026 (P-06) |

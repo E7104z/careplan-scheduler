@@ -83,7 +83,7 @@ describe("RULE_CATALOG matches ENGINE-SPEC section 5", () => {
   });
 
   it("maps the special Severity cells", () => {
-    expect(ruleById("AUTH-09")?.severities).toEqual(["BLOCK", "REVIEW"]);
+    expect(ruleById("AUTH-09")?.severities).toEqual(["BLOCK", "REVIEW", "WARN"]);
     expect(ruleById("CON-02")?.severities).toEqual(["BLOCK", "REVIEW"]);
     expect(ruleById("SCH-15")?.severities).toEqual([]);
     expect(ruleById("SCH-17")?.severities).toEqual([]);

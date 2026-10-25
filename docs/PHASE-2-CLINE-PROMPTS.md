@@ -53,6 +53,12 @@ and written into APP-SPEC, ENGINE-SPEC (Amendment B) and IMPORT-SPEC.
   check-bundle now fails if luxon reaches a public page.
 - The slow grid test: role queries now look inside the weekly grid (named "Weekly schedule")
   instead of the whole page, and QS-10's two scenarios are two tests. The 15 s timeout is gone.
+- AUTH-09 (found going through the app): a plan built by hand had no ceiling check. 70 hours
+  a week on agency personal care (1,240 units a month; ceiling 412) showed "Ready to use" and
+  "Follows every rule we check". A month with no imported figure is now checked on its derived
+  units, as WARN "More units than this service allows". Not BLOCK: the same check covers an
+  imported plan's partial months, which Fusion authorized, and a standing BLOCK whose numbers
+  change refuses every edit. Say if plans built by hand should get a BLOCK instead.
 
 ---
 

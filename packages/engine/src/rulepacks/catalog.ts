@@ -40,8 +40,8 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     source: "Policy 3.25 (01/26); HCBS-3c cell L88",
   },
   {
-    id: "AUTH-09", area: "Authorization", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
-    rule: "Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK.",
+    id: "AUTH-09", area: "Authorization", severities: ["BLOCK", "REVIEW", "WARN"], status: "VERIFIED",
+    rule: "Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. A month with no imported figure whose derived units (AUTH-05) are above the ceiling → WARN (Amendment B).",
     source: "3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01",
   },
   {

@@ -43,6 +43,11 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "The units entered are higher than this service's monthly limit. Confirm the number with Fusion.",
   },
+  "AUTH-09/WARN": {
+    title: "More units than this service allows",
+    whatToDo:
+      "These tasks add up to more units in a month than this service's monthly limit. Check the minutes and days against the care plan.",
+  },
   "AUTH-11/INFO": {
     title: "When ILW starts this month",
     whatToDo: "This projects the day State Plan units run out and ILW units begin.",

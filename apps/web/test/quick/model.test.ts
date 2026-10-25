@@ -3,6 +3,7 @@ import { MO_2026_07 } from "@careplan/engine";
 import { parseFusionText } from "@careplan/import";
 import { fromFusion } from "../../src/features/import/fromFusion";
 import { buildQuickModel, monthFigures } from "../../src/features/quick-schedule/model";
+import { manualState, reduce } from "../../src/features/quick-schedule/state";
 import type { QuickState } from "../../src/features/quick-schedule/types";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
@@ -124,6 +125,23 @@ describe("Quick Schedule model", () => {
     expect(monthFigures(model, "2026-01").calculatedUnits).toBe(181); // 31 days
     expect(monthFigures(model, "2026-09").calculatedUnits).toBe(177); // 30 days
     expect(monthFigures(model, "2026-02").calculatedUnits).toBe(169); // 28 days
+  });
+
+  it("AUTH-09: by hand, tasks above the service's monthly limit are worth checking in every month", () => {
+    let state = manualState(TODAY);
+    for (const [taskCode, name] of [["BATHING", "Bathing"], ["MEAL_PREP_EATING", "Meal Prep/Eating"], ["MOBILITY_TRANSFER", "Mobility/Transfer"]]) {
+      state = reduce(state, { type: "addTask", taskCode: taskCode!, name: name! }, MO_2026_07).state;
+    }
+    expect(state.tasks).toHaveLength(3);
+    expect(buildQuickModel(state, MO_2026_07).results.filter((r) => r.ruleId === "AUTH-09")).toEqual([]);
+
+    // 120 minutes every day for three tasks: 720 to 744 units a month, over CDS's 641.
+    for (const task of state.tasks) {
+      state = reduce(state, { type: "setMinutes", taskId: task.id, minutes: 120 }, MO_2026_07).state;
+    }
+    const model = buildQuickModel(state, MO_2026_07);
+    const ceiling = model.results.filter((r) => r.ruleId === "AUTH-09");
+    expect(ceiling.map((r) => [r.severity, r.refs.month])).toEqual(model.months.map((month) => ["WARN", month]));
   });
 
   it("builds fixture B in under 50 ms", () => {

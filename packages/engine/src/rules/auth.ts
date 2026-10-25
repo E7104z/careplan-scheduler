@@ -115,6 +115,7 @@ export function ruleAUTH08Transport(authorizations: ServiceAuthorization[]): Val
 export function ruleAUTH09Ceiling(
   authorizations: ServiceAuthorization[],
   monthlyAuthorizations: MonthlyAuthorization[],
+  derivedByAuthMonth: Record<string, number> = {},
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
   const authById = new Map(authorizations.map((a) => [a.id, a]));
@@ -152,6 +153,26 @@ export function ruleAUTH09Ceiling(
         severity: "REVIEW",
         message: `Imported ${ma.units} units exceed program ceiling ${ceiling}`,
         refs: { serviceAuthId: ma.serviceAuthId, month: ma.month },
+      });
+    }
+  }
+
+  // Amendment B: a month with no imported figure (a plan by hand) is checked on its derived units,
+  // keyed `serviceAuthId:month`. WARN: the plan's own tasks, not Fusion, put it over the limit.
+  const imported = new Set(monthlyAuthorizations.map((ma) => `${ma.serviceAuthId}:${ma.month}`));
+  for (const [key, units] of Object.entries(derivedByAuthMonth)) {
+    if (imported.has(key)) continue;
+    const split = key.lastIndexOf(":");
+    const serviceAuthId = key.slice(0, split);
+    const auth = authById.get(serviceAuthId);
+    if (!auth) continue;
+    const ceiling = serviceByCode(MO_2026_07, auth.serviceCode)?.monthlyCeiling ?? null;
+    if (ceiling !== null && units > ceiling) {
+      results.push({
+        ruleId: "AUTH-09",
+        severity: "WARN",
+        message: `Derived ${units} units exceed program ceiling ${ceiling}`,
+        refs: { serviceAuthId, month: key.slice(split + 1) },
       });
     }
   }

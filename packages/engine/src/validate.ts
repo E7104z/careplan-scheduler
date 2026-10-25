@@ -172,9 +172,10 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   results.push(...ruleAUTH03DerivedTaskUnits(tasks));
   results.push(...ruleAUTH05DerivedMonthUnits(authorizations));
   results.push(...ruleAUTH06MigratedPlan(authorizations));
-  results.push(...ruleAUTH07DerivedVsFusion(monthlyAuthorizations, derivedMonthUnits(authorizations, months)));
+  const derived = derivedMonthUnits(authorizations, months);
+  results.push(...ruleAUTH07DerivedVsFusion(monthlyAuthorizations, derived));
   results.push(...ruleAUTH08Transport(authorizations));
-  results.push(...ruleAUTH09Ceiling(authorizations, monthlyAuthorizations));
+  results.push(...ruleAUTH09Ceiling(authorizations, monthlyAuthorizations, derived));
   // The ILW switch projection counts only State Plan (CDS) and ILW task time.
   const projectionTaskIds = new Set(
     authorizations
