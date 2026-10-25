@@ -6,7 +6,7 @@ import {
   fitToAuthorization,
   monthTransportUnits,
   transportAllowance,
-  validateSchedule,
+  validatePlan,
   type AuthorizedTask,
   type CalendarException,
   type MonthlyAuthorization,
@@ -193,21 +193,11 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   const trims: CalendarException[] =
     tasks.length > 0 ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
-  // Step 9: validate.
+  // Step 9: validate. Quick Schedule has no visits, so only the plan rules run (ENGINE-SPEC
+  // Amendment B): CON-13 would otherwise ask for a referral date it has no first visit to check.
   const results: ScheduleValidationResult[] =
     tasks.length > 0
-      ? validateSchedule({
-          pack,
-          authorizations: [auth],
-          monthlyAuthorizations,
-          template,
-          exceptions: trims,
-          visits: [],
-          caregivers: [],
-          enrollments: [],
-          months,
-          tenantWorkweekStart: 0,
-        })
+      ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })
       : [];
 
   // Step 10: IMP-15 checksum against Fusion's monthly figure.

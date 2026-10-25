@@ -327,9 +327,10 @@ Both modes:
 8. `trims = fitToAuthorization(patternTemplate, auth, monthlyAuthorizations, months)`
    (ENGINE-SPEC SCH-17). Trims come from the **pattern**, never from cell changes, so a
    person's changes are never silently cut.
-9. `results = validateSchedule({ pack, authorizations: [auth], monthlyAuthorizations,
-   template (with entries), exceptions: trims, visits: [], caregivers: [], enrollments: [],
-   months, tenantWorkweekStart: 0 })`, or `[]` with no valid tasks.
+9. `results = validatePlan({ pack, authorizations: [auth], monthlyAuthorizations,
+   template (with entries), exceptions: trims, months })`, or `[]` with no valid tasks.
+   Quick Schedule doesn't schedule visits, so it runs the plan rules only (ENGINE-SPEC
+   Amendment B), never the visit rules (SCH-14, CON-*).
 10. `checksum` (from Fusion): IMP-15.
 11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
    derived; budget = `max(0, authorized − transportUnits) × 15`; scheduled; over; trims in
@@ -376,6 +377,8 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   mo-2026-07". A card about a task has "Show in week" (scroll to and highlight the row 2 s).
 - SCH-08 results with `refs.taskId` use the copy key `SCH-08/task`.
 - No "No problems found" while any Needs review group exists.
+- Quick Schedule runs only the plan rules (5.3 step 9). The SCH-14 and CON rows below are for
+  schedules with visits (Phase 3), so "Referral date is missing" (CON-13) never shows here.
 
 Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity in
 `RULE_CATALOG` has an entry (AUTH-13, SCH-15 and SCH-17 emit nothing and are exempt).
@@ -817,6 +820,9 @@ percentages, meter widths). No inline scripts are allowed.
   Radix menu, which keeps Radix out of every public page.
 - pdf.js is never in those chunks: check-bundle also fails if any of them contains `pdfjs-dist`
   code (search for `GlobalWorkerOptions`). It loads only through `import()` when a PDF is chosen.
+- luxon is never in those chunks either (search for `Invalid DateTime`). It times visits
+  (ENGINE-SPEC SCH-15), and public pages have none: they validate with `validatePlan`. Decided
+  in the Oct 25, 2026 review: luxon was 21 KB gzip of both `/` and `/quick`.
 - Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
   times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
   pasted plan takes under 20 ms.

@@ -11,12 +11,17 @@ async function buildB(user: UserEvent): Promise<void> {
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
 }
 
+/** The weekly grid. A role query inside it is about 4 times quicker than one over the whole page. */
+function grid(): HTMLElement {
+  return screen.getByRole("table", { name: "Weekly schedule" });
+}
+
 function cell(task: string, weekday: string, minutes: number): HTMLElement {
-  return screen.getByRole("button", { name: `${task}, ${weekday}, ${minutes} minutes. Change minutes` });
+  return within(grid()).getByRole("button", { name: `${task}, ${weekday}, ${minutes} minutes. Change minutes` });
 }
 
 function cellInput(task: string, weekday: string, minutes: number): HTMLElement {
-  return screen.getByRole("spinbutton", { name: `${task}, ${weekday}, ${minutes} minutes. Enter 0 to remove this day.` });
+  return within(grid()).getByRole("spinbutton", { name: `${task}, ${weekday}, ${minutes} minutes. Enter 0 to remove this day.` });
 }
 
 async function changeCell(user: UserEvent, task: string, weekday: string, from: number, to: number): Promise<void> {
@@ -37,8 +42,7 @@ function hiddenInPrint(element: HTMLElement): boolean {
 }
 
 describe("Quick Schedule: weekly grid", () => {
-  // Several edits on fixture B's 11-month plan: about 4 s alone, more when the whole suite runs.
-  it("QS-10: scheduled cells are tinted, changed cells underlined, and minutes above the task's own get the warn fill", { timeout: 15_000 }, async () => {
+  it("QS-10: scheduled cells are tinted, and a changed cell is underlined", async () => {
     const { user } = renderQuick();
     await buildB(user);
     expect(cell("Bathing", "Monday", 45)).toHaveClass("bg-brand-tint");
@@ -48,7 +52,13 @@ describe("Quick Schedule: weekly grid", () => {
     expect(changed(cell("Bathing", "Monday", 30))).toBe(true);
     expect(cell("Bathing", "Monday", 30)).not.toHaveClass("bg-warn-bg");
     expect(changed(cell("Bathing", "Wednesday", 45))).toBe(false);
+  });
 
+  it("QS-10: minutes above the task's own get the warn fill, and Undo my minute changes clears it", async () => {
+    const { user } = renderQuick();
+    await buildB(user);
+    // Taking 15 minutes off Monday leaves room for 10 more on Tuesday.
+    await changeCell(user, "Bathing", "Monday", 45, 30);
     await changeCell(user, "Bathing", "Tuesday", 45, 60);
     await user.click(screen.getByRole("button", { name: "Use 55 minutes" }));
     expect(changed(cell("Bathing", "Tuesday", 55))).toBe(true);
@@ -95,7 +105,8 @@ describe("Quick Schedule: month", () => {
   it("names a trimmed date for screen readers and marks it \"−95 min\"", async () => {
     const { user } = renderQuick();
     await buildB(user);
-    for (let i = 0; i < 10; i++) await user.click(screen.getByRole("button", { name: "Previous month" }));
+    const previous = screen.getByRole("button", { name: "Previous month" });
+    for (let i = 0; i < 10; i++) await user.click(previous);
     expect(screen.getByText("December 2025")).toBeInTheDocument();
 
     const label = screen.getByText(/^Wednesday 31: \d+ minutes, 95 minutes trimmed because the month's units run out$/);

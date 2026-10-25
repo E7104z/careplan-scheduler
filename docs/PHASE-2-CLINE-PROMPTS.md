@@ -37,6 +37,23 @@ into APP-SPEC; Prompts 6 and 7 below were adjusted to match.
 `isOwner(resource.data.tenantId)`. The verbatim order denied the "pending invites for me" query
 (7.2), so the invite banner couldn't load. Same access either way; rules test R-18 covers it.
 
+**Review decisions (Oct 25, 2026, after Fusion's care plan report).** Built on `phase-2-app`
+and written into APP-SPEC, ENGINE-SPEC (Amendment B) and IMPORT-SPEC.
+- CON-13 is left out of Quick Schedule. The engine has a second entry point, `validatePlan`,
+  that runs only the plan rules (AUTH-*, SCH-02/03/08/11/12); Quick Schedule and the landing
+  page call it. CON-13 checks the first visit, and Quick Schedule doesn't schedule visits, so
+  agency plans no longer show "Referral date is missing".
+- AGENCY_PC gains the household tasks Fusion lists under PC - Agency ("Med Rel HC Tasks"):
+  Clean Bath, Clean Kitchen, Clean Living Area, Laundry, Make Bed/Change Linens,
+  Shopping/Errands, Trash. They stay Homemaker tasks too. Iron/Mend, Meals/Dishes, Wash
+  Windows/Blinds and Essential Correspondence stay Homemaker only (not seen under PC - Agency).
+- `/quick` budget: the import reader was not the problem (about 4 KB, and the example plan
+  needs it on first paint). luxon was 21 KB gzip on `/` and `/quick`, used only for visit time.
+  With `validatePlan` it is gone from public pages: `/quick` 154.5 KB, `/` 125.2 KB.
+  check-bundle now fails if luxon reaches a public page.
+- The slow grid test: role queries now look inside the weekly grid (named "Weekly schedule")
+  instead of the whole page, and QS-10's two scenarios are two tests. The 15 s timeout is gone.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)

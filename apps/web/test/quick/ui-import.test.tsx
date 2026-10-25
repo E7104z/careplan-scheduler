@@ -181,6 +181,8 @@ describe("Quick Schedule: import panel and read summary", () => {
     ).toBeInTheDocument();
     expect(within(summary).getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeInTheDocument();
     expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
+    // No "Referral date is missing" card: Quick Schedule doesn't schedule visits (CON-13).
+    expect(within(statusPanel()).getByText("Follows every rule we check, for all 10 months.")).toBeInTheDocument();
   });
 
   it("a PDF that can't be read shows its message", async () => {

@@ -8,6 +8,10 @@ that document. Phase 1 = the rules engine package only (`packages/engine`).
 (fit a month to its authorization), SCH-11 ignores `kind: "fit"`, the "Essential Correspond"
 alias, `RULE_CATALOG`, and fixtures TC-38 to TC-40. Nothing else in this file changed.
 
+**Amendment B (Oct 25, 2026, Phase 2 review of Fusion's care plan report):** the entry point
+`validatePlan` (section 5), and agency personal care (AGENCY_PC) gains the seven household
+tasks Fusion lists under PC - Agency (section 3). No rule, formula or expected value changed.
+
 ---
 
 ## 1. Principles (apply to every module)
@@ -139,7 +143,10 @@ Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (t
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
-Medications (alias "Self Admin of Meds"); Toileting. Homemaker — Clean Bath; Clean Kitchen;
+Medications (alias "Self Admin of Meds"); Toileting; and the medically related household tasks
+Fusion lists under PC - Agency as "Med Rel HC Tasks" (Amendment B): Clean Bath; Clean Kitchen;
+Clean Living Area; Laundry; Make Bed/Change Linens; Shopping/Errands; Trash. These stay
+Homemaker tasks too. Homemaker — Clean Bath; Clean Kitchen;
 Clean Living Area; Essential Correspondence; Iron/Mend; Laundry (alias "Laundry (Home/Off
 Site)"); Make Bed/Change Linens; Meals/Dishes; Shopping/Errands (alias
 "Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. The three aliases are the names in
@@ -174,6 +181,16 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 ---
 
 ## 5. Rules (`src/rules/`)
+
+Entry points (`src/validate.ts`): `validateSchedule(input)` runs every rule below, stamps each
+result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN, INFO.
+`validatePlan(input)` (Amendment B) takes the same input without `visits`, `caregivers`,
+`enrollments` and `tenantWorkweekStart`, and runs only the rules that read the plan: AUTH-03
+to AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12. For a plan with no visits its results are
+`validateSchedule`'s without the visit rules (SCH-14 and every CON rule), in the same order.
+It is for a plan that is not scheduled as visits (Quick Schedule): run on no visits, CON-13
+would ask for a referral date it has no first visit to check. Only visit time (SCH-15) needs
+luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't load it.
 
 ### Authorization (`auth.ts`)
 

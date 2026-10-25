@@ -79,7 +79,8 @@ a different document from the care plan screen. No row says "units", so the scre
 The PDF draws one wide blank text item across each gap between cells (IMP-14 drops it).
 Agency plans list household tasks as "Med Rel HC Tasks: <task>" and use short names: "Laundry
 (Home/Off Site)", "Shop/Errands/Correspond" and "Self Admin of Meds" (ENGINE-SPEC section 3
-aliases). The real plan's tasks add up to exactly its monthly units by the method in 1.2.
+aliases). Those household tasks are agency personal care tasks in the rule pack too (ENGINE-SPEC
+Amendment B), so a plan built by hand can have them. The real plan's tasks add up to exactly its monthly units by the method in 1.2.
 
 ---
 

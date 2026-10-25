@@ -23,9 +23,12 @@ const PUBLIC_PAGES = {
   "/privacy": "src/pages/Privacy.tsx",
 };
 // Only when a visitor opens their own page (Firebase) or a PDF (pdf.js); never in the above.
+// luxon (21 KB gzip) only times visits, and public pages have none: they validate with the
+// engine's validatePlan, never validateSchedule (ENGINE-SPEC Amendment B).
 const FORBIDDEN = [
   { pattern: /@firebase\/|firebase\/app/, what: "the Firebase SDK; Firebase must load only through lazy app routes" },
   { pattern: /GlobalWorkerOptions/, what: "pdfjs-dist; pdf.js must load only when a PDF is opened" },
+  { pattern: /Invalid DateTime/, what: "luxon; public pages have no visits, so they call validatePlan, not validateSchedule" },
 ];
 
 function fail(message) {

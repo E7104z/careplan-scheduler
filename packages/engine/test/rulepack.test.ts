@@ -35,4 +35,17 @@ describe("MO 2026-07 rule pack", () => {
     expect(MO_2026_07.overlap("AGENCY_PC", "HOMEMAKER")).toBe("unknown");
     expect(MO_2026_07.overlap("CDS", "CDS")).toBe("prohibited");
   });
+
+  it("offers agency personal care the household tasks Fusion lists under PC - Agency", () => {
+    // Fusion's care plan report lists these as "Med Rel HC Tasks: <task>" (IMPORT-SPEC 1.3).
+    const household = ["Clean Bath", "Clean Kitchen", "Clean Living Area", "Laundry", "Make Bed/Change Linens", "Shopping/Errands", "Trash"];
+    for (const name of household) {
+      const def = findTaskByName(MO_2026_07, name);
+      expect(def?.programs, name).toContain("AGENCY_PC");
+      expect(def?.programs, name).toContain("HOMEMAKER");
+    }
+    for (const name of ["Iron/Mend", "Meals/Dishes", "Wash Windows/Blinds", "Essential Correspondence"]) {
+      expect(findTaskByName(MO_2026_07, name)?.programs, name).not.toContain("AGENCY_PC");
+    }
+  });
 });

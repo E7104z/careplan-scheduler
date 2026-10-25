@@ -189,7 +189,7 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
         <>
           <div className="relative overflow-x-auto">
             <div className="min-w-[560px]">
-              <table className="w-full border-collapse text-sm">
+              <table aria-label="Weekly schedule" className="w-full border-collapse text-sm">
               <thead>
                 <tr>
                   <th scope="col" className="border-b border-line px-2 py-2 text-left font-medium text-ink-3">

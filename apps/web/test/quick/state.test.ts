@@ -106,4 +106,14 @@ describe("Quick Schedule state", () => {
     const result = reduce(state, { type: "setTransportMinPerTrip", value: -5 }, MO_2026_07);
     expect((result.state.transport as { minPerTrip: number }).minPerTrip).toBe(0);
   });
+
+  it("QS-04: an agency plan by hand can have the household tasks Fusion lists under PC - Agency", () => {
+    const agency = reduce(manualState(TODAY), { type: "setService", code: "T1019" }, MO_2026_07).state;
+    const state = addTask(addTask(addTask(agency, "BATHING", "Bathing"), "TRASH", "Trash"), "LAUNDRY", "Laundry");
+    expect(state.tasks.map((task) => task.name)).toEqual(["Bathing", "Trash", "Laundry"]);
+    // QS-02: switching to Homemaker keeps the household tasks and removes Bathing.
+    const homemaker = reduce(state, { type: "setService", code: "S5130" }, MO_2026_07);
+    expect(homemaker.removed).toEqual(["Bathing"]);
+  });
 });
+

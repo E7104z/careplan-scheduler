@@ -23,7 +23,7 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | AUTH-09 | `packages/engine/src/rules/auth.ts` | `ruleAUTH09Ceiling` | `packages/engine/test/rules-auth-sch.test.ts` | TC-17 | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
 | AUTH-11 | `packages/engine/src/rules/auth.ts` | `ruleAUTH11ProjectIlwSwitch` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-10, FIX-6d | Policy 3.55 (01/26) |
 | AUTH-12 | `packages/engine/src/rules/auth.ts` | `ruleAUTH12PendingApproval` | `packages/engine/test/rules-auth-sch.test.ts` | — (custom) | Policy 3.55 (01/26); 3.00 Appendix 1 (rev. Jul 2026) |
-| AUTH-13 | `packages/engine/src/validate.ts` | `validateSchedule` (attaches `rulePackVersion`) | `packages/engine/test/validate.test.ts` | TC-01 | Product decision approved Oct 20, 2026 (P-06) |
+| AUTH-13 | `packages/engine/src/validate.ts` | `validateSchedule`, `validatePlan` (attach `rulePackVersion`) | `packages/engine/test/validate.test.ts` | TC-01 | Product decision approved Oct 20, 2026 (P-06) |
 
 ### Schedule
 

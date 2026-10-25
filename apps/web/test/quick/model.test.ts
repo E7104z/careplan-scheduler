@@ -80,6 +80,12 @@ describe("Quick Schedule model", () => {
     expect(model.results.filter((r) => r.severity === "BLOCK")).toHaveLength(0);
   });
 
+  it("runs only the plan rules: E's agency plan has no referral date, and no visit to check one against", () => {
+    const model = modelFor(fixtureE);
+    expect(model.results.filter((r) => r.ruleId === "SCH-14" || r.ruleId.startsWith("CON-"))).toEqual([]);
+    expect(model.results.filter((r) => r.severity === "REVIEW" || r.severity === "WARN")).toEqual([]);
+  });
+
   it("IMP-T25: a month the report gives its own figure is checked against that figure", () => {
     const model = modelFor(fixtureE.replace("06/30/2026	T1019	229", "06/30/2026	T1019	200"));
     expect(monthFigures(model, "2026-06")).toMatchObject({ authorizedUnits: 200, source: "fusion" });
