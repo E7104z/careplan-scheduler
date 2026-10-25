@@ -14,8 +14,10 @@ const monthInput = "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 
 /** APP-SPEC 5.2 by hand: QS-01 service and QS-03 plan start (the plan ends 11 months later). */
 export function ServiceSection({ state, dispatch }: { state: QuickState; dispatch: Dispatch<QuickAction> }) {
   const start = state.plan.start.slice(0, 7);
-  // Browsers without a month picker show a text box; keep what's typed until it's a whole month.
+  // Browsers without a month picker show a text box; keep what's typed until it's a whole month,
+  // and say how to enter one if it isn't when the field is left.
   const [month, setMonth] = useState(start);
+  const [error, setError] = useState<string | undefined>();
   useEffect(() => setMonth(start), [start]);
 
   return (
@@ -29,15 +31,19 @@ export function ServiceSection({ state, dispatch }: { state: QuickState; dispatc
         </Select>
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Plan starts">
+        <Field label="Plan starts" error={error}>
           <input
             type="month"
             className={monthInput}
             value={month}
             onChange={(event) => {
               setMonth(event.target.value);
-              if (MONTH.test(event.target.value)) dispatch({ type: "setPlanStart", month: event.target.value });
+              if (MONTH.test(event.target.value)) {
+                setError(undefined);
+                dispatch({ type: "setPlanStart", month: event.target.value });
+              }
             }}
+            onBlur={() => setError(MONTH.test(month) ? undefined : "Enter the month the plan starts, like 2026-11.")}
           />
         </Field>
         <div className="flex flex-col gap-1.5">

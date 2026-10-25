@@ -109,6 +109,15 @@ export function QuickSchedule() {
         participant's name and DCN are gone when you close it.
       </p>
 
+      {/* One column (below 1060px): the care plan comes first, and a long one pushes the status and
+          the week several screens down, so this link skips past it. */}
+      <a
+        href="#qs-schedule"
+        className="-my-3 self-start rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center min-[1060px]:hidden print:hidden"
+      >
+        Skip to the schedule
+      </a>
+
       <div className="grid items-start gap-6 min-[1060px]:grid-cols-[minmax(360px,400px)_minmax(0,1fr)] print:block">
         <div className="print:hidden">
           <CarePlanPane key={planKey} state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />

@@ -110,6 +110,15 @@ describe("Rules", () => {
     }
   });
 
+  it("says which checks Quick Schedule runs: not the ones about visits", () => {
+    render(<Rules />, { wrapper: MemoryRouter });
+    expect(
+      screen.getByText(
+        "Quick Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks. SCH-14 and the conflict and eligibility checks are for visits, caregivers and enrollments, which come in a later release.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("AC-21: each rule's row shows its text, results, status and source; each service's row its ceiling", () => {
     render(<Rules />, { wrapper: MemoryRouter });
     const words = { BLOCK: "Must fix", REVIEW: "Needs review", WARN: "Check", INFO: "Good to know" } as const;

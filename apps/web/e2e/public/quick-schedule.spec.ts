@@ -326,3 +326,10 @@ test("AC-19: no page scroll at phone size; the grid scrolls inside its panel", a
 });
 
 
+
+test("two panes side by side: no Skip to the schedule link", async ({ page, isMobile }) => {
+  test.skip(isMobile, "desktop viewport only; the phone test clicks the link");
+  await page.goto("/quick");
+  await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Skip to the schedule" })).toBeHidden();
+});

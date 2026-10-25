@@ -270,7 +270,9 @@ Two ways in, one schedule:
   like. Paste one above to make your own."
 - Notice (info style): "Nothing you paste or open is uploaded or saved to our servers. It
   stays in this browser tab, and the participant's name and DCN are gone when you close it."
-- Two panes at ≥ 1060px: Care plan (360–400px) left, Schedule right; one column below.
+- Two panes at ≥ 1060px: Care plan (360–400px) left, Schedule right; one column below. In one
+  column a link "Skip to the schedule" sits above the Care plan pane and goes to the Schedule
+  pane (a plan with many tasks otherwise puts the status several screens down on a phone).
 - First visit in a tab: the import panel with the 5-day example already built beneath it.
 - Inside `/app/quick` the page renders in the app shell; public `/quick` in the public layout.
 
@@ -292,7 +294,7 @@ By hand: the inputs below. Every input change goes through the guard (5.7).
 |---|---|---|
 | QS-01 | Service | Native select of every rule-pack service with `unit === "15min"`, grouped: Consumer Directed Services (T1019U2), Independent Living Waiver (T1019U6), Agency model (T1019, T1019TF), Aged and Disabled Waiver (S5130, S5120, S5150, S5150TF). Option text `<name> · <code>`. Default T1019U2. Nurse visits (T1001) are not offered: they are visits, not tasks. |
 | QS-02 | Changing service | Removes tasks whose `taskCode` isn't available to the new program, clears minute changes, keeps care days. Toast: "Removed 2 tasks that aren't part of Homemaker (ADW)" when any are removed. |
-| QS-03 | Plan starts | `<input type="month">`, default next calendar month. Plan ends = start + 11 months, shown read-only. Changing it clears Fusion units. |
+| QS-03 | Plan starts | `<input type="month">`, default next calendar month. Plan ends = start + 11 months, shown read-only. Changing it clears Fusion units. Left with something that isn't a whole month (a browser without a month picker shows a text box): "Enter the month the plan starts, like 2026-11." and nothing changes. |
 | QS-04 | Add a task | Combobox. Options: `pack.tasks` where `programs` includes the service's program, `isTransport` is not true, and not already added; matches name or any alias, case-insensitive. Enter adds the highlighted option. New task: 15 min/day, every day, not pinned; focus moves to its minutes field with the value selected. No match: "No Homemaker (ADW) task matches "xyz"". All used: "Every task for this service is already added". |
 | QS-05 | Minutes per day | Integer 1–1440, step 5. Empty or invalid: error "Enter whole minutes, like 15 or 30." and the task is left out of the schedule (not treated as 0) until fixed. Not a multiple of 5: allowed, hint "Most care plans use 5-minute steps." |
 | QS-06 | Days per week | Select 1–7, 7 shown as "Every day". Lowering it below the number of pinned days drops the latest pinned days. |
@@ -898,7 +900,10 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 - Footer: "© 2026 CarePlan Scheduler", links Privacy, Rules and sources, and
   "Questions: support@thecdscloud.com" as selectable text.
 
-**Rules and sources (`/rules`)**: intro sentence; rule pack name, ID and effective date;
+**Rules and sources (`/rules`)**: intro sentence; rule pack name, ID and effective date; "Quick
+Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks.
+SCH-14 and the conflict and eligibility checks are for visits, caregivers and enrollments, which
+come in a later release.";
 tables grouped Authorization / Schedule / Conflicts and eligibility, generated from
 `RULE_CATALOG` (ID, rule text, severities as pills, status, source); status explained in plain
 words: VERIFIED "Checked against the cited DHSS source", VERIFIED (CDS) "Checked for CDS; for

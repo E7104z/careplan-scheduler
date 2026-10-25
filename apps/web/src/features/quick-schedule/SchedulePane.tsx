@@ -35,7 +35,8 @@ export function SchedulePane({ state, model, pack, feedback, dispatch }: Schedul
   const clearHighlight = useCallback(() => setHighlight(null), []);
 
   return (
-    <div className="grid min-w-0 gap-5">
+    // "Skip to the schedule" lands here; the margin keeps the status clear of the sticky header.
+    <div id="qs-schedule" className="grid min-w-0 scroll-mt-24 gap-5">
       {/* APP-SPEC 5.4 print header: name and DCN (if read), service, plan dates, PA. */}
       <div className="hidden print:block">
         {state.identity ? (

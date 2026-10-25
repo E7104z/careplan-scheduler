@@ -33,6 +33,11 @@ export function Rules() {
         Rule pack: Missouri home and community-based services, {MO_2026_07.id}, effective{" "}
         {niceDate(MO_2026_07.effectiveDate)}.
       </p>
+      <p className="mt-2 max-w-[62ch] text-ink-2">
+        Quick Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule
+        checks. SCH-14 and the conflict and eligibility checks are for visits, caregivers and
+        enrollments, which come in a later release.
+      </p>
 
       <section className="mt-8">
         <h2 className="text-[17px] font-bold text-ink">Statuses</h2>

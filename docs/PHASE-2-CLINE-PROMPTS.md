@@ -59,6 +59,10 @@ and written into APP-SPEC, ENGINE-SPEC (Amendment B) and IMPORT-SPEC.
   units, as WARN "More units than this service allows". Not BLOCK: the same check covers an
   imported plan's partial months, which Fusion authorized, and a standing BLOCK whose numbers
   change refuses every edit. Say if plans built by hand should get a BLOCK instead.
+- Also from going through the app: on a phone a plan with 15 tasks put the status about 5,200 px
+  down, so one column now has "Skip to the schedule" above the care plan; "Plan starts" says how
+  to enter a month when it's left with something else (Safari and Firefox show a text box);
+  the Rules page says Quick Schedule doesn't run the visit checks.
 
 ---
 

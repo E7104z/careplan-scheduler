@@ -68,3 +68,17 @@ test("AC-19: /quick with a built plan and a refused change at phone size", async
   await expect(page.getByRole("button", { name: "Use 55 minutes" })).toBeVisible();
   await expectPhoneLayout(page);
 });
+
+test("AC-19: on a phone, Skip to the schedule goes past a long care plan to the status", async ({ page }) => {
+  await page.goto("/quick");
+  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+  const status = page.getByRole("status", { name: "Schedule status" });
+  await expect(status).not.toBeInViewport();
+  await page.getByRole("link", { name: "Skip to the schedule" }).click();
+  await expect(status).toBeInViewport();
+  // Not under the sticky header.
+  const headerBottom = (await page.locator("header").first().boundingBox())!;
+  expect((await status.boundingBox())!.y).toBeGreaterThanOrEqual(headerBottom.y + headerBottom.height);
+  await expectPhoneLayout(page);
+});
