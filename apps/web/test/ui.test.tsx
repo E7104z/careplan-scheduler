@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { Button } from "../src/ui/Button";
@@ -162,6 +162,17 @@ describe("Toast", () => {
     expect(
       statuses.some((el) => el.textContent?.includes("Invite link copied")),
     ).toBe(true);
+  });
+
+  it("is a list item of the viewport's list, with the message as the status (axe: list)", () => {
+    render(
+      <ToastProvider>
+        <Toast open onOpenChange={() => {}} message="Invite link copied" />
+        <ToastViewport />
+      </ToastProvider>,
+    );
+    const item = within(screen.getByRole("list")).getByRole("listitem");
+    expect(within(item).getByRole("status")).toHaveTextContent("Invite link copied");
   });
 });
 

@@ -52,10 +52,10 @@ describe("Dialog with a toast showing", () => {
       const toast = useToast();
       return <Button onClick={() => toast("Invite link copied")}>Copy invite link</Button>;
     }
-    // The toast itself (the li), not Radix's screen-reader copy of its text. The open dialog
-    // hides the rest of the page from screen readers, hence `hidden: true`.
+    // The toast itself (its message, inside the li), not Radix's screen-reader copy of its text.
+    // The open dialog hides the rest of the page from screen readers, hence `hidden: true`.
     const toastItem = () =>
-      screen.getAllByRole("status", { hidden: true }).find((element) => element.tagName === "LI");
+      screen.getAllByRole("status", { hidden: true }).find((element) => element.closest("li") !== null);
     const user = userEvent.setup();
     render(
       <ToastHost>

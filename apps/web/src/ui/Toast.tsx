@@ -15,11 +15,11 @@ export function Toast({ open, onOpenChange, message }: ToastProps) {
       open={open}
       onOpenChange={onOpenChange}
       duration={5000}
-      role="status"
       className="grid rounded-md border border-line bg-surface p-4 shadow-pop"
     >
       <div className="flex items-start justify-between gap-4">
-        <ToastPrimitive.Description className="text-sm text-ink">
+        {/* The status is the message: the toast itself stays an item of the viewport's list. */}
+        <ToastPrimitive.Description role="status" className="text-sm text-ink">
           {message}
         </ToastPrimitive.Description>
         <ToastPrimitive.Close

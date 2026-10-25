@@ -20,22 +20,32 @@ async function useTheme(page: Page, theme: "light" | "dark"): Promise<void> {
   await page.addInitScript((value) => localStorage.setItem("cps.theme", value), theme);
 }
 
-for (const theme of ["light", "dark"] as const) {
-  test(`axe: landing in ${theme}`, async ({ page }) => {
-    await useTheme(page, theme);
-    await page.goto("/");
-    await analyze(page);
-  });
+// AC-18's public pages and the other public pages (APP-SPEC 4.4: every page). Each waits for its
+// h1, since the pages are lazy chunks and axe would otherwise check the empty shell.
+const PAGES = [
+  { name: "landing", path: "/", heading: "Paste a Fusion care plan. Get a schedule that follows Missouri's rules." },
+  { name: "rules", path: "/rules", heading: "Rules and sources" },
+  { name: "privacy", path: "/privacy", heading: "Privacy" },
+  { name: "sign in", path: "/sign-in", heading: "Sign in" },
+  { name: "sign up", path: "/sign-up", heading: "Create account" },
+  { name: "reset password", path: "/reset-password", heading: "Reset your password" },
+  { name: "not found", path: "/no-such-page", heading: "We can't find that page" },
+];
 
-  test(`axe: rules in ${theme}`, async ({ page }) => {
-    await useTheme(page, theme);
-    await page.goto("/rules");
-    await analyze(page);
-  });
+for (const theme of ["light", "dark"] as const) {
+  for (const { name, path, heading } of PAGES) {
+    test(`axe: ${name} in ${theme}`, async ({ page }) => {
+      await useTheme(page, theme);
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await analyze(page);
+    });
+  }
 
   test(`axe: quick example in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");
+    await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
     await analyze(page);
   });
 
@@ -52,6 +62,11 @@ for (const theme of ["light", "dark"] as const) {
     await page.goto("/quick");
     await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
     await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+    await analyze(page);
+
+    // With "Review what we read" open.
+    await page.getByRole("button", { name: "Review what we read" }).click();
+    await expect(page.getByRole("table", { name: "What we read from Fusion" })).toBeVisible();
     await analyze(page);
   });
 }

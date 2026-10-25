@@ -1,10 +1,11 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { expectGridScrollsInPanel, expectPhoneLayout } from "../layout-checks";
 import { createAccount, createInvite, setUpAgency, verifyEmail } from "./helpers";
 
 // AC-19 at 390 × 844 for the signed-in routes in AC-18 and the other signed-in pages: no
-// sideways page scroll, and 44 × 44 px buttons (APP-SPEC 4.4). Runs only inside
-// `firebase emulators:exec`.
+// sideways page scroll, 44 × 44 px buttons, and axe at phone width too, where tables scroll
+// (APP-SPEC 4.4). Runs only inside `firebase emulators:exec`.
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 const AGENCY = "P-TEST-AGENCY-01";
@@ -12,6 +13,8 @@ const AGENCY = "P-TEST-AGENCY-01";
 async function onPage(page: Page, heading: string): Promise<void> {
   await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
   await expectPhoneLayout(page);
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  expect(results.violations, `axe on ${heading}`).toEqual([]);
 }
 
 test("AC-19: every signed-in page at phone size", async ({ page, context }) => {

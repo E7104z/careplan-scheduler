@@ -37,7 +37,9 @@ export function MembersTable({ members, myUid, canManage, onChangeRole, onRemove
   ];
 
   return (
-    <div className="relative overflow-x-auto rounded-md border border-line bg-surface">
+    // On a phone the table scrolls sideways, and an owner alone has no buttons in it: the panel
+    // takes focus.
+    <div role="region" aria-label="Members" tabIndex={0} className="relative overflow-x-auto rounded-md border border-line bg-surface">
       <table aria-label="Members" className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-line bg-sunk text-ink-2">

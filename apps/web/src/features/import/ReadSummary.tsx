@@ -40,7 +40,8 @@ function ReadTable({ state, model }: { state: QuickState; model: QuickModel }) {
   const cell = "border-b border-line px-2.5 py-1.5";
   const number = cn(cell, "text-right");
   return (
-    <div className="relative overflow-x-auto">
+    // On a phone the table scrolls sideways; with nothing focusable inside, the panel takes focus.
+    <div role="region" aria-label="What we read from Fusion" tabIndex={0} className="relative overflow-x-auto">
       <table id="qs-read-table" className="w-full min-w-[520px] border-collapse text-left text-sm">
         <caption className="sr-only">What we read from Fusion</caption>
         <thead className="bg-sunk text-[13px] text-ink-2">

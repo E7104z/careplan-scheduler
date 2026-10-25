@@ -46,10 +46,18 @@ export function Rules() {
         </dl>
       </section>
 
-      {AREAS.map((area) => (
+      {AREAS.map((area, index) => (
         <section key={area} className="mt-10">
-          <h2 className="text-[17px] font-bold text-ink">{area}</h2>
-          <div className="mt-3 overflow-x-auto rounded-md border border-line">
+          <h2 id={`rules-area-${index}`} className="text-[17px] font-bold text-ink">
+            {area}
+          </h2>
+          {/* On a phone the table scrolls sideways; with no links inside, the panel takes focus. */}
+          <div
+            role="region"
+            aria-labelledby={`rules-area-${index}`}
+            tabIndex={0}
+            className="mt-3 overflow-x-auto rounded-md border border-line"
+          >
             <table className="w-full border-collapse">
               <thead className="bg-sunk">
                 <tr>
@@ -98,8 +106,15 @@ export function Rules() {
       ))}
 
       <section className="mt-10">
-        <h2 className="text-[17px] font-bold text-ink">Services and monthly limits</h2>
-        <div className="mt-3 overflow-x-auto rounded-md border border-line">
+        <h2 id="rules-services" className="text-[17px] font-bold text-ink">
+          Services and monthly limits
+        </h2>
+        <div
+          role="region"
+          aria-labelledby="rules-services"
+          tabIndex={0}
+          className="mt-3 overflow-x-auto rounded-md border border-line"
+        >
           <table className="w-full border-collapse">
             <thead className="bg-sunk">
               <tr>
