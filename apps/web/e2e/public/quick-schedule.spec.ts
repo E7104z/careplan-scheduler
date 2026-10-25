@@ -123,6 +123,18 @@ test("AC-08: the PDF with a banner builds like AC-02; the table-only PDF asks fo
   await expect(page.getByRole("heading", { name: "Care plan from Fusion" })).toBeVisible();
 });
 
+test("AC-24: Fusion's care plan report PDF builds the plan and leaves out the nurse visits", async ({ page }) => {
+  await page.goto("/quick");
+  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-care-plan-report"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT E" })).toBeVisible();
+  await expect(page.getByText("Read from Fusion · DCN 10000005")).toBeVisible();
+  await expect(page.getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeVisible();
+  await expect(
+    page.getByText("GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule."),
+  ).toBeVisible();
+  await expect(statusPanel(page)).toContainText("Ready to use");
+});
+
 test("AC-09: pasting text with no care plan says so", async ({ page }) => {
   await page.goto("/quick");
   await pasteCarePlan(page, "Meeting notes from Tuesday");
@@ -232,6 +244,7 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
     for (const text of [stored.join("\n"), consoleText.join("\n")]) {
       expect(text).not.toContain("10000002");
       expect(text).not.toContain("10000004");
+      expect(text).not.toContain("10000005");
       expect(text).not.toContain("SAMPLE PARTICIPANT");
     }
   };
@@ -282,6 +295,12 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   await page.getByLabel("Plan ends").fill("2026-12-31");
   await page.getByRole("button", { name: "Use these dates" }).click();
   await expect(page.getByRole("heading", { name: "Care plan from Fusion" })).toBeVisible();
+  await expectNothingStored();
+
+  // Fusion's care plan report (AC-24).
+  await page.getByRole("button", { name: "New care plan" }).first().click();
+  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-care-plan-report"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT E" })).toBeVisible();
   await expectNothingStored();
 });
 

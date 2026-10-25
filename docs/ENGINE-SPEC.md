@@ -139,9 +139,11 @@ Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (t
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
-Medications; Toileting. Homemaker — Clean Bath; Clean Kitchen; Clean Living Area; Essential
-Correspondence; Iron/Mend; Laundry; Make Bed/Change Linens; Meals/Dishes; Shopping/Errands;
-Trash; Wash Windows/Blinds. APC — Aseptic Dressings; Assistive Transfer Device; Bowel
+Medications (alias "Self Admin of Meds"); Toileting. Homemaker — Clean Bath; Clean Kitchen;
+Clean Living Area; Essential Correspondence; Iron/Mend; Laundry (alias "Laundry (Home/Off
+Site)"); Make Bed/Change Linens; Meals/Dishes; Shopping/Errands (alias
+"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. The three aliases are the names in
+Fusion's care plan report for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device; Bowel
 Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite — Basic
 Respite; Advanced Respite.
 

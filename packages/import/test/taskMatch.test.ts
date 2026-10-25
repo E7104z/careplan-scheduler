@@ -44,6 +44,19 @@ describe("IMP-09 matching a Fusion task name to the rule pack", () => {
     expect(codeOf("Pet Care")).toBeNull();
   });
 
+  it("matches the names in Fusion's care plan report for agency personal care", () => {
+    expect(codeOf("Self Admin of Meds")).toBe("SELF_ADMIN_OF_MEDICATIONS");
+    expect(codeOf("Laundry (Home/Off Site)")).toBe("LAUNDRY");
+    expect(codeOf("Shop/Errands/Correspond")).toBe("SHOPPING_ERRANDS");
+  });
+
+  it("reads the name after a group prefix such as \"Med Rel HC Tasks:\"", () => {
+    expect(codeOf("Med Rel HC Tasks: Trash")).toBe("TRASH");
+    expect(codeOf("Med Rel HC Tasks: Clean Living Area")).toBe("CLEAN_LIVING_AREA");
+    expect(codeOf("Med Rel HC Tasks: Laundry (Home/Off Site)")).toBe("LAUNDRY");
+    expect(codeOf("Med Rel HC Tasks: Pet Care")).toBeNull();
+  });
+
   it("finds the transportation task by its alias-free name", () => {
     expect(matchTask(PACK, "Essential Transportation")?.isTransport).toBe(true);
   });

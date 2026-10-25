@@ -1,5 +1,7 @@
 import { isRealDate } from "./dates.js";
 import { pagingTotal } from "./paging.js";
+import type { ReadRow } from "./rows.js";
+import { ROWS_ONLY_SERVICE_CODE, serviceCodeForLabel } from "./services.js";
 import type { ImportedService, ImportedTask, ImportIssue, ImportResult, PagingEntry } from "./types.js";
 
 /** What reading one or more pastes produced, before the issues are worked out. */
@@ -12,7 +14,11 @@ export interface ResultParts {
   services: ImportedService[];
   /** `duplicate-task` warnings for repeated tasks dropped while reading. */
   duplicates: ImportIssue[];
+  /** `not-scheduled` notes for services left out, one per label (IMP-18). */
+  skipped: ImportIssue[];
 }
+
+export type ServiceBase = Omit<ImportedService, "serviceCode" | "tasks" | "transport" | "unread">;
 
 /** IMP-12: add a task to a service unless that task was already read; a repeat is dropped and reported. */
 export function addTask(service: ImportedService, task: ImportedTask, duplicates: ImportIssue[]): void {
@@ -22,6 +28,35 @@ export function addTask(service: ImportedService, task: ImportedTask, duplicates
     return;
   }
   service.tasks.push(task);
+}
+
+/** IMP-04/05/12: put a service's rows into tasks, transportation and unread rows. */
+export function buildService(base: ServiceBase, rows: ReadRow[], duplicates: ImportIssue[]): ImportedService {
+  const service: ImportedService = {
+    label: base.label,
+    serviceCode: base.label ? serviceCodeForLabel(base.label) : ROWS_ONLY_SERVICE_CODE,
+    provider: base.provider,
+    phone: base.phone,
+    start: base.start,
+    end: base.end,
+    units: base.units,
+    cost: base.cost,
+    pa: base.pa,
+    tasks: [],
+    transport: null,
+    unread: [],
+    monthly: base.monthly,
+  };
+  for (const row of rows) {
+    if (row.kind === "unread") {
+      service.unread.push({ raw: row.raw, reason: row.reason });
+    } else if (row.kind === "transport") {
+      service.transport ??= { unitsPerMonth: row.unitsPerMonth, minutesPerMonth: row.minutesPerMonth };
+    } else {
+      addTask(service, row.task, duplicates);
+    }
+  }
+  return service;
 }
 
 /** Rows read for a plan: tasks, transportation and rows we couldn't read. */
@@ -85,7 +120,7 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
       }
     }
   }
-  issues.push(...parts.duplicates);
+  issues.push(...parts.duplicates, ...parts.skipped);
   if (!plan && rows > 0) {
     issues.push({ level: "input", code: "no-plan-dates", message: "The plan dates weren't included. Enter them from Fusion." });
   }

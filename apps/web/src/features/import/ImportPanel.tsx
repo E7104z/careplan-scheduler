@@ -5,7 +5,7 @@ import { FileDrop } from "../../ui/FileDrop";
 import { Textarea } from "../../ui/Textarea";
 import { exampleStateA, exampleStateB, manualState } from "../quick-schedule/state";
 import type { QuickState } from "../quick-schedule/types";
-import { ImportIssues, type ImportNotice, type NeedsOutcome } from "./ImportIssues";
+import { ImportIssues, type ImportNotice, type ImportSource, type NeedsOutcome } from "./ImportIssues";
 import { addPage, emptyImportFlow, next, setChoice, type ImportChoice, type ImportFlow } from "./importFlow";
 import type { PdfReadResult } from "./readPdf";
 
@@ -46,6 +46,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
   const [outcome, setOutcome] = useState<NeedsOutcome | null>(null);
   const [notice, setNotice] = useState<ImportNotice | null>(null);
   const [reading, setReading] = useState(false);
+  const [from, setFrom] = useState<ImportSource>("paste");
   // A PDF read in progress belongs to the panel as it was when the file was chosen.
   const readToken = useRef(0);
   useEffect(() => () => void (readToken.current += 1), []);
@@ -77,8 +78,9 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
     setOutcome(result);
   };
 
-  const acceptText = (value: string) => {
+  const acceptText = (value: string, source: ImportSource = "paste") => {
     if (value.trim() === "") return;
+    setFrom(source);
     setText("");
     setNotice(null);
     run(addPage(flowRef.current, value));
@@ -109,7 +111,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
     if (token !== readToken.current) return;
     setReading(false);
     if (result.kind === "error") setNotice({ title: result.title, detail: result.detail });
-    else acceptText(result.text);
+    else acceptText(result.text, "pdf");
   };
 
   const start = (state: QuickState, from: BuiltFrom) => {
@@ -144,7 +146,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
               if ("inputType" in native && native.inputType === "insertFromPaste") return;
               setText(event.target.value);
             }}
-            onPasteText={acceptText}
+            onPasteText={(value) => acceptText(value)}
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={build}>Build schedule</Button>
@@ -174,7 +176,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
           </p>
         </div>
       </div>
-      <ImportIssues outcome={outcome} notice={notice} reading={reading} onChoose={choose} />
+      <ImportIssues outcome={outcome} notice={notice} reading={reading} from={from} onChoose={choose} />
     </section>
   );
 }

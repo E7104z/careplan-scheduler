@@ -59,7 +59,7 @@ export interface QuickState {
   activeDays: boolean[]; // length 7, index 0 = Sunday
   transport: QuickTransport;
   edits: Record<string, number>; // `${taskId}:${weekday}` -> minutes
-  fusion: Record<string, number>; // month -> units (QS-11, by hand only)
+  fusion: Record<string, number>; // month -> units (QS-11 by hand, or Fusion's care plan report, IMP-17)
   viewMonth: string;
   isExample: boolean;
   notes: ImportIssue[];

@@ -7,6 +7,7 @@ import type { QuickState } from "../../src/features/quick-schedule/types";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 import fixtureC from "@fixtures/fusion/C-rows-only-older-plan-402.txt?raw";
+import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
 
@@ -64,6 +65,25 @@ describe("Quick Schedule model", () => {
     expect(model.allowance?.weeklyMinutes).toBe(150);
     expect(dayTotals(model)).toEqual([0, 290, 285, 275, 270, 195, 0]);
     expect(model.results.filter((r) => r.severity === "BLOCK" || r.severity === "REVIEW")).toHaveLength(0);
+  });
+
+  it("IMP-T25: E, Fusion's care plan report: each month's own figure, a matching checksum, no BLOCK", () => {
+    const months = ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01"];
+    const state = fromFusion(parseFusionText(fixtureE, MO_2026_07), 0, TODAY);
+    expect(state.serviceCode).toBe("T1019");
+    expect(state.headerUnits).toBe(229);
+    expect(state.fusion).toEqual(Object.fromEntries(months.map((month) => [month, 229])));
+
+    const model = buildQuickModel(state, MO_2026_07);
+    expect(model.monthlyAuthorizations.map((a) => [a.month, a.units])).toEqual(months.map((month) => [month, 229]));
+    expect(model.checksum).toEqual({ fusion: 229, byMonthLength: { "30": 229, "31": 229 }, matches: true });
+    expect(model.results.filter((r) => r.severity === "BLOCK")).toHaveLength(0);
+  });
+
+  it("IMP-T25: a month the report gives its own figure is checked against that figure", () => {
+    const model = modelFor(fixtureE.replace("06/30/2026	T1019	229", "06/30/2026	T1019	200"));
+    expect(monthFigures(model, "2026-06")).toMatchObject({ authorizedUnits: 200, source: "fusion" });
+    expect(monthFigures(model, "2026-07")).toMatchObject({ authorizedUnits: 229, source: "fusion" });
   });
 
   it("AC-13: the TC-01 tasks by hand give the engine's day totals and month units", () => {

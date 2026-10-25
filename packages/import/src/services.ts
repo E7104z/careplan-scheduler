@@ -6,6 +6,7 @@ import type { ServiceCode } from "@careplan/engine";
  */
 const SERVICE_LABELS: ReadonlyMap<string, ServiceCode> = new Map<string, ServiceCode>([
   ["PC - CDS", "T1019U2"],
+  ["PC - Agency", "T1019"], // Fusion's care plan report, Oct 2026
 ]);
 
 /** The engine service for a Fusion label, or null for a label we haven't seen yet. */

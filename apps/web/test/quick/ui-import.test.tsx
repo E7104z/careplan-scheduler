@@ -6,6 +6,7 @@ import { routes } from "../../src/router";
 import { pasteBox, pasteText, renderQuick, setUpQuickTests, statusPanel } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 import fixtureD from "@fixtures/fusion/D-page1-only-incomplete.txt?raw";
+import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
 
 // readPdf loads pdf.js; the screens only need what it returns (Prompt 7's e2e opens real PDFs).
 vi.mock("../../src/features/import/readPdf", () => ({ readPdf: vi.fn() }));
@@ -157,6 +158,29 @@ describe("Quick Schedule: import panel and read summary", () => {
     await user.click(screen.getByRole("button", { name: "Use these dates" }));
     expect(screen.getByText("Enter a start date and an end date after it.")).toBeInTheDocument();
     expect(importHeading()).toBeInTheDocument();
+  });
+
+  it("a PDF with no care plan in it says so, without sending the person back to the PDF", async () => {
+    vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: "Meeting notes from Tuesday" });
+    const { user } = renderQuick();
+    await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "notes.pdf", { type: "application/pdf" }));
+    expect(await screen.findByText("We couldn't find care plan tasks in that PDF")).toBeInTheDocument();
+    expect(
+      screen.getByText("Open the participant's care plan PDF from Fusion, or copy the care plan from Fusion's screen and paste it above."),
+    ).toBeInTheDocument();
+  });
+
+  it("Fusion's care plan report builds, with a note that its nurse visits aren't scheduled", async () => {
+    vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: fixtureE });
+    const { user } = renderQuick();
+    await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
+    const summary = await screen.findByRole("region", { name: "SAMPLE PARTICIPANT E" });
+    expect(within(summary).getByText("Read from Fusion · DCN 10000005")).toBeInTheDocument();
+    expect(
+      within(summary).getByText("GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule."),
+    ).toBeInTheDocument();
+    expect(within(summary).getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeInTheDocument();
+    expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
   });
 
   it("a PDF that can't be read shows its message", async () => {

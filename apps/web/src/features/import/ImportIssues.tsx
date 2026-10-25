@@ -79,10 +79,28 @@ function ServiceChoice({ onChoose }: { onChoose: (choice: ImportChoice) => void 
   );
 }
 
-function IssueView({ issue, onChoose }: { issue: ImportIssue; onChoose: (choice: ImportChoice) => void }) {
+/** Where the text being read came from: the paste box or a PDF. */
+export type ImportSource = "paste" | "pdf";
+
+function IssueView({
+  issue,
+  from,
+  onChoose,
+}: {
+  issue: ImportIssue;
+  from: ImportSource;
+  onChoose: (choice: ImportChoice) => void;
+}) {
   switch (issue.code) {
     case "no-rows":
-      return (
+      return from === "pdf" ? (
+        <IssueBox level="error" title="We couldn't find care plan tasks in that PDF">
+          <Body>
+            Open the participant's care plan PDF from Fusion, or copy the care plan from Fusion's screen and paste it
+            above.
+          </Body>
+        </IssueBox>
+      ) : (
         <IssueBox level="error" title="We couldn't find care plan tasks in that text">
           <Body>
             Copy from the participant's name in Fusion down to the last task, then paste again. Or open the care
@@ -143,11 +161,12 @@ export interface ImportIssuesProps {
   outcome: NeedsOutcome | null;
   notice: ImportNotice | null;
   reading: boolean;
+  from: ImportSource;
   onChoose: (choice: ImportChoice) => void;
 }
 
 /** IMPORT-SPEC 3.1: what still stops the plan from building, with the control that resolves it. */
-export function ImportIssues({ outcome, notice, reading, onChoose }: ImportIssuesProps) {
+export function ImportIssues({ outcome, notice, reading, from, onChoose }: ImportIssuesProps) {
   const services = outcome?.parsed.services ?? [];
   return (
     <div aria-live="polite" className="grid gap-2.5 px-5 pb-5 empty:p-0 max-sm:px-4 max-sm:pb-4">
@@ -163,7 +182,7 @@ export function ImportIssues({ outcome, notice, reading, onChoose }: ImportIssue
         </IssueBox>
       ) : null}
       {outcome?.issues.map((issue, index) => (
-        <IssueView key={`${issue.code}-${index}`} issue={issue} onChoose={onChoose} />
+        <IssueView key={`${issue.code}-${index}`} issue={issue} from={from} onChoose={onChoose} />
       ))}
       {outcome && services.length > 1 && outcome.serviceIndex === null ? (
         <IssueBox level="input" title={`This care plan has ${services.length} services`}>

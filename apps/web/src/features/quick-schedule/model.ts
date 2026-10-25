@@ -166,17 +166,19 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   };
   if (transportMinutesPerMonth > 0) auth.transportMinutesPerMonth = transportMinutesPerMonth;
 
-  // Step 7: monthly figures (Fusion header units for full months, else QS-11 entries).
+  // Step 7: monthly figures: each month's own figure (QS-11 by hand, or Fusion's care plan report,
+  // IMP-17), else Fusion's header units for full months (IMP-10).
   const fusionFigure = (month: string, units: number): MonthlyAuthorization => ({
     serviceAuthId: "quick", month, units, source: "fusion", revision: 1,
   });
   const headerUnits = state.headerUnits;
+  const ownFigures = Object.entries(state.fusion)
+    .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
+    .map(([month, units]) => fusionFigure(month, units));
   const monthlyAuthorizations: MonthlyAuthorization[] =
-    state.source === "fusion" && headerUnits !== null && Number.isInteger(headerUnits)
+    state.source === "fusion" && ownFigures.length === 0 && headerUnits !== null && Number.isInteger(headerUnits)
       ? months.filter((month) => isFullMonth(month, auth.start, auth.end)).map((month) => fusionFigure(month, headerUnits))
-      : Object.entries(state.fusion)
-          .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
-          .map(([month, units]) => fusionFigure(month, units));
+      : ownFigures;
 
   // Step 8: trims come from the pattern, never from a person's cell changes (SCH-17).
   const pattern: ScheduleTemplate = {

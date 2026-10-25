@@ -1,7 +1,17 @@
 import type { Weekday } from "@careplan/engine";
-import type { ImportResult } from "@careplan/import";
+import type { ImportedService, ImportResult } from "@careplan/import";
 import { MONDAY_FIRST, localMonth, monthsBetween } from "../quick-schedule/model.js";
 import type { QuickState } from "../quick-schedule/types.js";
+
+/** IMP-17: the care plan report's authorized units for each plan month (two periods in a month add up). */
+function reportFigures(monthly: ImportedService["monthly"], months: string[]): Record<string, number> {
+  const figures: Record<string, number> = {};
+  for (const { start, units } of monthly ?? []) {
+    const month = start.slice(0, 7);
+    if (months.includes(month)) figures[month] = (figures[month] ?? 0) + units;
+  }
+  return figures;
+}
 
 /**
  * IMPORT-SPEC section 4: turn one parsed Fusion service into Quick Schedule state with locked
@@ -58,7 +68,7 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
       day: lastActive,
     },
     edits: {},
-    fusion: {},
+    fusion: reportFigures(service.monthly, months),
     viewMonth: months.includes(currentMonth) ? currentMonth : (months[0] ?? currentMonth),
     isExample: false,
     notes: [],

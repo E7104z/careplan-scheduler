@@ -18,11 +18,14 @@ export interface ImportedService {
   tasks: ImportedTask[];
   transport: { unitsPerMonth: number; minutesPerMonth: number } | null;
   unread: { raw: string; reason: "unreadable" | "task-numbers" | "transport-numbers" }[];
+  /** The care plan report's authorized units for each month (IMP-17); null from the care plan screen. */
+  monthly: { start: string; end: string; units: number }[] | null;
 }
 
 export type ImportIssueCode =
   | "no-rows" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
-  | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task";
+  | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
+  | "not-scheduled";
 
 export interface ImportIssue {
   level: "error" | "input" | "warn"; code: ImportIssueCode; message: string;

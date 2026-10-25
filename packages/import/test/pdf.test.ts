@@ -92,6 +92,14 @@ describe("IMP-14 textItemsToLines", () => {
     expect(textItemsToLines([[item("a", 0, 0, 10, 5), item("b", 15, 0, 10, 10)]])).toBe("a b");
   });
 
+  it("drops blank items, so blank filler drawn across a column gap still reads as a gap", () => {
+    // Fusion's care plan report fills each gap between cells with one wide " " item.
+    const row = [item("Bathing", 42.4, 0, 38, 12), item(" ", 80.4, 0, 251.3, 12), item("30", 331.6, 0, 13.3, 12)];
+    expect(textItemsToLines([row])).toBe("Bathing	30");
+    // An ordinary space item between words still reads as a space (the gap it leaves).
+    expect(textItemsToLines([[item("Total", 0, 0, 25), item(" ", 25, 0, 3), item("Cost", 28, 0, 20)]])).toBe("Total Cost");
+  });
+
   it("ignores empty text items and blank lines", () => {
     expect(textItemsToLines([[item("", 0, 100), item("a", 0, 50), item("  ", 0, 20)]])).toBe("a");
   });

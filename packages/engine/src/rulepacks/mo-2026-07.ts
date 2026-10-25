@@ -83,16 +83,16 @@ const tasks: TaskDef[] = [
   // Basic PC (agency model)
   t("DIETARY", "Dietary", [], ["AGENCY_PC"]),
   t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", [], ["AGENCY_PC"]),
-  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", [], ["AGENCY_PC"]),
+  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds"], ["AGENCY_PC"]),
   t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
 
   // Homemaker (agency model)
   t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER"]),
   t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER"]),
-  t("LAUNDRY", "Laundry", [], ["HOMEMAKER"]),
+  t("LAUNDRY", "Laundry", ["Laundry (Home/Off Site)"], ["HOMEMAKER"]),
   t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", [], ["HOMEMAKER"]),
   t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER"]),
-  t("SHOPPING_ERRANDS", "Shopping/Errands", [], ["HOMEMAKER"]),
+  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond"], ["HOMEMAKER"]),
   t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", [], ["HOMEMAKER"]),
 
   // APC (agency model)

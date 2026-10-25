@@ -321,8 +321,9 @@ Both modes:
 5. `months`: every month from plan start to plan end.
 6. `auth`: `{ id: "quick", participantId: "quick", program, serviceCode, start, end,
    state: "active", suspensions: [], revision: 1, tasks, transportMinutesPerMonth? }`.
-7. `monthlyAuthorizations`: from Fusion, the header units for every full plan month
-   (IMP-10); by hand, QS-11 entries.
+7. `monthlyAuthorizations`: from Fusion's care plan report, each month's own figure (IMP-17);
+   from the care plan screen, the header units for every full plan month (IMP-10); by hand,
+   QS-11 entries.
 8. `trims = fitToAuthorization(patternTemplate, auth, monthlyAuthorizations, months)`
    (ENGINE-SPEC SCH-17). Trims come from the **pattern**, never from cell changes, so a
    person's changes are never silently cut.
@@ -845,7 +846,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-12 | By hand: "Build a schedule by hand" opens the inputs; keyboard-only "dress" + Enter adds Dressing/Grooming and focuses its minutes; 60-minute transportation once a week shows "300 minutes a month = 20 units"; switching to Homemaker (ADW) removes tasks with the toast. | Playwright |
 | AC-13 | By hand, the ENGINE-SPEC TC-01 tasks give day totals Sun..Sat `70, 90, 90, 90, 90, 90, 70` and month units 181 / 177 / 169 for 31-, 30- and 28-day months. | unit (model) |
 | AC-14 | `/quick`, `/`, `/rules` load no Firebase and no pdf.js code until a PDF is chosen, and make no requests to Google domains. Opening a PDF requests only same-origin files. | check-bundle + Playwright request log |
-| AC-15 | Privacy: during AC-02 to AC-08, `sessionStorage`, `localStorage` and the console never contain "10000002" or "SAMPLE PARTICIPANT". | Playwright |
+| AC-15 | Privacy: during AC-02 to AC-08 and AC-24, `sessionStorage`, `localStorage` and the console never contain "10000002", "10000005" or "SAMPLE PARTICIPANT". | Playwright |
 | AC-16 | Sign up → verify (emulator) → set up agency → invite a scheduler → second user accepts → both see each other on Team. | Playwright against emulators |
 | AC-17 | Firestore rules tests R-01 to R-18 pass. | `npm run test:rules` |
 | AC-18 | axe: zero violations on `/`, `/quick` (example, an import issue showing, and a built plan), `/rules`, `/sign-in`, `/sign-up`, `/app`, `/app/quick`, `/app/agency/members`, in light and dark. | Playwright |
@@ -854,6 +855,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-21 | `/rules` lists every rule in `RULE_CATALOG` (including SCH-17) with ID, status, severities and source, and the services table shows each ceiling from `MO_2026_07`. | component test |
 | AC-22 | Engine: `RULE_CATALOG` matches ENGINE-SPEC section 5; TC-38 to TC-40 pass; all earlier engine tests pass. Import: IMP-T01 to IMP-T19 pass. | engine + import tests |
 | AC-23 | Root `npm run typecheck`, `npm test`, `npm run build` pass; `.github/workflows/ci.yml` runs them plus e2e and rules tests. | CI / local |
+| AC-24 | Opening `fusion-care-plan-report.pdf` (Fusion's care plan report, IMPORT-SPEC 1.3) builds the plan with no button press: read summary "SAMPLE PARTICIPANT E", "Read from Fusion · DCN 10000005", the 229 match line, the note "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule.", and "Ready to use". | Playwright |
 
 ---
 

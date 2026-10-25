@@ -33,13 +33,15 @@ function joinLine(items: PdfTextItem[]): string {
 
 /**
  * IMP-14: turn the text items of a PDF's pages into the text a paste would give. Pure: the
- * caller reads the PDF with pdf.js and passes the items in. Pages are joined with newlines;
- * a PDF with no text (a scan) gives an empty string.
+ * caller reads the PDF with pdf.js and passes the items in. Blank items are dropped first:
+ * Fusion's care plan report draws one wide " " across each gap between cells, which would
+ * otherwise close the gap. Pages are joined with newlines; a PDF with no text (a scan) gives
+ * an empty string.
  */
 export function textItemsToLines(pages: PdfTextItem[][]): string {
   return pages
     .map((items) =>
-      groupLines(items.filter((item) => item.str !== ""))
+      groupLines(items.filter((item) => item.str.trim() !== ""))
         .map(joinLine)
         .filter((line) => line.trim() !== "")
         .join("\n"),

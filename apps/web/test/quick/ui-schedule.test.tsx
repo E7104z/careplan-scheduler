@@ -37,7 +37,8 @@ function hiddenInPrint(element: HTMLElement): boolean {
 }
 
 describe("Quick Schedule: weekly grid", () => {
-  it("QS-10: scheduled cells are tinted, changed cells underlined, and minutes above the task's own get the warn fill", async () => {
+  // Several edits on fixture B's 11-month plan: about 4 s alone, more when the whole suite runs.
+  it("QS-10: scheduled cells are tinted, changed cells underlined, and minutes above the task's own get the warn fill", { timeout: 15_000 }, async () => {
     const { user } = renderQuick();
     await buildB(user);
     expect(cell("Bathing", "Monday", 45)).toHaveClass("bg-brand-tint");

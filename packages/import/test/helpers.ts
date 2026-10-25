@@ -65,6 +65,15 @@ export const C_TASKS: TaskTuple[] = [
   ["Tidy and Dust", 10, 1], ["Trash", 5, 1], ["Wash Dishes", 30, 7],
 ];
 
+// Fixture E, Fusion's care plan report: "Med Rel HC Tasks:" dropped and the report's short names
+// read as the rule pack's (Laundry, Shopping/Errands, Self-Admin of Medications).
+export const E_TASKS: TaskTuple[] = [
+  ["Bathing", 45, 3], ["Dietary", 45, 3], ["Dressing/Grooming", 15, 3], ["Laundry", 60, 1],
+  ["Make Bed/Change Linens", 10, 3], ["Shopping/Errands", 90, 1], ["Trash", 5, 3],
+  ["Mobility/Transfer/Position", 15, 3], ["Toileting", 15, 3], ["Clean Bath", 20, 1], ["Clean Kitchen", 20, 1],
+  ["Self-Admin of Medications", 5, 3], ["Clean Living Area", 30, 1],
+];
+
 export const FIXTURE_NAMES = [
   "A-run-together-5day-466.txt",
   "B-page1-of-2.txt",
@@ -72,4 +81,5 @@ export const FIXTURE_NAMES = [
   "B-tabbed-7day-455.txt",
   "C-rows-only-older-plan-402.txt",
   "D-page1-only-incomplete.txt",
+  "E-care-plan-report-229.txt",
 ];

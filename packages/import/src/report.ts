@@ -1,0 +1,156 @@
+import type { RulePack } from "@careplan/engine";
+import { MDY, ymd } from "./dates.js";
+import { buildService, type ResultParts } from "./result.js";
+import { readRow, type ReadRow } from "./rows.js";
+import type { ImportIssue } from "./types.js";
+
+// Fusion's care plan report ("Home & Community Based Services Care Plan"), IMPORT-SPEC 1.3.
+// Cells are separated by tabs (its PDF) or single spaces (copied from a PDF viewer).
+const PLAN_RE = new RegExp(`Care Plan Information\\s+${MDY}\\s*-\\s*${MDY}`);
+const PARTICIPANT_RE = /^\s*Participant Information:\s*(.+?)\s*$/m;
+const DCN_RE = /\bDCN:\s*(\d{6,12})\b/;
+// The header at the top of every page after the first: "NAME - DCN:12345678".
+const PAGE_HEADER_RE = /^\s*(.{1,120}?)\s+-\s+DCN:\s*(\d{6,12})\s*$/m;
+const FOOTER_RE = /^\s*Date Generated:/;
+const SERVICE_HEAD_RE = /^\s*Service\b.*\bStart\b/;
+const MONTH_HEAD_RE = /^\s*Start Date\s+End Date\s+Procedure Code\s+Authorized Units\s*$/;
+const TASK_HEAD_RE = /^\s*Task\s+#Min\/Day\b/;
+const MONTH_ROW_RE = new RegExp(`^\\s*${MDY}\\s+${MDY}\\s+([A-Z]\\d{4}[A-Z0-9]*)\\s+(\\d{1,5})\\s*$`);
+// The service row's middle line: "PC - Agency⇥N/A⇥N/A⇥20260000000005" (dates and provider wrap above and below).
+const LABEL_RE = /^\s*([A-Z]{2,6}(?:\s*-\s*[A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)*)?)(?=\t|\s+N\/A\b|\s+\d{6,}|\s*$)/;
+// The service row's top line: "04/01⇥01/31⇥PROVIDER NAME , (555) 555-".
+const PROVIDER_RE = /^\s*\d{1,2}\/\d{1,2}\s+\d{1,2}\/\d{1,2}\s+(.+?)\s*,\s*\(/;
+
+/** True for the text of Fusion's care plan report rather than the care plan screen. */
+export function isReport(text: string): boolean {
+  return PLAN_RE.test(text) || text.split("\n").some((line) => TASK_HEAD_RE.test(line) || MONTH_HEAD_RE.test(line));
+}
+
+interface Block {
+  label: string | null;
+  pa: string | null;
+  provider: string | null;
+  months: { start: string; end: string; code: string; units: number }[];
+  rows: string[];
+}
+
+/** The task name at the start of a report row: the first cell, or the text before the first number. */
+function rowName(line: string): string {
+  return (line.split(/\t| {2,}/)[0] ?? "").replace(/\s+\d.*$/, "").trim();
+}
+
+/** The most common value, the first seen on a tie. */
+function mostCommon(values: number[]): number {
+  let best = values[0] ?? 0;
+  for (const value of values) {
+    if (values.filter((v) => v === value).length > values.filter((v) => v === best).length) best = value;
+  }
+  return best;
+}
+
+/** The label, authorization and provider in the lines just above a service's month table. */
+function serviceRow(above: string[]): Pick<Block, "label" | "pa" | "provider"> {
+  const nearest = [...above].reverse();
+  const labelLine = nearest.find((line) => LABEL_RE.test(line)) ?? null;
+  const label = labelLine ? LABEL_RE.exec(labelLine)![1]!.replace(/\s*-\s*/, " - ") : null;
+  const pa = labelLine ? ([...labelLine.matchAll(/\b(\d{10,})\b/g)].at(-1)?.[1] ?? null) : null;
+  // The provider only when its line also starts the phone number: then the name isn't cut short.
+  const providerLine = nearest.find((line) => PROVIDER_RE.test(line));
+  const provider = providerLine ? PROVIDER_RE.exec(providerLine)![1]!.trim() : null;
+  return { label, pa, provider };
+}
+
+/** Split the report into services: a month table, then the task table that follows it. */
+function readBlocks(text: string): Block[] {
+  const lines = text.split("\n").filter((line) => line.trim() !== "" && !FOOTER_RE.test(line) && !PAGE_HEADER_RE.test(line));
+  const blocks: Block[] = [];
+  let mode: "none" | "months" | "tasks" = "none";
+  lines.forEach((line, i) => {
+    const block = blocks[blocks.length - 1];
+    if (MONTH_HEAD_RE.test(line)) {
+      blocks.push({ ...serviceRow(lines.slice(Math.max(0, i - 6), i)), months: [], rows: [] });
+      mode = "months";
+    } else if (TASK_HEAD_RE.test(line)) {
+      mode = block ? "tasks" : "none";
+    } else if (SERVICE_HEAD_RE.test(line)) {
+      mode = "none";
+    } else if (mode === "months" && block) {
+      const m = MONTH_ROW_RE.exec(line);
+      if (m) {
+        const [, m1, d1, y1, m2, d2, y2, code, units] = m;
+        block.months.push({ start: ymd(m1!, d1!, y1!), end: ymd(m2!, d2!, y2!), code: code!, units: Number(units) });
+      } else {
+        mode = "none";
+      }
+    } else if (mode === "tasks" && block) {
+      block.rows.push(line.trim());
+    }
+  });
+  return blocks;
+}
+
+/** IMP-17: one task row. The Comments cell ("N/A") is dropped; an unread row keeps its full text. */
+function readReportRow(line: string, pack: RulePack): ReadRow | null {
+  const row = readRow(line.replace(/\s+N\/A\s*$/i, ""), pack);
+  return row?.kind === "unread" ? { ...row, raw: line } : row;
+}
+
+/**
+ * IMP-17/18: read Fusion's care plan report. Participant from "Participant Information" and the
+ * first DCN (else the page header), plan dates from "Care Plan Information", and for each
+ * service its label, authorization, provider, each month's authorized units and its tasks.
+ * A service whose procedure code is a visit in the rule pack (a nurse visit, such as GHE) is
+ * left out with a note. The address, date of birth and phone numbers are never read.
+ */
+export function readReport(text: string, pack: RulePack): ResultParts {
+  const plan = PLAN_RE.exec(text);
+  const name = PARTICIPANT_RE.exec(text)?.[1];
+  const dcn = DCN_RE.exec(text)?.[1];
+  const pageHeader = PAGE_HEADER_RE.exec(text);
+  const participant =
+    name && dcn ? { name, dcn } : pageHeader ? { name: pageHeader[1]!.trim(), dcn: pageHeader[2]! } : null;
+
+  const duplicates: ImportIssue[] = [];
+  const skipped: ImportIssue[] = [];
+  const services: ResultParts["services"] = [];
+  for (const block of readBlocks(text)) {
+    const code = block.months[0]?.code ?? null;
+    const label = block.label ?? code;
+    if (code && pack.services.find((service) => service.code === code)?.unit === "visit") {
+      if (!skipped.some((note) => note.label === label)) {
+        const what = block.rows[0] ? rowName(block.rows[0]) : "";
+        skipped.push({
+          level: "warn", code: "not-scheduled", label: label ?? undefined,
+          message: `${label}${what ? ` (${what})` : ""} is a nurse visit, so it isn't part of this schedule.`,
+        });
+      }
+      continue;
+    }
+    const monthly = block.months.map(({ start, end, units }) => ({ start, end, units }));
+    const rows = block.rows.flatMap((line) => {
+      const row = readReportRow(line, pack);
+      return row ? [row] : [];
+    });
+    services.push(buildService({
+      label,
+      provider: block.provider,
+      phone: null,
+      start: monthly.length ? monthly.map((m) => m.start).sort()[0]! : null,
+      end: monthly.length ? monthly.map((m) => m.end).sort().at(-1)! : null,
+      units: mostCommon(monthly.map((m) => m.units)),
+      cost: null,
+      pa: block.pa,
+      monthly,
+    }, rows, duplicates));
+  }
+
+  return {
+    participant,
+    bannerPlan: plan ? { start: ymd(plan[1]!, plan[2]!, plan[3]!), end: ymd(plan[4]!, plan[5]!, plan[6]!) } : null,
+    totalCost: null,
+    paging: [],
+    services,
+    duplicates,
+    skipped,
+  };
+}
