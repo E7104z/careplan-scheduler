@@ -125,7 +125,7 @@ describe("Quick Schedule: month", () => {
     expect(screen.getByText(/^Monday 1: \d+ minutes$/)).toHaveClass("sr-only");
   });
 
-  it("shows the month's units authorized, scheduled and left, and every month on request", async () => {
+  it("AC-26: shows the month's units authorized, scheduled and left, and every month on request", async () => {
     const { user } = renderQuick();
     await buildB(user);
     const balance = screen.getByLabelText("Units in December 2025");

@@ -335,8 +335,8 @@ Both modes:
    person's changes are never silently cut.
 9. `results = validatePlan({ pack, authorizations: [auth], monthlyAuthorizations,
    template (with entries), exceptions: trims, months })`, or `[]` with no valid tasks.
-   Quick Schedule doesn't schedule visits, so it runs the plan rules only (ENGINE-SPEC
-   Amendment B), never the visit rules (SCH-14, CON-*).
+   Quick Schedule doesn't schedule visits, so it runs the plan rules (ENGINE-SPEC Amendment B)
+   and CON-09 on the expanded template, never the visit rules (SCH-14, the other CON rules).
 10. `checksum` (from Fusion): IMP-15, over the full months of Fusion's plan (computed before
    step 7, which uses it).
 11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
@@ -407,8 +407,9 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   mo-2026-07". A card about a task has "Show in week" (scroll to and highlight the row 2 s).
 - SCH-08 results with `refs.taskId` use the copy key `SCH-08/task`.
 - No "No problems found" while any Needs review group exists.
-- Quick Schedule runs only the plan rules (5.3 step 9). The SCH-14 and CON rows below are for
-  schedules with visits (Phase 3), so "Referral date is missing" (CON-13) never shows here.
+- Quick Schedule runs the plan rules and CON-09 on its weekly pattern (5.3 step 9). The SCH-14
+  and other CON rows below are for schedules with visits (Phase 3), so "Referral date is
+  missing" (CON-13) never shows here.
 
 Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity in
 `RULE_CATALOG` has an entry (AUTH-13, SCH-15 and SCH-17 emit nothing and are exempt).
@@ -934,9 +935,9 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   "Questions: support@thecdscloud.com" as selectable text.
 
 **Rules and sources (`/rules`)**: intro sentence; rule pack name, ID and effective date; "Quick
-Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks.
-SCH-14 and the conflict and eligibility checks are for visits, caregivers and enrollments, which
-come in a later release.";
+Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks,
+and the 49-hour weekly limit (CON-09) on the pattern. SCH-14 and the other conflict and
+eligibility checks are for visits, caregivers and enrollments, which come in a later release.";
 tables grouped Authorization / Schedule / Conflicts and eligibility, generated from
 `RULE_CATALOG` (ID, rule text, severities as pills, status, source); status explained in plain
 words: VERIFIED "Checked against the cited DHSS source", VERIFIED (CDS) "Checked for CDS; for

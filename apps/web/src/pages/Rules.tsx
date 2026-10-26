@@ -35,8 +35,9 @@ export function Rules() {
       </p>
       <p className="mt-2 max-w-[62ch] text-ink-2">
         Quick Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule
-        checks. SCH-14 and the conflict and eligibility checks are for visits, caregivers and
-        enrollments, which come in a later release.
+        checks, and the 49-hour weekly limit (CON-09) on the pattern. SCH-14 and the other conflict
+        and eligibility checks are for visits, caregivers and enrollments, which come in a later
+        release.
       </p>
 
       <section className="mt-8">

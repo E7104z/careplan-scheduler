@@ -44,7 +44,7 @@ describe("Quick Schedule: for the caregiver, the participant and EVV", () => {
     await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
   }
 
-  it("the daily task list gives each visit's tasks and a visit length that is their total", async () => {
+  it("AC-26: the daily task list gives each visit's tasks and a visit length that is their total", async () => {
     const { user } = renderQuick();
     await buildB(user);
     const list = screen.getByRole("heading", { level: 2, name: "Daily task list" }).closest("section")!;
@@ -59,7 +59,7 @@ describe("Quick Schedule: for the caregiver, the participant and EVV", () => {
     expect(within(sunday).getByText("235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)")).toBeInTheDocument();
   });
 
-  it("reviewed with the participant: today's date by default, printed, and cleared by a change", async () => {
+  it("AC-26: reviewed with the participant: today's date by default, printed, and cleared by a change", async () => {
     const { user } = renderQuick();
     await buildB(user);
     expect(screen.getByText("Reviewed with the participant on ______________________")).toBeInTheDocument();

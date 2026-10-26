@@ -202,8 +202,9 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   const trims: CalendarException[] =
     tasks.length > 0 ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
-  // Step 9: validate. Quick Schedule has no visits, so only the plan rules run (ENGINE-SPEC
-  // Amendment B): CON-13 would otherwise ask for a referral date it has no first visit to check.
+  // Step 9: validate. Quick Schedule has no visits, so the plan rules run, with CON-09 on the
+  // expanded template (ENGINE-SPEC Amendment B): CON-13 would otherwise ask for a referral date
+  // it has no first visit to check.
   const results: ScheduleValidationResult[] =
     tasks.length > 0
       ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })

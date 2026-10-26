@@ -124,7 +124,7 @@ describe("Rules", () => {
     render(<Rules />, { wrapper: MemoryRouter });
     expect(
       screen.getByText(
-        "Quick Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks. SCH-14 and the conflict and eligibility checks are for visits, caregivers and enrollments, which come in a later release.",
+        "Quick Schedule builds a weekly pattern, not visits, so it runs the authorization and schedule checks, and the 49-hour weekly limit (CON-09) on the pattern. SCH-14 and the other conflict and eligibility checks are for visits, caregivers and enrollments, which come in a later release.",
       ),
     ).toBeInTheDocument();
   });
