@@ -59,12 +59,12 @@ const tasks: TaskDef[] = [
   t("BOWEL_BLADDER_ROUTINE", "Bowel/Bladder Routine", [], ["CDS", "ILW"]),
   t("CATHETER_HYGIENE", "Catheter Hygiene", [], ["CDS", "ILW", "APC"]),
   t("CHANGE_LINENS", "Change Linens", [], ["CDS", "ILW"]),
-  t("CLEAN_BATH", "Clean Bath", [], ["CDS", "ILW", "HOMEMAKER"]),
+  t("CLEAN_BATH", "Clean Bath", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_FLOORS", "Clean Floors", [], ["CDS", "ILW"]),
-  t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER"]),
+  t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
   t("DRESSING_GROOMING", "Dressing/Grooming", [], ["CDS", "ILW", "AGENCY_PC"]),
-  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", [], ["CDS", "ILW", "HOMEMAKER"]),
+  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
   t("MAKE_BED", "Make Bed", [], ["CDS", "ILW"]),
@@ -74,7 +74,7 @@ const tasks: TaskDef[] = [
   t("OSTOMY_HYGIENE", "Ostomy Hygiene", [], ["CDS", "ILW", "APC"]),
   t("PASSIVE_ROM", "Passive ROM", [], ["CDS", "ILW", "APC"]),
   t("TIDY_AND_DUST", "Tidy and Dust", [], ["CDS", "ILW"]),
-  t("TRASH", "Trash", [], ["CDS", "ILW", "HOMEMAKER"]),
+  t("TRASH", "Trash", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("TREATMENTS", "Treatments", [], ["CDS", "ILW"]),
   t("TURNING_POSITIONING", "Turning/Positioning", [], ["CDS", "ILW"]),
   t("WASH_DISHES", "Wash Dishes", [], ["CDS", "ILW"]),
@@ -83,16 +83,18 @@ const tasks: TaskDef[] = [
   // Basic PC (agency model)
   t("DIETARY", "Dietary", [], ["AGENCY_PC"]),
   t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", [], ["AGENCY_PC"]),
-  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", [], ["AGENCY_PC"]),
+  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds"], ["AGENCY_PC"]),
   t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
 
-  // Homemaker (agency model)
-  t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER"]),
+  // Homemaker (agency model). AGENCY_PC also has the household tasks Fusion lists under PC - Agency
+  // as "Med Rel HC Tasks": Clean Bath, Clean Kitchen, Clean Living Area, Laundry, Make Bed/Change
+  // Linens, Shopping/Errands and Trash (Amendment B).
+  t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER"]),
-  t("LAUNDRY", "Laundry", [], ["HOMEMAKER"]),
-  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", [], ["HOMEMAKER"]),
+  t("LAUNDRY", "Laundry", ["Laundry (Home/Off Site)"], ["HOMEMAKER", "AGENCY_PC"]),
+  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER"]),
-  t("SHOPPING_ERRANDS", "Shopping/Errands", [], ["HOMEMAKER"]),
+  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond"], ["HOMEMAKER", "AGENCY_PC"]),
   t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", [], ["HOMEMAKER"]),
 
   // APC (agency model)

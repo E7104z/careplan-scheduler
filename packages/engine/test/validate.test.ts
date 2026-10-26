@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   MO_2026_07,
+  validatePlan,
   validateSchedule,
   type AuthorizedTask,
+  type ServiceAuthorization,
+  type ValidatePlanInput,
+  type ValidateScheduleInput,
   type ScheduleTemplate,
   type TemplateEntry,
   type Weekday,
@@ -137,3 +141,80 @@ describe("validateSchedule", () => {
     expect(results.some((r) => r.severity === "WARN")).toBe(true);
   });
 });
+
+/** An AGENCY_PC plan with no referral date: CON-13 has nothing to check it against. */
+function agencyPlan(): ValidatePlanInput {
+  const auth: ServiceAuthorization = {
+    id: "auth-1",
+    participantId: "P-TEST-01",
+    program: "AGENCY_PC",
+    serviceCode: "T1019",
+    start: "2025-09-01",
+    end: "2026-08-31",
+    state: "active",
+    suspensions: [],
+    revision: 1,
+    tasks: [task("bathing", 30, 3), task("toileting", 15, 7), task("meals", 45, 7), task("laundry", 30, 2), task("kitchen", 10, 2)],
+  };
+  return {
+    pack: MO_2026_07,
+    authorizations: [auth],
+    monthlyAuthorizations: [{ serviceAuthId: "auth-1", month: "2025-09", units: 177, source: "fusion", revision: 1 }],
+    template: tc01Template(),
+    exceptions: [],
+    months: ["2025-09", "2025-10"],
+  };
+}
+
+const NO_VISITS: Pick<ValidateScheduleInput, "visits" | "caregivers" | "enrollments" | "tenantWorkweekStart"> = {
+  visits: [],
+  caregivers: [],
+  enrollments: [],
+  tenantWorkweekStart: 0,
+};
+
+describe("validatePlan", () => {
+  it("leaves out the visit rules: no CON-13 REVIEW for an agency plan without a referral date", () => {
+    const plan = agencyPlan();
+    expect(validateSchedule({ ...plan, ...NO_VISITS }).some((r) => r.ruleId === "CON-13")).toBe(true);
+    expect(validatePlan(plan).some((r) => r.ruleId === "CON-13")).toBe(false);
+  });
+
+  it("gives every other result validateSchedule gives with no visits, in the same order, stamped the same", () => {
+    const plan = agencyPlan();
+    const withVisitRules = validateSchedule({ ...plan, ...NO_VISITS });
+    expect(validatePlan(plan)).toEqual(withVisitRules.filter((r) => r.ruleId !== "CON-13"));
+    expect(validatePlan(plan).length).toBeGreaterThan(0);
+  });
+
+  it("CON-09 on the expanded template: an ILW week over 49 hours needs review, 49 hours doesn't (Amendment B)", () => {
+    const ilw = (minPerDay: number): ValidatePlanInput => ({
+      pack: MO_2026_07,
+      authorizations: [
+        {
+          id: "auth-1", participantId: "P-TEST-01", program: "ILW", serviceCode: "T1019U6",
+          start: "2026-11-01", end: "2026-12-31", state: "active", suspensions: [], revision: 1,
+          tasks: [task("care", minPerDay, 7)],
+        },
+      ],
+      monthlyAuthorizations: [],
+      template: {
+        id: "tpl-1", participantId: "P-TEST-01", start: "2026-11-01", end: "2026-12-31", rulePackVersion: "mo-2026-07",
+        entries: ([0, 1, 2, 3, 4, 5, 6] as Weekday[]).map((weekday) => entry("care", weekday, minPerDay)),
+      },
+      exceptions: [],
+      months: ["2026-11", "2026-12"],
+    });
+    // 420 min a day = 49 hours a week exactly.
+    expect(validatePlan(ilw(420)).filter((r) => r.ruleId === "CON-09")).toEqual([]);
+    // 430 min a day = 50 h 10 min a week: every whole Sunday–Saturday week of Nov and Dec 2026.
+    const over = validatePlan(ilw(430)).filter((r) => r.ruleId === "CON-09");
+    expect(over.length).toBe(8);
+    expect(over.every((r) => r.severity === "REVIEW")).toBe(true);
+    expect(over[0]).toMatchObject({
+      message: "Sunday-Saturday week 2026-11-01 exceeds 49 h (3010 min)",
+      refs: { date: "2026-11-01", month: "2026-11", serviceAuthId: "auth-1" },
+    });
+  });
+});
+

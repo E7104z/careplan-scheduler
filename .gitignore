@@ -2,3 +2,19 @@ node_modules
 dist
 coverage
 .DS_Store
+
+# apps/web build and test output
+apps/web/dist
+apps/web/dist-emulated
+apps/web/test-results
+apps/web/playwright-report
+
+# local env and Firebase emulator logs
+.env.local
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Vercel CLI link (vercel link). apps/web/.env and .env.emulator are committed (APP-SPEC 7.1),
+# so never ignore .env* broadly.
+.vercel

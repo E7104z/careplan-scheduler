@@ -1,8 +1,19 @@
-# CarePlan Scheduler — Engine Specification (Phase 1)
+# CarePlan Scheduler — Engine Specification (Phase 1, amended for Phase 2)
 
 Condensed from "CarePlan Scheduler — Missouri Scheduling Rules Specification" v0.3
 (Claude Docs, Oct 20, 2026). Rule IDs, formulas and expected values here are identical to
 that document. Phase 1 = the rules engine package only (`packages/engine`).
+
+**Amendment A (Oct 21, 2026, Phase 2 Prompt 1):** `CalendarException.kind`, rule SCH-17
+(fit a month to its authorization), SCH-11 ignores `kind: "fit"`, the "Essential Correspond"
+alias, `RULE_CATALOG`, and fixtures TC-38 to TC-40. Nothing else in this file changed.
+
+**Amendment B (Oct 25, 2026, Phase 2 review of Fusion's care plan report):** the entry point
+`validatePlan` (section 5); agency personal care (AGENCY_PC) gains the seven household tasks
+Fusion lists under PC - Agency (section 3); and AUTH-09 also checks a month with no imported
+figure on its derived units, as WARN (a plan built by hand had no ceiling check at all); and
+`validatePlan` checks CON-09's Sunday–Saturday weeks on the expanded template (no visits needed).
+No formula or expected value changed.
 
 ---
 
@@ -80,6 +91,7 @@ export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date
   reason: string; author: string; createdAt: string;
+  kind?: "change" | "fit";                // Amendment A: "fit" = automatic trim from SCH-17; absent = "change"
 }
 export interface Visit {
   id: string; participantId: string; caregiverId: string;
@@ -128,15 +140,20 @@ CDS / ILW (DHSS 14b dropdown, HCBS-3c names as aliases):
 Assistive Transfer Device (alias "Asst. Transfer Device"); Assistance with Toileting (aliases
 "Asstance with Toileting", "Asst. with Toileting"); Bathing; Bowel/Bladder Routine; Catheter
 Hygiene; Change Linens; Clean Bath; Clean Floors; Clean Kitchen; Clean/Maintain Equipment;
-Dressing/Grooming; Essential Correspondence; Laundry (Home); Laundry (Off Site); Make Bed;
+Dressing/Grooming; Essential Correspondence (alias "Essential Correspond", Fusion's truncation); Laundry (Home); Laundry (Off Site); Make Bed;
 Meal Prep/Eating; Medications; Mobility/Transfer; Ostomy Hygiene; Passive ROM; Tidy and Dust;
 Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (transport).
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
-Medications; Toileting. Homemaker — Clean Bath; Clean Kitchen; Clean Living Area; Essential
-Correspondence; Iron/Mend; Laundry; Make Bed/Change Linens; Meals/Dishes; Shopping/Errands;
-Trash; Wash Windows/Blinds. APC — Aseptic Dressings; Assistive Transfer Device; Bowel
+Medications (alias "Self Admin of Meds"); Toileting; and the medically related household tasks
+Fusion lists under PC - Agency as "Med Rel HC Tasks" (Amendment B): Clean Bath; Clean Kitchen;
+Clean Living Area; Laundry; Make Bed/Change Linens; Shopping/Errands; Trash. These stay
+Homemaker tasks too. Homemaker — Clean Bath; Clean Kitchen;
+Clean Living Area; Essential Correspondence; Iron/Mend; Laundry (alias "Laundry (Home/Off
+Site)"); Make Bed/Change Linens; Meals/Dishes; Shopping/Errands (alias
+"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. The three aliases are the names in
+Fusion's care plan report for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device; Bowel
 Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite — Basic
 Respite; Advanced Respite.
 
@@ -168,6 +185,20 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 
 ## 5. Rules (`src/rules/`)
 
+Entry points (`src/validate.ts`): `validateSchedule(input)` runs every rule below, stamps each
+result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN, INFO.
+`validatePlan(input)` (Amendment B) takes the same input without `visits`, `caregivers`,
+`enrollments` and `tenantWorkweekStart`, and runs the rules that read the plan: AUTH-03 to
+AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, plus CON-09 on the expanded template: each
+ILW or Respite authorization's task minutes on each date (template plus exceptions), checked as
+visits would be, keeping only the Sunday–Saturday week results (REVIEW; a repeating week makes
+every rolling 7-day window equal its week or less), with `refs.month` the week's first month.
+For a plan with no visits its other results are `validateSchedule`'s without the visit rules
+(SCH-14 and every CON rule), in the same order.
+It is for a plan that is not scheduled as visits (Quick Schedule): run on no visits, CON-13
+would ask for a referral date it has no first visit to check. Only visit time (SCH-15) needs
+luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't load it.
+
 ### Authorization (`auth.ts`)
 
 | ID | Rule | Severity | Status | Source |
@@ -177,7 +208,7 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 | AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED | INFO 05-25-03 (May 9, 2025) |
 | AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 (P-02) |
 | AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED | Policy 3.25 (01/26); HCBS-3c cell L88 |
-| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. | BLOCK / REVIEW | VERIFIED | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
+| AUTH-09 | Imported authorization above the program ceiling → REVIEW. Respite Basic + Advanced in a month > 868 → BLOCK. A month with no imported figure whose derived units (AUTH-05) are above the ceiling → WARN (Amendment B). | BLOCK / REVIEW / WARN | VERIFIED | 3.00 Appendix 1 (rev. Jul 2026); Policy 3.50 (rev. Jul 2026); HCBS 06-26-01 |
 | AUTH-11 | ILW switch projection only when both imported authorizations exist; label "projection". | INFO | PARTIAL | Policy 3.55 (01/26) |
 | AUTH-12 | ILW units scheduled while `state = pending_approval` → BLOCK. Never create a State Plan authorization for an ILW participant. | BLOCK | VERIFIED | Policy 3.55 (01/26); 3.00 Appendix 1 (rev. Jul 2026) |
 | AUTH-13 | Validation results carry the rule-pack version. | INFO | APPROVED | Product decision approved Oct 20, 2026 (P-06) |
@@ -189,10 +220,11 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 | SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
 | SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
 | SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK. | BLOCK | VERIFIED | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2 |
-| SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). | WARN | APPROVED | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
+| SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). Exceptions with `kind: "fit"` are not counted (Amendment A). | WARN | APPROVED | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
 | SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
+| SCH-17 | Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: "fit"`, `reason: "Units for the month run out"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results. | — | APPROVED | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
 
 ### Conflicts and eligibility (`con.ts`)
 
@@ -268,5 +300,9 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-33 | caregiver 42 h in workweek | WARN CON-05 only |
 | TC-35 | ILW attendant `fcsrRegistered` undefined | REVIEW CON-17 |
 | TC-37 | 7-day task, 61 weekly minutes (10×6 + 1) | F-2b 18; F-2a 19; REVIEW AUTH-03 |
+
+| TC-38 | IMPORT-SPEC fixture B (7-day plan, Fusion 455, transport 345 min) composed with all seven days active, `weeklyTransportMinutes` 60 on Sunday (transportDay 0), no overrides; authorization 2025-12-01–2026-10-31; Fusion 455 for every month | `fitToAuthorization` returns exactly: 2025-12-31 Meal Prep/Eating −60, Bathing −35; 2026-03-31 Meal Prep/Eating −60, Bathing −15; 2026-08-31 Meal Prep/Eating −55; all `kind: "fit"`; validateSchedule with those exceptions has no BLOCK |
+| TC-39 | the TC-38 trims (Dec, Mar, Aug) plus a second `kind: "fit"` trim on 2026-01-31 for Meal Prep/Eating | no SCH-11 result; the same four as `kind: "change"` → one SCH-11 WARN |
+| TC-40 | "Essential Correspond" | `findTaskByName` → ESSENTIAL_CORRESPONDENCE |
 
 TC-19 (app-level), TC-23 (amendment), TC-34 (GHE) and TC-36 (exports) belong to later phases.

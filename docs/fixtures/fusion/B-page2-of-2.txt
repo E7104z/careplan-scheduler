@@ -1,0 +1,15 @@
+SAMPLE PARTICIPANT B (DCN: 10000002) Care Plan: 12/01/2025 - 10/31/2026 Total Cost: $2436.53
+Search:
+Total Units	Task Type	Minutes Per Day	Days Per Week	Units Per Day	Units Per Month	Units Per Year	Minutes Per Month
+PC - CDS | TEST HOME CARE LLC | 5555550100 | 12/01/2025 - 10/31/2026 | 455 units | $2,436.53 | PA: 20250000000002
+455 units	Meal Prep/Eating	60	7				
+455 units	Medications	5	7				
+455 units	Mobility/Transfer	10	7				
+455 units	Tidy and Dust	10	1				
+455 units	Trash	5	7				
+455 units	Wash Dishes	15	7				
+Showing 11 to 16 of 16 entries
+Previous
+1
+2
+Next

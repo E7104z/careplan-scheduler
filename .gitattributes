@@ -1,0 +1,3 @@
+# PDFs are binary: converting their line endings (core.autocrlf on Windows) shifts the byte
+# offsets a PDF's cross-reference table points at.
+*.pdf binary

@@ -2,10 +2,16 @@
   "name": "careplan-scheduler",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "test": "npm run test -w @careplan/engine",
-    "typecheck": "npm run typecheck -w @careplan/engine"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build -w @careplan/web",
+    "dev": "npm run dev -w @careplan/web"
+  },
+  "devDependencies": {
+    "firebase-tools": "14.27.0"
   }
 }

@@ -1,0 +1,16 @@
+SAMPLE PARTICIPANT C (DCN: 10000003) Care Plan: 02/01/2025 - 12/31/2025
+402 units	Bathing	15	7
+402 units	Change Linens	10	2
+402 units	Clean Bath	15	2
+402 units	Clean Floors	15	2
+402 units	Clean/Maintain Equipment	15	7
+402 units	Essential Correspond	10	3
+402 units	Essential Transportation			30		450
+402 units	Laundry (Home)	60	2
+402 units	Make Bed	5	5
+402 units	Meal Prep/Eating	60	7
+402 units	Medications	5	7
+402 units	Mobility/Transfer	10	7
+402 units	Tidy and Dust	10	1
+402 units	Trash	5	1
+402 units	Wash Dishes	30	7

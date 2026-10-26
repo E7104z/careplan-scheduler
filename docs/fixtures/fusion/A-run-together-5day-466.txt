@@ -1,0 +1,4 @@
+SAMPLE PARTICIPANT A (DCN: 10000001) Care Plan: 08/01/2025 - 06/30/2026
+Search:
+Total UnitsTask TypeMinutes Per DayDays Per WeekUnits Per DayUnits Per MonthUnits Per YearMinutes Per MonthPC - CDS    |    __TEST HOME CARE LLC__ | 5555550100    |    08/01/2025 - 06/30/2026    |    466 units    |    PA: 20250000000001       466 unitsBathing455466 unitsChange Linens101466 unitsClean Bath451466 unitsClean Floors301466 unitsClean Kitchen451466 unitsClean/Maintain Equipment105466 unitsEssential Correspond305466 unitsEssential Transportation51765466 unitsLaundry (Home)902466 unitsMake Bed55
+466 unitsMeal Prep/Eating605466 unitsMedications155466 unitsMobility/Transfer105466 unitsTidy and Dust151466 unitsTrash53466 unitsWash Dishes205
