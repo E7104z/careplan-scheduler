@@ -1,12 +1,14 @@
 import { useEffect, useState, type Dispatch, type ReactNode } from "react";
 import { daysInMonth, weekdayOf, type Weekday } from "@careplan/engine";
 import { cn } from "../../lib/cn";
-import { formatUnits, monthName, niceDate, weekdayName } from "../../lib/format";
+import { formatUnits, monthName, weekdayName } from "../../lib/format";
 import { Button } from "../../ui/Button";
 import { Field } from "../../ui/Field";
 import { NumberField } from "../../ui/NumberField";
 import { Panel } from "../../ui/Panel";
+import { MonthBalance } from "./MonthBalance";
 import { addMonths, monthFigures } from "./model";
+import { MonthTable } from "./MonthTable";
 import type { QuickAction } from "./state";
 import type { QuickModel, QuickState } from "./types";
 
@@ -72,13 +74,6 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
   const month = state.viewMonth;
   const [year, monthNumber] = month.split("-").map(Number);
   const figures = monthFigures(model, month);
-  const available = figures.authorizedUnits - figures.transportUnits;
-  const cap = Math.max(figures.taskBudgetMinutes, figures.scheduledTaskMinutes, 1);
-  const fill = (Math.min(figures.scheduledTaskMinutes, figures.taskBudgetMinutes) / cap) * 100;
-  const overPct = figures.over ? ((figures.scheduledTaskMinutes - figures.taskBudgetMinutes) / cap) * 100 : 0;
-  const lastTrim = figures.trims.length ? figures.trims.map((trim) => trim.date).sort()[0] : null;
-  const scheduledUnits = Math.floor(figures.scheduledTaskMinutes / 15);
-  const scheduledRemainder = figures.scheduledTaskMinutes % 15;
 
   const firstMonth = model.months[0] ?? month;
   const lastMonth = model.months[model.months.length - 1] ?? month;
@@ -185,42 +180,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
         <p className="text-ink-2">Add tasks to see this month's units.</p>
       ) : (
         <>
-          <div className="grid gap-2 rounded-md border border-line bg-surface p-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-sm text-ink">
-                <strong className="font-bold">
-                  {scheduledUnits} unit{scheduledUnits === 1 ? "" : "s"}
-                  {scheduledRemainder ? ` + ${scheduledRemainder} min` : ""}
-                </strong>{" "}
-                scheduled for tasks of {available} available
-              </p>
-              <span className="text-[13px] text-ink-3">
-                {figures.source === "fusion"
-                  ? `Fusion: ${figures.authorizedUnits} units`
-                  : `Calculated: ${figures.calculatedUnits} units`}
-                {figures.transportUnits ? ` − ${figures.transportUnits} transportation` : ""}
-              </span>
-            </div>
-            <div
-              role="img"
-              aria-label={figures.over ? "Over the month's authorization" : "Within the month's authorization"}
-              className="flex h-3 w-full overflow-hidden rounded-full bg-sunk"
-            >
-              <div className="h-full bg-tile" style={{ flexBasis: `${fill}%` }} />
-              {figures.over ? <div className="h-full bg-block" style={{ flexBasis: `${overPct}%` }} /> : null}
-            </div>
-            {figures.trimmedMinutes && lastTrim ? (
-              <p className="text-[13px] text-warn">
-                This month's tasks need more than Fusion's {figures.authorizedUnits} units, so the schedule stops{" "}
-                {figures.trimmedMinutes} minutes early, starting {niceDate(lastTrim)}. Those days are marked below.
-              </p>
-            ) : null}
-            {figures.over ? (
-              <p className="text-[13px] text-block">
-                {figures.scheduledTaskMinutes - figures.taskBudgetMinutes} minutes over. See Checks below.
-              </p>
-            ) : null}
-          </div>
+          <MonthBalance model={model} month={month} figures={figures} />
 
           {state.source === "manual" ? <FusionUnitsField state={state} month={month} dispatch={dispatch} /> : null}
 
@@ -234,6 +194,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
             </div>
             <div className="mt-1 grid grid-cols-7 gap-1">{cells}</div>
           </div>
+          <MonthTable model={model} />
         </>
       )}
     </Panel>

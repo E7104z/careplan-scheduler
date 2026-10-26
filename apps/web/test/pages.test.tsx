@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MO_2026_07, RULE_CATALOG } from "@careplan/engine";
 import {
   exampleDayTotals,
@@ -14,6 +14,15 @@ import { Privacy } from "../src/pages/Privacy";
 import { Rules } from "../src/pages/Rules";
 
 describe("Landing", () => {
+  // The example plan starts this month, so the refusal names a month after Oct 21, 2026.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T12:00:00-05:00"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("renders the spec copy and engine-computed figures", () => {
     render(<Landing />, { wrapper: MemoryRouter });
 
@@ -45,7 +54,8 @@ describe("Landing", () => {
     // The four figures come from the engine and the import package, not hardcoded output.
     const matchLine = "Every task read. Our total from these tasks matches Fusion's 466 units a month.";
     const weekText = "70, 90, 90, 90, 90, 90, 70";
-    const refusalSentence = "That would put Bathing over its 69 units in October 2025.";
+    // December 2026: the plan's first month with 23 weekdays, so Bathing has no room left.
+    const refusalSentence = "That would put Bathing over its 69 units in December 2026.";
     const refusalFix =
       "Bathing can't have more than 45 minutes on Tuesday. To add time here, take it from another day first.";
 

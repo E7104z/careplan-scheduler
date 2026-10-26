@@ -25,7 +25,9 @@ export interface ImportedService {
 export type ImportIssueCode =
   | "no-rows" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
   | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
-  | "not-scheduled";
+  | "not-scheduled"
+  // Set by the app, which knows today's date (the reader has no clock): the plan ended before this month.
+  | "plan-ended";
 
 export interface ImportIssue {
   level: "error" | "input" | "warn"; code: ImportIssueCode; message: string;

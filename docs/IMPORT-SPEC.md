@@ -56,8 +56,16 @@ for a **30-day month**: daily tasks use 30 days, other tasks use the DHSS factor
 | B, 7-day plan | tab-separated | 455 | 455 | match |
 | C, older plan (Feb 2025) | rows only | 402 | 391 (401 for 31 days) | no match: flagged, Fusion's figure used |
 
-**Open question (DHSS):** whether Fusion authorizes more units in a 31-day month. Until DHSS
-confirms, Fusion's figure caps every full month (IMP-10), which is never over-authorization.
+**Answered by DSDS's Fusion FAQ (Jun 4, 2025):** "Fusion pro-rates units monthly for care
+plans containing tasks occurring 7 days weekly"; a task's units are its units per day times 31,
+a task done fewer days a week counts a set number of days ("a 3 day a week task will be
+calculated at 15 days per month"), and a shorter month changes only the 7-day tasks (139, 136
+and 133 units for 31, 30 and 29 days in its example). INFO 05-25-03 adds that migrated plans
+show only the longest month's total. So the care plan screen's one figure is Fusion's figure
+for one month length (30 days for A and B), and Fusion's figure for each other month is that
+figure prorated the same way: B is 469 in a 31-day month and 434 in a 28-day month. Applying 455
+to every month, as before Oct 25, 2026, cut authorized care at the end of 31-day months and let
+February go 21 units over Fusion's figure (IMP-10 now prorates; decided Oct 25, 2026).
 
 ### 1.3 Fusion's care plan report (PDF)
 Seen in Oct 2026 in a real GCA plan (agency personal care), then de-identified as fixture E
@@ -97,7 +105,7 @@ Amendment B), so a plan built by hand can have them. The real plan's tasks add u
 | IMP-07 | **Task numbers**: cells → first two numbers are minutes per day and days per week. Run-together → the last digit is days per week (always one digit, 1–7) and the digits before it are minutes per day. Valid only if days 1–7 and minutes 1–1440; otherwise the row is unread. |
 | IMP-08 | **Transportation numbers**: find the pair (units, minutes) where `floor(minutes / 15) = units`; for run-together digits try every split point. The plan's transportation is that minutes-per-month value. |
 | IMP-09 | **Task names**: match the rule pack's task names and aliases ignoring case and extra spaces; if none, accept a unique prefix match of 6+ characters (Fusion truncation). A name with a group prefix, such as the care plan report's `Med Rel HC Tasks: Trash`, is matched by the part after the last colon. No match → keep the Fusion name, warn, and schedule it anyway (taskCode `FUSION:<name>`). |
-| IMP-10 | **Monthly authorization**: the group row's units become a Fusion `MonthlyAuthorization` (source `fusion`) for every **full** plan month. Partial months get none (SCH-12 asks for that month's figure). This is the conservative reading until DHSS answers the open question in 1.2. The care plan report gives each month's own figure instead (IMP-17); those are used as they are. |
+| IMP-10 | **Monthly authorization**: the group row's units, prorated to each **full** month of the schedule as Fusion prorates (1.2), become a Fusion `MonthlyAuthorization` (source `fusion`) for that month. When our total from the rows read equals Fusion's figure for some month length (IMP-15), each month's figure is our total for that month: Fusion's own method on the same tasks. When it doesn't (rows may be missing), each month's figure is Fusion's, lowered in a month shorter than 30 days by what the daily tasks read lose there, and never raised above Fusion's. Partial months get none (SCH-12 asks for that month's figure). The care plan report gives each month's own figure instead (IMP-17); those are used as they are. |
 | IMP-11 | **Service labels**: `PC - CDS` → `T1019U2`; `PC - Agency` → `T1019` (care plan report, Oct 2026). Any other label → ask the person which service it is (from the rule pack's 15-minute services). Add a label to the map only after seeing it in a real plan. |
 | IMP-12 | **Several pastes**: each new paste is added to the ones before (Fusion page 2, 3…). Rows join the service with the same label and units; a task already read is not added twice; a different DCN is refused. |
 | IMP-13 | **Plan dates** come from the banner, else from the group row. Neither → ask for them. |
@@ -161,6 +169,7 @@ export interface PdfTextItem { str: string; x: number; y: number; width: number;
 | unknown-service | input | until a service is chosen | service select |
 | no-plan-dates | input | until dates are entered | two date fields |
 | bad-dates | error | yes | "The plan dates don't look right." |
+| plan-ended | error | yes | Set by the app, which knows today's date: the plan ended before this month. "This care plan has ended" + "This care plan ended on Jun 30, 2026. A schedule covers care still to come. Open the participant's current care plan in Fusion and paste it, or open its PDF." Dates the person entered keep the date fields open. |
 | (several services) | input | until one is chosen | one button per service |
 | unread-row | error | no | listed in the read summary with the raw text |
 | unknown-task | warn | no | listed in the read summary |
@@ -178,9 +187,10 @@ export interface PdfTextItem { str: string; x: number; y: number; width: number;
 | serviceCode, plan, headerUnits | from the service and IMP-13 |
 | tasks | every imported task, ids `qt-1…`, not pinned |
 | care days | the first *d* days of Monday, Tuesday, … Sunday, where *d* is the largest days-per-week of any task (5 → Mon–Fri; 7 → every day), as in Scheduler Lite |
-| monthly figures | from the care plan report, each month's authorized units (`fusion`, by month; two periods in one month add up), used instead of IMP-10's header units for full months |
+| monthly figures | from the care plan report, each month's authorized units (`fusion`, by month; two periods in one month add up), used instead of IMP-10's prorated header units for full months |
+| schedule months | from this month (`fromMonth`, the month it was built) or the plan's first month, whichever is later, to the plan's end; the plan's own dates are kept as read |
 | transportation | minutes per month from Fusion; usual day = the last care day in that order; weekly hint = `floor(floor(minutes/15) / 5) × 15` minutes |
-| month shown | the current month if it's in the plan, else the plan's first month |
+| month shown | the current month if it's in the plan, else the plan's first month after it |
 
 Then the schedule is built (APP-SPEC 5.3): composer → month fit (ENGINE-SPEC SCH-17) →
 `validateSchedule`. An imported plan whose own numbers break a rule (for example Respite
@@ -213,7 +223,7 @@ and IMP-T25 need the Quick Schedule model, so they live in `apps/web/test/quick/
 | IMP-T14 | `fusion-table-with-banner.pdf` through pdfjs-dist + textItemsToLines | same as IMP-T02 |
 | IMP-T15 | `fusion-table-only.pdf` | 15 tasks, transport 345, participant null, `no-plan-dates` |
 | IMP-T16 | checksum (with the engine): A → match at 466; B → match at 455 (30-day), 469 for 31 days, 434 for 28; C → no match (374 / 391 / 401 vs 402) | as stated |
-| IMP-T17 | B through fromFusion + build, plan Dec 2025–Oct 2026 | zero BLOCK; trims only on 2025-12-31 (Meal Prep/Eating −60, Bathing −35), 2026-03-31 (Meal Prep/Eating −60, Bathing −15), 2026-08-31 (Meal Prep/Eating −55); no SCH-11 result |
+| IMP-T17 | B through fromFusion + build on Nov 20, 2025 (before its plan, Dec 2025–Oct 2026, starts) | each month's figure is 455 prorated: 469 for 31 days, 455 for 30, 434 for 28 (February); no trims, no AUTH-07, zero BLOCK. With the figure at 440 (rows don't add up): never above 440, February 419; every month but February and April cut exactly to its figure at the end (SCH-17), AUTH-07 in every month. (Before Oct 25, 2026, 455 applied to every month and three 31-day month ends were trimmed.) |
 | IMP-T18 | A through fromFusion + build | care days Mon–Fri; transport day Friday, weekly hint 150; day totals Mon..Fri 290, 285, 275, 270, 195; zero BLOCK, zero REVIEW |
 | IMP-T19 | privacy | no exported function writes to storage or the console (spy on `console.*`, `localStorage`, `sessionStorage` during all tests) |
 | IMP-T20 | E (care plan report text) | participant `SAMPLE PARTICIPANT E` / `10000005`; plan 2026-04-01–2027-01-31; one service `PC - Agency` → T1019, provider `TEST HOME CARE LLC`, PA `20260000000005`, units 229, `monthly` 10 rows of 229; 13 tasks with the rule pack's names ("Med Rel HC Tasks:" dropped; Laundry, Shopping/Errands, Self-Admin of Medications); issues: one `not-scheduled` note for GHE; no address, date of birth or phone in the result |
@@ -235,5 +245,6 @@ These don't block building; each becomes a fixture and a test when it arrives.
    IMP-18). A plan with State Plan and ILW, or Respite, adds more to IMP-11.
 3. **A care plan report for CDS** (`PC - CDS`), to confirm its procedure code and whether it
    lists essential transportation in the task table.
-4. **DHSS answer on 31-day months** (1.2). If Fusion authorizes more in long months, IMP-10
-   changes to "30-day months only" and the month-end trims go away for those months.
+4. ~~DHSS answer on 31-day months~~ (1.2). Answered by the Fusion FAQ: Fusion prorates by the
+   days in each month, and IMP-10 now does too (Oct 25, 2026). A question to DSDS on what to do
+   when a month's units run out anyway is in `docs/DSDS-QUESTIONS.md`.

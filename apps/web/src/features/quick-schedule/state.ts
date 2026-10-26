@@ -31,6 +31,7 @@ export type QuickAction =
   | { type: "setTransportDay"; day: Weekday }
   | { type: "setFusionUnits"; month: string; units: number | null }
   | { type: "setViewMonth"; month: string }
+  | { type: "setReviewed"; date: string | null }
   | { type: "replace"; state: QuickState };
 
 function clone(state: QuickState): QuickState {
@@ -56,7 +57,8 @@ function isDayMinutes(value: number): boolean {
 /**
  * Apply a person's change through the guard (APP-SPEC 5.7, .clinerules 19a); a refused change
  * returns the original state and the sentence explaining why. An accepted change also drops cell
- * changes whose task is no longer on that day (QS-10), so they can't come back later.
+ * changes whose task is no longer on that day (QS-10), so they can't come back later, and clears
+ * "reviewed with the participant": that review was of the schedule before the change.
  */
 function guard(
   state: QuickState,
@@ -73,6 +75,7 @@ function guard(
   for (const key of Object.keys(next.edits)) {
     if (!placed.has(key)) delete next.edits[key];
   }
+  next.reviewed = null;
   return { state: next };
 }
 
@@ -119,7 +122,10 @@ export function reduce(state: QuickState, action: QuickAction, pack: RulePack): 
         : result;
     }
     case "setPlanStart": {
-      if (state.source !== "manual" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(action.month)) return { state };
+      // QS-03: a whole month, not before the month the schedule was started (that's over).
+      if (state.source !== "manual" || !/^\d{4}-(0[1-9]|1[0-2])$/.test(action.month) || action.month < state.fromMonth) {
+        return { state };
+      }
       // QS-03: end = start + 11 months; changing the start clears Fusion units.
       return guard(state, pack, (next) => {
         next.plan = { start: `${action.month}-01`, end: lastDayIso(addMonths(action.month, 11)) };
@@ -235,6 +241,7 @@ export function reduce(state: QuickState, action: QuickAction, pack: RulePack): 
       // Back to the pattern, which fits by construction; not guarded, so it is always possible.
       const next = clone(state);
       next.edits = {};
+      next.reviewed = null;
       return { state: next };
     }
     case "setTransportMinPerTrip": {
@@ -266,11 +273,20 @@ export function reduce(state: QuickState, action: QuickAction, pack: RulePack): 
       const next = clone(state);
       if (action.units === null) delete next.fusion[action.month];
       else next.fusion[action.month] = action.units;
+      next.reviewed = null;
       return { state: next };
     }
     case "setViewMonth": {
       const next = clone(state);
       next.viewMonth = action.month;
+      return { state: next };
+    }
+    case "setReviewed": {
+      // Not a change to the schedule, so not guarded: a record that it was gone over with the
+      // participant (INFO 09-25-02), on a real date.
+      if (action.date !== null && !/^\d{4}-\d{2}-\d{2}$/.test(action.date)) return { state };
+      const next = clone(state);
+      next.reviewed = action.date;
       return { state: next };
     }
     case "replace": {

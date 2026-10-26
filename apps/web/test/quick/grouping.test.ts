@@ -4,9 +4,10 @@ import { parseFusionText } from "@careplan/import";
 import { fromFusion } from "../../src/features/import/fromFusion";
 import { buildQuickModel } from "../../src/features/quick-schedule/model";
 import { contextFor, groupResults, monthsContext } from "../../src/features/quick-schedule/grouping";
-import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
+import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
 
-const TODAY = new Date("2026-10-21T12:00:00-05:00");
+/** Before fixture E's plan (Apr 1, 2026 to Jan 31, 2027) starts, so all 10 months are scheduled. */
+const BEFORE_E = new Date("2026-03-15T12:00:00-05:00");
 
 function result(ruleId: string, severity: Severity, taskId?: string): ScheduleValidationResult {
   return { ruleId, severity, message: "message", refs: taskId ? { taskId } : {}, rulePackVersion: "mo-2026-07" };
@@ -39,15 +40,18 @@ describe("Quick Schedule grouping", () => {
     expect(groups.find((g) => g.taskId === "t1")?.ruleId).toBe("SCH-08");
   });
 
-  it("reports the AUTH-07 REVIEW across 8 of 11 months for fixture B", () => {
-    const state = fromFusion(parseFusionText(fixtureB, MO_2026_07), 0, TODAY);
+  it("reports the AUTH-07 REVIEW in 2 of 10 months for E with two months' figures changed", () => {
+    const text = fixtureE
+      .replace("06/30/2026	T1019	229", "06/30/2026	T1019	200")
+      .replace("09/30/2026	T1019	229", "09/30/2026	T1019	240");
+    const state = fromFusion(parseFusionText(text, MO_2026_07), 0, BEFORE_E);
     const model = buildQuickModel(state, MO_2026_07);
     const groups = groupResults(model.results as ScheduleValidationResult[]);
     const auth07 = groups.find((g) => g.ruleId === "AUTH-07" && g.severity === "REVIEW");
     expect(auth07).toBeDefined();
-    expect(auth07!.months).toHaveLength(8);
-    expect(monthsContext(auth07!.months, model.months.length)).toBe("8 of 11 months");
-    expect(contextFor(auth07!, "Bathing", model.months.length)).toBe("Bathing, 8 of 11 months");
+    expect(auth07!.months).toEqual(["2026-06", "2026-09"]);
+    expect(monthsContext(auth07!.months, model.months.length)).toBe("2 of 10 months");
+    expect(contextFor(auth07!, "Bathing", model.months.length)).toBe("Bathing, 2 of 10 months");
   });
 
   it("formats single months and every-month contexts", () => {

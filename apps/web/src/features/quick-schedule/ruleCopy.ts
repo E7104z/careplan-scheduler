@@ -28,7 +28,7 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
   "AUTH-07/REVIEW": {
     title: "Fusion's monthly figure differs from this month's task units",
     whatToDo:
-      "We always use Fusion's figure. In longer months the schedule stops when the units run out; see the month view.",
+      "We schedule against Fusion's figure. If the tasks need more, the last days of the month are cut, and the month view lists them. If that happens every month, ask the care plan change team for a change.",
   },
   "AUTH-08/INFO": {
     title: "Transportation time is set aside",
@@ -78,8 +78,8 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo: "Lower this task's minutes on the longer days.",
   },
   "SCH-11/WARN": {
-    title: "Same one-time change two months running",
-    whatToDo: "If this keeps happening, the care plan may need a change request.",
+    title: "The same change two months running",
+    whatToDo: "DSDS says a consistent need to change a task should prompt a request to the care plan change team. Ask them for a care plan change.",
   },
   "SCH-12/REVIEW": {
     title: "Partial month without a Fusion figure",

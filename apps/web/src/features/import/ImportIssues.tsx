@@ -145,6 +145,15 @@ function IssueView({
           <PlanDates onChoose={onChoose} />
         </IssueBox>
       );
+    case "plan-ended":
+      return (
+        <IssueBox level="error" title="This care plan has ended">
+          <Body>
+            {issue.message} A schedule covers care still to come. Open the participant's current care plan in Fusion
+            and paste it, or open its PDF.
+          </Body>
+        </IssueBox>
+      );
     case "bad-dates":
       return (
         <IssueBox level="error" title="The plan dates don't look right">

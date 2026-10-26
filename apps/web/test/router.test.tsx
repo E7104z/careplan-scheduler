@@ -26,6 +26,14 @@ describe("public routing", () => {
     await expectPage("CarePlan Scheduler");
   });
 
+  it("a printed page leaves out the site's header and footer (the schedule prints its own)", async () => {
+    render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/quick"] })} />);
+    await expectPage("Quick Schedule | CarePlan Scheduler", "Quick Schedule");
+    // The first banner is the site's header (each panel has a header of its own).
+    expect(screen.getAllByRole("banner")[0]).toHaveClass("print:hidden");
+    expect(screen.getByRole("contentinfo")).toHaveClass("print:hidden");
+  });
+
   it("renders the rules route with its title and focus", async () => {
     render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/rules"] })} />);
     await expectPage("Rules and sources | CarePlan Scheduler", "Rules and sources");

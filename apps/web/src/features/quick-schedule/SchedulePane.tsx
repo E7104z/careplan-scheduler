@@ -3,7 +3,9 @@ import { Link } from "react-router";
 import type { RulePack } from "@careplan/engine";
 import { niceDate } from "../../lib/format";
 import { ChecksPanel } from "./ChecksPanel";
+import { DailyTaskList } from "./DailyTaskList";
 import { MonthPanel } from "./MonthPanel";
+import { ReviewSection } from "./ReviewSection";
 import { StatusPanel } from "./StatusPanel";
 import { WeeklyPanel } from "./WeeklyPanel";
 import type { QuickAction } from "./state";
@@ -27,8 +29,8 @@ interface SchedulePaneProps {
 }
 
 /**
- * APP-SPEC 5.4 schedule pane: status, week, month, checks and the footnote, plus the print header
- * and footer (shown only in print).
+ * APP-SPEC 5.4 schedule pane: status, week, daily task list, month, checks, the review with the
+ * participant and the footnote, plus the print header and footer (shown only in print).
  */
 export function SchedulePane({ state, model, pack, feedback, dispatch }: SchedulePaneProps) {
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -61,8 +63,10 @@ export function SchedulePane({ state, model, pack, feedback, dispatch }: Schedul
         highlight={highlight}
         onHighlightDone={clearHighlight}
       />
+      <DailyTaskList state={state} model={model} />
       <MonthPanel state={state} model={model} dispatch={dispatch} />
       <ChecksPanel state={state} model={model} onShowInWeek={setHighlight} />
+      {model.tasks.length > 0 ? <ReviewSection state={state} dispatch={dispatch} /> : null}
 
       <p className="text-[13px] text-ink-3 print:hidden">
         {FOOTNOTE}{" "}

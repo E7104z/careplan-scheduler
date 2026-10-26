@@ -88,4 +88,18 @@ describe("Quick Schedule persistence", () => {
       expect(loadQuickState()).toBeNull();
     });
   }
+
+  it("keeps the month the schedule starts from and the review date; a bad one falls back to the example", () => {
+    const state = { ...exampleStateB(TODAY), reviewed: "2026-10-20" };
+    saveQuickState(state);
+    expect(loadQuickState()).toMatchObject({ fromMonth: "2026-10", reviewed: "2026-10-20" });
+    storedWith((saved) => {
+      saved.fromMonth = "October";
+    });
+    expect(loadQuickState()).toBeNull();
+    storedWith((saved) => {
+      saved.reviewed = "yesterday";
+    });
+    expect(loadQuickState()).toBeNull();
+  });
 });

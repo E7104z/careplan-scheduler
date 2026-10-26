@@ -60,7 +60,14 @@ export interface QuickState {
   transport: QuickTransport;
   edits: Record<string, number>; // `${taskId}:${weekday}` -> minutes
   fusion: Record<string, number>; // month -> units (QS-11 by hand, or Fusion's care plan report, IMP-17)
+  /**
+   * YYYY-MM: the month the schedule was built. A schedule is for care still to come, so it covers
+   * the plan from this month (or from the plan's first month, if that is later).
+   */
+  fromMonth: string;
   viewMonth: string;
+  /** YYYY-MM-DD the person went over this schedule with the participant (INFO 09-25-02); null if not. */
+  reviewed: string | null;
   isExample: boolean;
   notes: ImportIssue[];
   rowsRead: number;
@@ -91,6 +98,8 @@ export interface QuickModel {
   allowance: QuickAllowance | null;
   months: string[];
   monthlyAuthorizations: MonthlyAuthorization[];
+  /** The monthly figures are the care plan screen's one figure, prorated to each month (IMP-10). */
+  prorated: boolean;
   results: ScheduleValidationResult[];
   checksum: QuickChecksum | null;
 }
@@ -99,6 +108,8 @@ export interface MonthFigures {
   expanded: Record<string, Record<string, number>>;
   authorizedUnits: number;
   source: "fusion" | "calculated";
+  /** Fusion's figure for a month of this many days, from the care plan screen's one figure (IMP-10). */
+  proratedDays: number | null;
   calculatedUnits: number;
   transportUnits: number;
   taskBudgetMinutes: number;

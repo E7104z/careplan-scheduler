@@ -3,7 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { fixtureText, pasteCarePlan } from "./helpers";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
-const FIXED_TIME = new Date("2026-10-21T12:00:00-05:00");
+// Nov 20, 2025: every fixture's plan is current or still to come (B starts Dec 1, 2025; D runs
+// Sep 2025 to Jun 2026). A schedule covers only months still to come (APP-SPEC 5.3 step 5).
+const FIXED_TIME = new Date("2025-11-20T12:00:00-06:00");
 
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });

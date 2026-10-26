@@ -7,6 +7,8 @@ import {
   type ImportedService,
 } from "@careplan/import";
 import { daysInMonth, type RulePack, type ServiceCode } from "@careplan/engine";
+import { niceDate } from "../../lib/format";
+import { localMonth } from "../quick-schedule/model.js";
 import { fromFusion } from "./fromFusion.js";
 import type { Plan, QuickState } from "../quick-schedule/types.js";
 
@@ -18,6 +20,7 @@ const HARD_STOPS: readonly ImportIssueCode[] = [
   "no-plan-dates",
   "bad-dates",
   "different-participant",
+  "plan-ended",
 ];
 
 const BAD_DATES: ImportIssue = {
@@ -107,6 +110,12 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     });
   }
   if (entered !== null && !enteredOk) issues.push(BAD_DATES);
+  // A schedule is for care still to come: a plan that ended before this month has nothing left.
+  const plan = enteredOk ? entered : (parsed.plan ?? (chosen?.start && chosen.end ? { start: chosen.start, end: chosen.end } : null));
+  const ended = plan !== null && chosen !== undefined && plan.end < `${localMonth(today)}-01`;
+  if (ended) {
+    issues.push({ level: "error", code: "plan-ended", message: `This care plan ended on ${niceDate(plan.end)}.` });
+  }
 
   const pending = issues.filter((issue) => {
     if (!HARD_STOPS.includes(issue.code)) return false;
@@ -116,7 +125,8 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
       return chosen !== undefined && chosen.serviceCode === null && flow.choices.serviceCode === null
         && concerns(issue, chosen);
     }
-    if (issue.code === "no-plan-dates" || issue.code === "bad-dates") return !enteredOk;
+    // Dates the person entered that have already ended can be entered again.
+    if (issue.code === "no-plan-dates" || issue.code === "bad-dates") return !enteredOk || (ended && entered !== null);
     return true;
   });
   if (pending.length > 0 || index === null || chosen === undefined) {

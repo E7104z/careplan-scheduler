@@ -69,7 +69,10 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
     },
     edits: {},
     fusion: reportFigures(service.monthly, months),
-    viewMonth: months.includes(currentMonth) ? currentMonth : (months[0] ?? currentMonth),
+    fromMonth: currentMonth,
+    // The schedule starts this month (or at the plan's start, if later): never a month that's over.
+    viewMonth: months.includes(currentMonth) ? currentMonth : (months.find((month) => month > currentMonth) ?? currentMonth),
+    reviewed: null,
     isExample: false,
     notes: [],
     // Rows the schedule is built from (tasks and transportation), for "Built from 10 of 14 rows".

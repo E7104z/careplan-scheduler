@@ -58,7 +58,7 @@ describe("Quick Schedule: import panel and read summary", () => {
     const title = await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
     await waitFor(() => expect(title).toHaveFocus());
     expect(screen.getByText("Read from Fusion · DCN 10000002")).toBeInTheDocument();
-    expect(screen.getByText("Our total from these tasks matches Fusion's 455 units a month.")).toBeInTheDocument();
+    expect(screen.getByText("Our total from these tasks matches Fusion's 455 units for a 30-day month. Fusion counts the days in each month for daily tasks, so a 31-day month has 469 and a 28-day month 434.")).toBeInTheDocument();
     expect(importHeading()).not.toBeInTheDocument();
     expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
 
@@ -88,6 +88,8 @@ describe("Quick Schedule: import panel and read summary", () => {
   });
 
   it("fixture D asks for the next page, and builds with the rows it has", async () => {
+    // Inside D's plan (Sep 1, 2025 to Jun 30, 2026); on Oct 21, 2026 it has ended.
+    vi.setSystemTime(new Date("2026-01-15T12:00:00-06:00"));
     const { user } = renderQuick();
     await pasteText(user, fixtureD);
 
@@ -181,8 +183,21 @@ describe("Quick Schedule: import panel and read summary", () => {
     ).toBeInTheDocument();
     expect(within(summary).getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeInTheDocument();
     expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
-    // No "Referral date is missing" card: Quick Schedule doesn't schedule visits (CON-13).
-    expect(within(statusPanel()).getByText("Follows every rule we check, for all 10 months.")).toBeInTheDocument();
+    // No "Referral date is missing" card: Quick Schedule doesn't schedule visits (CON-13). The plan runs
+    // Apr 2026 to Jan 2027; on Oct 21, 2026 the schedule covers October to January.
+    expect(
+      within(statusPanel()).getByText("Follows every rule we check, for the 4 months left in the plan."),
+    ).toBeInTheDocument();
+    expect(within(summary).getByText("Oct 1, 2026")).toBeInTheDocument();
+  });
+
+  it("a care plan that has ended says so and builds nothing (fixture D on Oct 21, 2026)", async () => {
+    const { user } = renderQuick();
+    await pasteText(user, fixtureD);
+    await user.click(await screen.findByRole("button", { name: "Build with the 10 rows I have" }));
+    expect(await screen.findByRole("heading", { name: "This care plan has ended" })).toBeInTheDocument();
+    expect(screen.getByText(/^This care plan ended on Jun 30, 2026\. A schedule covers care still to come\./)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT D" })).not.toBeInTheDocument();
   });
 
   it("a PDF that can't be read shows its message", async () => {

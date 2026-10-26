@@ -64,6 +64,9 @@ function isQuickState(value: unknown): value is QuickState {
     ISO_DATE.test(value.plan.end) &&
     typeof value.viewMonth === "string" &&
     ISO_MONTH.test(value.viewMonth) &&
+    typeof value.fromMonth === "string" &&
+    ISO_MONTH.test(value.fromMonth) &&
+    (value.reviewed === null || (typeof value.reviewed === "string" && ISO_DATE.test(value.reviewed))) &&
     (value.headerUnits === null || isInt(value.headerUnits, 0)) &&
     isStringOrNull(value.provider) &&
     isStringOrNull(value.pa) &&

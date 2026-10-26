@@ -11,9 +11,17 @@ import fixtureC from "@fixtures/fusion/C-rows-only-older-plan-402.txt?raw";
 import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
+/** Before fixture B's plan starts (Dec 1, 2025), so all 11 months are still to come. */
+const BEFORE_B = new Date("2025-11-20T12:00:00-06:00");
+/** Before fixture E's plan starts (Apr 1, 2026), so all 10 months are still to come. */
+const BEFORE_E = new Date("2026-03-15T12:00:00-05:00");
+
+function modelAt(fixture: string, today: Date) {
+  return buildQuickModel(fromFusion(parseFusionText(fixture, MO_2026_07), 0, today), MO_2026_07);
+}
 
 function modelFor(fixture: string) {
-  return buildQuickModel(fromFusion(parseFusionText(fixture, MO_2026_07), 0, TODAY), MO_2026_07);
+  return modelAt(fixture, TODAY);
 }
 
 function dayTotals(model: ReturnType<typeof modelFor>): number[] {
@@ -39,22 +47,47 @@ describe("Quick Schedule model", () => {
     expect(c?.matches).toBe(false);
   });
 
-  it("IMP-T17: B has zero BLOCK and trims only the three 31-day month ends", () => {
-    const model = modelFor(fixtureB);
-    expect(model.results.filter((r) => r.severity === "BLOCK")).toHaveLength(0);
-    expect(model.results.filter((r) => r.ruleId === "SCH-11")).toHaveLength(0);
-
-    const mealPrep = model.tasks.find((t) => t.name === "Meal Prep/Eating")!.id;
-    const bathing = model.tasks.find((t) => t.name === "Bathing")!.id;
-    const byDate: Record<string, Record<string, number>> = {};
-    for (const trim of model.trims) {
-      (byDate[trim.date] ??= {})[trim.taskId] = -trim.minutesDelta;
-    }
-    expect(byDate).toEqual({
-      "2025-12-31": { [mealPrep]: 60, [bathing]: 35 },
-      "2026-03-31": { [mealPrep]: 60, [bathing]: 15 },
-      "2026-08-31": { [mealPrep]: 55 },
+  it("IMP-T17: B's figure is for a 30-day month; each month gets Fusion's proration, so nothing is cut", () => {
+    const model = modelAt(fixtureB, BEFORE_B);
+    expect(model.months).toHaveLength(11);
+    expect(Object.fromEntries(model.monthlyAuthorizations.map((a) => [a.month, a.units]))).toMatchObject({
+      "2025-12": 469, // 31 days
+      "2026-02": 434, // 28 days
+      "2026-04": 455, // 30 days, Fusion's figure
     });
+    expect(model.trims).toEqual([]);
+    expect(model.results.filter((r) => r.severity === "BLOCK" || r.ruleId === "AUTH-07")).toEqual([]);
+    expect(monthFigures(model, "2025-12")).toMatchObject({ authorizedUnits: 469, source: "fusion", proratedDays: 31 });
+  });
+
+  it("SCH-17: with Fusion's figure below the tasks (B at 440), a month that needs more is cut to it at the end", () => {
+    const model = modelAt(fixtureB.replaceAll("455 units", "440 units"), BEFORE_B);
+    const units = Object.fromEntries(model.monthlyAuthorizations.map((a) => [a.month, a.units]));
+    // Rows don't add up to Fusion's figure: never raised above it, lowered in February.
+    expect(units).toMatchObject({ "2025-12": 440, "2026-02": 419, "2026-04": 440 });
+    const cut: string[] = [];
+    for (const month of model.months) {
+      const figures = monthFigures(model, month);
+      expect(figures.scheduledTaskMinutes, month).toBeLessThanOrEqual(figures.taskBudgetMinutes);
+      if (figures.trimmedMinutes === 0) continue;
+      cut.push(month);
+      // Cut exactly to the figure, from the end of the month.
+      expect(figures.scheduledTaskMinutes, month).toBe(figures.taskBudgetMinutes);
+      expect(figures.trims.every((trim) => trim.date >= `${month}-25`), month).toBe(true);
+    }
+    // February and April fit: their once-a-week tasks come 4 times, against the factor's 5.
+    expect(cut).toEqual(model.months.filter((month) => month !== "2026-02" && month !== "2026-04"));
+    expect(model.results.filter((r) => r.ruleId === "AUTH-07").map((r) => r.refs.month)).toEqual(model.months);
+    expect(model.results.filter((r) => r.severity === "BLOCK")).toEqual([]);
+  });
+
+  it("a plan that started before this month is scheduled from this month; its dates stay Fusion's", () => {
+    const state = fromFusion(parseFusionText(fixtureB, MO_2026_07), 0, TODAY);
+    const model = buildQuickModel(state, MO_2026_07);
+    expect(state.plan).toEqual({ start: "2025-12-01", end: "2026-10-31" });
+    expect(model.months).toEqual(["2026-10"]);
+    expect(model.auth.start).toBe("2026-10-01");
+    expect(state.viewMonth).toBe("2026-10");
   });
 
   it("IMP-T18: A has Mon–Fri care days, Friday transport, and the expected day totals", () => {
@@ -70,7 +103,7 @@ describe("Quick Schedule model", () => {
 
   it("IMP-T25: E, Fusion's care plan report: each month's own figure, a matching checksum, no BLOCK", () => {
     const months = ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10", "2026-11", "2026-12", "2027-01"];
-    const state = fromFusion(parseFusionText(fixtureE, MO_2026_07), 0, TODAY);
+    const state = fromFusion(parseFusionText(fixtureE, MO_2026_07), 0, BEFORE_E);
     expect(state.serviceCode).toBe("T1019");
     expect(state.headerUnits).toBe(229);
     expect(state.fusion).toEqual(Object.fromEntries(months.map((month) => [month, 229])));
@@ -88,7 +121,7 @@ describe("Quick Schedule model", () => {
   });
 
   it("IMP-T25: a month the report gives its own figure is checked against that figure", () => {
-    const model = modelFor(fixtureE.replace("06/30/2026	T1019	229", "06/30/2026	T1019	200"));
+    const model = modelAt(fixtureE.replace("06/30/2026	T1019	229", "06/30/2026	T1019	200"), BEFORE_E);
     expect(monthFigures(model, "2026-06")).toMatchObject({ authorizedUnits: 200, source: "fusion" });
     expect(monthFigures(model, "2026-07")).toMatchObject({ authorizedUnits: 229, source: "fusion" });
   });
@@ -115,7 +148,9 @@ describe("Quick Schedule model", () => {
       transport: { minPerTrip: 0, tripsPerWeek: 1, day: 1 },
       edits: {},
       fusion: {},
+      fromMonth: "2026-01",
       viewMonth: "2026-01",
+      reviewed: null,
       isExample: false,
       notes: [],
       rowsRead: 0,

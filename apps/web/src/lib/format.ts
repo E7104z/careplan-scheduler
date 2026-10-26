@@ -47,10 +47,18 @@ export function niceDate(iso: string): string {
   return `${MONTH_NAMES[(month ?? 1) - 1]!.slice(0, 3)} ${day}, ${year}`;
 }
 
-/** Whole 15-minute units plus leftover minutes: "2 units", "2 units + 5 min". */
+/** Whole 15-minute units plus leftover minutes: "2 units", "2 units + 5 min", or "5 min" under one unit. */
 export function formatUnits(minutes: number): string {
   const units = Math.floor(minutes / 15);
   const remainder = minutes % 15;
+  if (units === 0 && remainder > 0) return `${remainder} min`;
   return `${units} unit${units === 1 ? "" : "s"}${remainder ? ` + ${remainder} min` : ""}`;
 }
 
+/** A visit's length: "45 min", "1 h", "5 h 15 min". */
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} min`;
+  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`;
+}

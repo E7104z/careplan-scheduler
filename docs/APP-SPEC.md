@@ -199,7 +199,7 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Panel | Section with `h2` header row (title, meta text, tools slot) and body. |
 | SeverityPill | Icon + word, never color alone: BLOCK `OctagonX` "Must fix"; REVIEW `CircleHelp` "Needs review"; WARN `TriangleAlert` "Check"; INFO `Info` "Good to know". |
 | Dialog | Radix Dialog; title required; focus returns to the trigger; Escape closes; overlay `bg-overlay`. |
-| Toast | Radix Toast, bottom-right (bottom-center on phones), 5s, `role="status"`. Message names the result of the action ("Invite link copied"). |
+| Toast | Radix Toast, bottom-right (bottom-center on phones), 5s; the message has `role="status"` (on the message, not the list item, so the viewport stays a valid list; decided Oct 25, 2026). Message names the result of the action ("Invite link copied"). |
 | Menu | Radix DropdownMenu for the account menu and agency switcher. Not for site navigation: the public header's phone navigation is a disclosure (a button with `aria-expanded` showing a `nav` of plain links). |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
 | Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPasteText` hands the box's text up after the browser inserts a paste (the `input` event with `inputType` "insertFromPaste"). |
@@ -222,7 +222,8 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 - Full keyboard use: every action reachable by Tab/Shift-Tab, Enter/Space; the task picker is
   an ARIA combobox (arrow keys, Enter, Escape).
 - Visible focus ring from the tokens on every focusable element.
-- Touch targets ≥ 44px on screens under 640px wide.
+- Touch targets ≥ 44px on screens under 640px wide: buttons, toggles and checkboxes (with their
+  label). Links inside a sentence are exempt, as WCAG 2.5.8 allows (decided Oct 25, 2026).
 - Status changes are announced: the Quick Schedule status line is `aria-live="polite"`.
 - Tables have `<th scope>`; the weekly grid's cells have labels like
   "Bathing, Monday, 30 minutes. Change minutes".
@@ -308,7 +309,7 @@ Both modes:
 | QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. Unselecting a task's last day leaves it pinned with no days (off the week, SCH-02 "fewer days"), so the next day selected is where it goes; this is how a 1-day task moves. A care day turned off that empties a pinned set returns the task to our days. A refused change (5.7) shows its sentence in the same place. |
 | QS-08 | Care days | DayToggle, default from the import (IMPORT-SPEC 4) or all seven by hand. Turning a day off removes it from every pinned set and clears minute changes. None selected: "Choose at least one care day." |
 | QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes, and a change whose task moves off that day (another task's pins, transportation day, adding or removing a task) is dropped, so it can't come back later. |
-| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples). "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
+| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples), moved to start this month with their length kept: the fixtures are real plans from 2025, and a schedule covers only months still to come. "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
 
 ### 5.3 Model (`features/quick-schedule/model.ts`, pure; reference `quick-model.js`)
 `buildQuickModel(state, pack): QuickModel`:
@@ -321,11 +322,14 @@ Both modes:
    transportDay })`. This is the **pattern**.
 4. `entries`: pattern with cell changes applied, 0-minute entries removed.
 5. `months`: every month from plan start to plan end.
-6. `auth`: `{ id: "quick", participantId: "quick", program, serviceCode, start, end,
-   state: "active", suspensions: [], revision: 1, tasks, transportMinutesPerMonth? }`.
+6. `auth`: `{ id: "quick", participantId: "quick", program, serviceCode, start: the schedule's
+   start (step 5), end, state: "active", suspensions: [], revision: 1, tasks,
+   transportMinutesPerMonth? }`. The plan's own dates stay as Fusion has them (read summary,
+   print); months already over aren't scheduled or checked.
 7. `monthlyAuthorizations`: from Fusion's care plan report, each month's own figure (IMP-17);
-   from the care plan screen, the header units for every full plan month (IMP-10); by hand,
-   QS-11 entries.
+   from the care plan screen, its one figure prorated to every full month as Fusion does
+   (IMP-10: when our total matches Fusion's, each month's own total; otherwise Fusion's figure,
+   lowered in shorter months); by hand, QS-11 entries.
 8. `trims = fitToAuthorization(patternTemplate, auth, monthlyAuthorizations, months)`
    (ENGINE-SPEC SCH-17). Trims come from the **pattern**, never from cell changes, so a
    person's changes are never silently cut.
@@ -333,7 +337,8 @@ Both modes:
    template (with entries), exceptions: trims, months })`, or `[]` with no valid tasks.
    Quick Schedule doesn't schedule visits, so it runs the plan rules only (ENGINE-SPEC
    Amendment B), never the visit rules (SCH-14, CON-*).
-10. `checksum` (from Fusion): IMP-15.
+10. `checksum` (from Fusion): IMP-15, over the full months of Fusion's plan (computed before
+   step 7, which uses it).
 11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
    derived; budget = `max(0, authorized − transportUnits) × 15`; scheduled; over; trims in
    that month and their minutes. Same test as SCH-08, so meter and checks always agree.
@@ -344,30 +349,53 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
 - **Status** (`aria-live="polite"`): no tasks → "Add tasks to start". Any BLOCK group (only
   possible when the imported plan itself breaks a rule) → "N things to fix" and "This care
   plan itself breaks a Missouri rule. Details are in Checks." Otherwise "Ready to use" with
-  "Follows every rule we check, for all N months." or "Follows every rule we check. N items
-  are worth a look in Checks." Figures: minutes a week, units in the viewed month, care days.
+  "Follows every rule we check, for all N months." ("for the N months left in the plan" when
+  the plan started before this month; "for its one month" or "for the one month left in the
+  plan" for one) or "Follows every rule we check. N items are worth a look in Checks."
+  Figures: minutes a week, units in the viewed month, care days.
 - **Weekly schedule**: rows per task ("45 min · every day"), the transportation row on its
   day ("Set aside, not a task"), Day total footer with minutes, units and **unit tiles** (one
   10px square per whole unit, four per row, a partly filled square for leftover minutes);
   non-care days show "Off". Header meta "1465 minutes a week · 97 units + 10 min". Legend:
   "One square = one 15-minute unit · Scheduled · Select a cell to change its minutes". The
   refusal box (5.7) sits under the table. Scrolls inside its panel on phones.
-- **Month**: previous/next limited to the plan's months. Meter: "<n> units (+ r min)
-  scheduled for tasks of <available> available", chip "Fusion: 455 units − 23
+- **Daily task list** (after the week): one card per weekday with each task and its minutes
+  in care plan order, essential transportation on its usual day, and "Visit length 5 h 15 min"
+  with "315 minutes = 21 units" (and "(175 for tasks, 60 for transportation)" on the
+  transportation day); "No visit" on other days. Intro: "The tasks for each visit and their
+  minutes. Set each EVV visit window to its visit length." Printed on its own page. The visit
+  length is the sum of what's listed, so an EVV window set from it agrees with the schedule.
+- **Month**: previous/next limited to the schedule's months (5.3 step 5). Balance, three
+  figures for the viewed month: Authorized ("455 units", "Fusion", "Fusion, for 31 days" or
+  "Calculated from the tasks"), Scheduled ("452 units + 10 min", "429 units + 10 min for tasks,
+  23 for transportation"), Left ("2 units + 5 min", "Not scheduled, not billed"; "N min over"
+  in block red). Meter: "<n> units (+ r min) scheduled for tasks of <available> available",
+  chip "Fusion: 455 units − 23 transportation", "Fusion, for a 31-day month: 469 units − 23
   transportation" or "Calculated: …", bar in tile colors (block red for any overflow). When
-  the month was trimmed: "This month's tasks need more than Fusion's 455 units, so the
-  schedule stops 95 minutes early, starting Dec 31, 2025. Those days are marked below."
+  the month was trimmed: "This month's tasks need more than Fusion's 440 units, so the
+  schedule stops 320 minutes early, starting Dec 30, 2025. Those days are marked below.",
+  then "Cut at the end of December:" and one line per date with each task and its minutes
+  ("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, …"), then "If the units run out
+  every month, the care plan needs more than Fusion authorizes. DSDS says a consistent need to
+  change a task should prompt a request to the care plan change team (INFO 09-25-02)."
   Calendar: one cell per date with minutes and units; trimmed dates get a warn border and
-  "−95 min"; dates outside the plan and days without care are dashed.
+  "−195 min"; dates outside the plan and days without care are dashed. "Show every month"
+  opens a table (always printed): month, authorized, scheduled, left, cut at month end.
+- **Review with the participant** (optional, after Checks): the checkbox "I went over this
+  schedule with the participant" and "Date reviewed" (today by default, not later). INFO
+  09-25-02: "Collaborating with the participant to create this schedule is key." Not a change
+  to the schedule, so not guarded; any change to the schedule afterwards clears it.
 - **Checks**: 5.5. Footnote: "Unit math follows DHSS rules for 15-minute units: weekly
   frequency factors, short-month proration for daily tasks, and whole units only. A change
   that would break a rule isn't accepted; you'll see the limit instead. Checks marked "Needs
   review" use a rule DHSS hasn't confirmed yet, so they never count as passing." Link "See
   every rule and its source" → `/rules`.
 - **Print**: "Print schedule" → `window.print()`. Print: participant name and DCN (if read),
-  service, plan dates, PA number, weekly grid with day totals, the viewed month's calendar
-  (with trims), status line, Must fix / Needs review checks; footer "Checked with CarePlan
-  Scheduler under rule pack mo-2026-07 on <date>". US Letter landscape.
+  service, plan dates, PA number, weekly grid with day totals, the daily task list, the viewed
+  month's balance and calendar (with trims) and every month's units, status line, Must fix /
+  Needs review checks, "Reviewed with the participant on Oct 21, 2026." (or a line to write the
+  date on); footer "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>". US
+  Letter landscape.
 
 ### 5.5 Checks: grouping and copy (`grouping.ts`, `ruleCopy.ts`)
 - Group results by `ruleId + severity + refs.taskId`; each group keeps its months in order.
@@ -391,7 +419,7 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | AUTH-03 | INFO | Task units calculated | Units for this task use the DHSS worksheet formula. |
 | AUTH-05 | INFO | How monthly units are figured | Daily tasks are prorated by the days in each month. Other tasks use the DHSS weekly frequency factor. |
 | AUTH-06 | WARN | Monthly figures are calculated, not imported | This plan came from the old web tool, so each month's units are our calculation. Check them against Fusion. |
-| AUTH-07 | REVIEW | Fusion's monthly figure differs from this month's task units | We always use Fusion's figure. In longer months the schedule stops when the units run out; see the month view. |
+| AUTH-07 | REVIEW | Fusion's monthly figure differs from this month's task units | We schedule against Fusion's figure. If the tasks need more, the last days of the month are cut, and the month view lists them. If that happens every month, ask the care plan change team for a change. |
 | AUTH-08 | INFO | Transportation time is set aside | Transportation minutes come off the monthly units before tasks are counted. |
 | AUTH-09 | BLOCK | Respite is over its combined monthly limit | Basic and Advanced Respite together can't go over the monthly limit. |
 | AUTH-09 | REVIEW | Fusion units are above the program limit | The units entered are higher than this service's monthly limit. Confirm the number with Fusion. |
@@ -403,7 +431,7 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | SCH-03 | WARN | A day has more minutes than the task allows | One day's minutes for this task are above its minutes per day. That's allowed while the month stays within its units. |
 | SCH-08 | BLOCK | The schedule goes over the month's authorization | Lower some minutes or days, or check the monthly units against Fusion. |
 | SCH-08/task | BLOCK | A task goes over its monthly units | Lower this task's minutes on the longer days. |
-| SCH-11 | WARN | Same one-time change two months running | If this keeps happening, the care plan may need a change request. |
+| SCH-11 | WARN | The same change two months running | DSDS says a consistent need to change a task should prompt a request to the care plan change team. Ask them for a care plan change. |
 | SCH-12 | REVIEW | Partial month without a Fusion figure | The plan starts or ends mid-month, so Fusion's monthly figure doesn't apply. Check that month's units in Fusion. |
 | SCH-14 | BLOCK | A visit falls outside the authorization | Move the visit to a date the authorization covers. |
 | SCH-14 | INFO | Future authorization | Visits for this authorization are drafts until it starts. |
@@ -434,8 +462,10 @@ nothing.
 - One reducer owns `QuickState`: `source` ("fusion" | "manual"), `identity` ({ name, dcn } |
   null, **memory only**), `provider`, `pa`, `serviceLabel`, `serviceCode`, `plan` { start,
   end }, `headerUnits`, `tasks[]` (`id`, `taskCode`, `name`, `minPerDay`, `daysPerWeek`,
-  `pinned`, `locked`), `nextId`, `activeDays`, `transport`, `edits`, `fusion`, `viewMonth`,
-  `isExample`, `notes`, `rowsRead`.
+  `pinned`, `locked`), `nextId`, `activeDays`, `transport`, `edits`, `fusion`, `fromMonth`
+  ("YYYY-MM", the month the schedule was built; it covers the plan from then on), `viewMonth`,
+  `reviewed` (the date it was gone over with the participant, or null), `isExample`, `notes`,
+  `rowsRead`.
 - Persist everything **except `identity`** to `sessionStorage` key `cps.quick.v2` (debounced
   300 ms); restore if the shape validates, else show the example. After a reload the read
   summary title is "Care plan from Fusion". All storage access in try/catch.
@@ -842,8 +872,8 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | ID | Check | How |
 |---|---|---|
 | AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon..Fri `290, 285, 275, 270, 195`, "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
-| AC-02 | Pasting fixture B into the box builds the schedule with no button press: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line, import panel hidden, "Ready to use", and one Needs review card "Fusion's monthly figure differs from this month's task units · 8 of 11 months". | Playwright |
-| AC-03 | With B in December 2025: the meter says "the schedule stops 95 minutes early, starting Dec 31, 2025", and the Dec 31 cell shows "−95 min". | Playwright |
+| AC-02 | On Nov 20, 2025 (before B's plan starts), pasting fixture B into the box builds the schedule with no button press: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
+| AC-03 | B with Fusion's figure at 440, in December 2025: "the schedule stops 320 minutes early, starting Dec 30, 2025", the line "Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min", and the Dec 31 cell shows "−195 min". | Playwright |
 | AC-04 | With B: changing Monday's Bathing to 60 is refused: "Not changed. That would put Bathing over its 93 units in October 2026." and "Bathing can't have more than 45 minutes on Monday."; the week is unchanged. | Playwright |
 | AC-05 | With B: Monday's Bathing 45 → 30 is accepted (SCH-03 not involved); Tuesday's 45 → 60 is refused with "The most Bathing can have on Tuesday is 55 minutes."; "Use 55 minutes" applies 55 and the status stays "Ready to use". | Playwright |
 | AC-06 | Fixture D shows "This copy has 10 of the plan's 14 rows"; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
@@ -865,6 +895,8 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-22 | Engine: `RULE_CATALOG` matches ENGINE-SPEC section 5; TC-38 to TC-40 pass; all earlier engine tests pass. Import: IMP-T01 to IMP-T19 pass. | engine + import tests |
 | AC-23 | Root `npm run typecheck`, `npm test`, `npm run build` pass; `.github/workflows/ci.yml` runs them plus e2e and rules tests. | CI / local |
 | AC-24 | Opening `fusion-care-plan-report.pdf` (Fusion's care plan report, IMPORT-SPEC 1.3) builds the plan with no button press: read summary "SAMPLE PARTICIPANT E", "Read from Fusion · DCN 10000005", the 229 match line, the note "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule.", and "Ready to use". | Playwright |
+| AC-25 | On Oct 21, 2026: the 5-day example's month view starts at October 2026 with Previous month disabled; B (Dec 2025 to Oct 2026) builds with "Schedule starts Oct 1, 2026" and "for the one month left in the plan"; D (ended Jun 30, 2026) shows "This care plan has ended" and builds nothing. | Playwright |
+| AC-26 | Daily task list: B's Monday "Visit length 5 h 15 min", "315 minutes = 21 units"; Sunday with transportation "235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)". Month balance: B in December 2025 "469 units", "Fusion, for 31 days"; every month's units on request (February 434). Review with the participant: today's date, printed, and cleared by a change. | Component tests |
 
 ---
 
@@ -892,8 +924,9 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   2. "Built from tasks, not averages" — monthly units are never spread evenly across days;
      figure: the TC-01 week `70, 90, 90, 90, 90, 90, 70`.
   3. "Can't be edited out of compliance" — a change that breaks a rule is refused with the
-     limit; figure: the refusal box "Not changed. That would put Bathing over its 69 units in
-     October 2025. Bathing can't have more than 45 minutes on Tuesday. To add time here, take
+     limit; figure: the refusal box for the 5-day example (starting this month), in its first
+     month where Bathing has no room left (23 weekdays), e.g. on Oct 21, 2026: "Not changed. That
+     would put Bathing over its 69 units in December 2026. Bathing can't have more than 45 minutes on Tuesday. To add time here, take
      it from another day first."
   4. "Every check names its source" — figure: one card with its source line.
 - For state reviewers: one paragraph and a link "See every rule and its source" → `/rules`.

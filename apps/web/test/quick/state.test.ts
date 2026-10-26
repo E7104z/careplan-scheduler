@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
-import { manualState, reduce } from "../../src/features/quick-schedule/state";
+import { exampleStateA, exampleStateB, manualState, reduce } from "../../src/features/quick-schedule/state";
 import type { QuickState } from "../../src/features/quick-schedule/types";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
@@ -115,5 +115,29 @@ describe("Quick Schedule state", () => {
     const homemaker = reduce(state, { type: "setService", code: "S5130" }, MO_2026_07);
     expect(homemaker.removed).toEqual(["Bathing"]);
   });
-});
 
+  it("QS-03: a plan can't start in a month that's already over", () => {
+    const state = manualState(TODAY);
+    expect(reduce(state, { type: "setPlanStart", month: "2026-09" }, MO_2026_07).state).toBe(state);
+    expect(reduce(state, { type: "setPlanStart", month: "2026-10" }, MO_2026_07).state.plan.start).toBe("2026-10-01");
+  });
+
+  it("QS-12: the examples start this month, keeping their length (the fixtures are from 2025)", () => {
+    const a = exampleStateA(TODAY);
+    expect(a.plan).toEqual({ start: "2026-10-01", end: "2027-08-31" });
+    expect([a.fromMonth, a.viewMonth, a.isExample]).toEqual(["2026-10", "2026-10", true]);
+    expect(exampleStateB(TODAY).plan).toEqual({ start: "2026-10-01", end: "2027-08-31" });
+  });
+
+  it("reviewed with the participant: a date or nothing, and any change to the schedule clears it", () => {
+    let state = addTask(manualState(TODAY), "BATHING", "Bathing");
+    expect(reduce(state, { type: "setReviewed", date: "Oct 20" }, MO_2026_07).state).toBe(state);
+    state = reduce(state, { type: "setReviewed", date: "2026-10-20" }, MO_2026_07).state;
+    expect(state.reviewed).toBe("2026-10-20");
+    // Looking at another month isn't a change to the schedule.
+    expect(reduce(state, { type: "setViewMonth", month: "2027-01" }, MO_2026_07).state.reviewed).toBe("2026-10-20");
+    const changed = reduce(state, { type: "setMinutes", taskId: state.tasks[0]!.id, minutes: 30 }, MO_2026_07).state;
+    expect(changed.reviewed).toBeNull();
+    expect(reduce(state, { type: "undoCellChanges" }, MO_2026_07).state.reviewed).toBeNull();
+  });
+});

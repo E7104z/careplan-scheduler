@@ -52,8 +52,9 @@ export function PublicLayout() {
   return (
     <div className="flex min-h-dvh flex-col">
       <SkipLink />
+      {/* Printed schedules carry their own header (APP-SPEC 5.4); the site's navigation stays off paper. */}
       <header
-        className="sticky top-0 z-40 border-b border-line bg-surface pt-[env(safe-area-inset-top)]"
+        className="sticky top-0 z-40 border-b border-line bg-surface pt-[env(safe-area-inset-top)] print:hidden"
         onKeyDown={closeOnEscape}
       >
         <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between gap-3 px-[max(16px,env(safe-area-inset-left))] py-3">
@@ -119,7 +120,7 @@ export function PublicLayout() {
         </Suspense>
       </main>
 
-      <footer className="border-t border-line bg-surface">
+      <footer className="border-t border-line bg-surface print:hidden">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-[max(16px,env(safe-area-inset-left))] py-6 text-sm text-ink-2 sm:flex-row sm:items-center sm:justify-between">
           <p>© 2026 CarePlan Scheduler</p>
           <nav aria-label="Footer" className="flex flex-wrap gap-4">

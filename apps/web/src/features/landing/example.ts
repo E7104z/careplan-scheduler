@@ -1,21 +1,19 @@
-import fixture from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
-import { parseFusionText } from "@careplan/import";
 import { MO_2026_07, composeWeek, ruleById, type AuthorizedTask, type RuleCatalogEntry } from "@careplan/engine";
-import { fromFusion } from "../import/fromFusion";
+import { monthName } from "../../lib/format";
 import { checksumLines } from "../quick-schedule/checksumText";
 import { cellRefusal } from "../quick-schedule/guard";
 import { groupResults } from "../quick-schedule/grouping";
+import { exampleStateA } from "../quick-schedule/initialStates";
 import { buildQuickModel } from "../quick-schedule/model";
 import type { QuickState } from "../quick-schedule/types";
 
 /**
  * The landing page's figures, computed by the same code Quick Schedule uses (APP-SPEC 12):
- * fixture A read with @careplan/import and built with the Quick Schedule model and guard.
- * The example is shown as of October 2025, a month of the plan.
+ * fixture A read with @careplan/import and built with the Quick Schedule model and guard, as the
+ * 5-day example Quick Schedule opens with (starting this month).
  */
-function exampleState(): QuickState {
-  const state = fromFusion(parseFusionText(fixture, MO_2026_07), 0, new Date(2025, 9, 1));
-  return { ...state, isExample: true };
+function exampleState(today: Date): QuickState {
+  return exampleStateA(today);
 }
 
 export interface ExampleDayTotals {
@@ -27,8 +25,8 @@ export interface ExampleDayTotals {
 }
 
 /** APP-SPEC 12: the headline figure, the example plan's Day total row and its checked status. */
-export function exampleDayTotals(): ExampleDayTotals {
-  const state = exampleState();
+export function exampleDayTotals(today = new Date()): ExampleDayTotals {
+  const state = exampleState(today);
   const model = buildQuickModel(state, MO_2026_07);
   const dayTotals = [0, 0, 0, 0, 0, 0, 0];
   for (const entry of model.entries) dayTotals[entry.weekday] = (dayTotals[entry.weekday] ?? 0) + entry.minutes;
@@ -41,8 +39,8 @@ export function exampleDayTotals(): ExampleDayTotals {
 }
 
 /** APP-SPEC 12.1: the checksum line for fixture A, from our total and Fusion's figure. */
-export function exampleMatchLine(): string {
-  const checksum = buildQuickModel(exampleState(), MO_2026_07).checksum;
+export function exampleMatchLine(today = new Date()): string {
+  const checksum = buildQuickModel(exampleState(today), MO_2026_07).checksum;
   if (!checksum) throw new Error("The example care plan has no Fusion figure to check against.");
   const { lead, detail } = checksumLines(checksum);
   return `${lead} ${detail}`;
@@ -84,15 +82,20 @@ export interface ExampleRefusal {
 
 /**
  * APP-SPEC 12.3: the refusal box Quick Schedule shows for raising Bathing on Tuesday to 50
- * minutes in the example plan, from the real guard (APP-SPEC 5.7).
+ * minutes in the example plan, from the real guard (APP-SPEC 5.7), viewing the first plan month
+ * where Bathing has no room left (one with 23 weekdays).
  */
-export function exampleRefusal(): ExampleRefusal {
-  const state = exampleState();
-  const bathing = state.tasks.find((task) => task.name === "Bathing");
+export function exampleRefusal(today = new Date()): ExampleRefusal {
+  const base = exampleState(today);
+  const bathing = base.tasks.find((task) => task.name === "Bathing");
   if (!bathing) throw new Error("The example care plan has no Bathing task.");
-  const refusal = cellRefusal(state, `${bathing.id}:2`, 50, MO_2026_07);
-  if (!refusal) throw new Error("The example change was not refused.");
-  return { sentence: refusal.sentence, fix: refusal.hint };
+  for (const month of buildQuickModel(base, MO_2026_07).months) {
+    const refusal = cellRefusal({ ...base, viewMonth: month }, `${bathing.id}:2`, 50, MO_2026_07);
+    if (refusal && refusal.useMinutes === null && refusal.sentence.includes(monthName(month))) {
+      return { sentence: refusal.sentence, fix: refusal.hint };
+    }
+  }
+  throw new Error("The example change was not refused.");
 }
 
 /** APP-SPEC 12.4: one rule card with its source line. */

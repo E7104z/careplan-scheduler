@@ -41,12 +41,19 @@ export function StatusPanel({ state, model }: { state: QuickState; model: QuickM
   const units = monthFigures(model, state.viewMonth).authorizedUnits;
 
   const title = blocks > 0 ? `${blocks} ${blocks === 1 ? "thing" : "things"} to fix` : "Ready to use";
+  // The schedule starts this month when the plan started earlier (APP-SPEC 5.3 step 5).
+  const count = model.months.length;
+  const left = model.auth.start > state.plan.start;
+  const span =
+    count === 1
+      ? left ? "for the one month left in the plan" : "for its one month"
+      : left ? `for the ${count} months left in the plan` : `for all ${count} months`;
   const detail =
     blocks > 0
       ? "This care plan itself breaks a Missouri rule. Details are in Checks."
       : attention > 0
         ? `Follows every rule we check. ${attention} ${attention === 1 ? "item is" : "items are"} worth a look in Checks.`
-        : `Follows every rule we check, for all ${model.months.length} months.`;
+        : `Follows every rule we check, ${span}.`;
 
   return (
     <div role="status" aria-live="polite" aria-label="Schedule status" className={box}>

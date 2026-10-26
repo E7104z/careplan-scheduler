@@ -5,7 +5,7 @@ import type { ImportIssue } from "@careplan/import";
 import { cn } from "../../lib/cn";
 import { monthName, niceDate } from "../../lib/format";
 import { Button } from "../../ui/Button";
-import { checksumLines } from "../quick-schedule/checksumText";
+import { checksumLines, fusionUnitsText } from "../quick-schedule/checksumText";
 import type { QuickModel, QuickState } from "../quick-schedule/types";
 
 /** The summary's h2 id: the page focuses it after a real import. */
@@ -125,7 +125,11 @@ export function ReadSummary({ state, model, onNewPlan }: ReadSummaryProps) {
       <dl className="flex flex-wrap gap-x-7 gap-y-2">
         <Fact term="Service">{`${state.serviceLabel ?? model.svc.name} · ${model.svc.code}`}</Fact>
         <Fact term="Plan">{`${niceDate(state.plan.start)} to ${niceDate(state.plan.end)}`}</Fact>
-        {state.headerUnits !== null ? <Fact term="Fusion units">{`${state.headerUnits} a month`}</Fact> : null}
+        {state.headerUnits !== null ? (
+          <Fact term="Fusion units">{fusionUnitsText(model.checksum, state.headerUnits)}</Fact>
+        ) : null}
+        {/* A plan that started before this month: the schedule covers what's still to come. */}
+        {model.auth.start > state.plan.start ? <Fact term="Schedule starts">{niceDate(model.auth.start)}</Fact> : null}
         <Fact term="Tasks">{`${state.tasks.length}${model.allowance ? " + transportation" : ""}`}</Fact>
         {state.provider ? <Fact term="Provider">{state.provider}</Fact> : null}
         {state.pa ? <Fact term="Prior authorization">{state.pa}</Fact> : null}

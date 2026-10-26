@@ -148,16 +148,20 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     })
     .filter((entry) => entry.minutes > 0);
 
-  // Step 5: every month of the plan.
-  const months = monthsBetween(state.plan.start, state.plan.end);
+  // Step 5: the months this schedule covers. A schedule is for care still to come, so it starts at
+  // the month it was built (fromMonth), or at the plan's start if that is later. The plan's own
+  // dates stay as Fusion has them; months already over aren't scheduled or checked.
+  const fromDate = `${state.fromMonth}-01`;
+  const scheduleStart = state.plan.start > fromDate ? state.plan.start : fromDate;
+  const months = scheduleStart <= state.plan.end ? monthsBetween(scheduleStart, state.plan.end) : [];
 
-  // Step 6: the single authorization this page schedules.
+  // Step 6: the single authorization this page schedules: the part of the plan still to come.
   const auth: ServiceAuthorization = {
     id: "quick",
     participantId: "quick",
     program: svc.program,
     serviceCode: svc.code,
-    start: state.plan.start,
+    start: scheduleStart,
     end: state.plan.end,
     state: "active",
     suspensions: [],
@@ -166,18 +170,23 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   };
   if (transportMinutesPerMonth > 0) auth.transportMinutesPerMonth = transportMinutesPerMonth;
 
-  // Step 7: monthly figures: each month's own figure (QS-11 by hand, or Fusion's care plan report,
-  // IMP-17), else Fusion's header units for full months (IMP-10).
+  // IMP-15 checksum against Fusion's monthly figure, over the full months of Fusion's plan.
+  const checksum = state.source === "fusion" && tasks.length > 0 ? checksumFor(state, auth) : null;
+
+  // Step 7: monthly figures. Each month's own figure (QS-11 by hand, or Fusion's care plan
+  // report, IMP-17); else the care plan screen's one figure, prorated to each full month (IMP-10).
   const fusionFigure = (month: string, units: number): MonthlyAuthorization => ({
     serviceAuthId: "quick", month, units, source: "fusion", revision: 1,
   });
-  const headerUnits = state.headerUnits;
   const ownFigures = Object.entries(state.fusion)
     .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
     .map(([month, units]) => fusionFigure(month, units));
-  const monthlyAuthorizations: MonthlyAuthorization[] =
-    state.source === "fusion" && ownFigures.length === 0 && headerUnits !== null && Number.isInteger(headerUnits)
-      ? months.filter((month) => isFullMonth(month, auth.start, auth.end)).map((month) => fusionFigure(month, headerUnits))
+  const prorated =
+    state.source === "fusion" && ownFigures.length === 0 && state.headerUnits !== null && Number.isInteger(state.headerUnits);
+  const monthlyAuthorizations: MonthlyAuthorization[] = prorated
+      ? months
+          .filter((month) => isFullMonth(month, auth.start, auth.end))
+          .map((month) => fusionFigure(month, proratedUnits(state.headerUnits as number, checksum, auth, month)))
       : ownFigures;
 
   // Step 8: trims come from the pattern, never from a person's cell changes (SCH-17).
@@ -200,27 +209,6 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
       ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })
       : [];
 
-  // Step 10: IMP-15 checksum against Fusion's monthly figure.
-  let checksum: QuickChecksum | null = null;
-  if (state.source === "fusion" && state.headerUnits !== null && Number.isInteger(state.headerUnits) && tasks.length > 0) {
-    const full = months.filter((month) => isFullMonth(month, auth.start, auth.end));
-    const byMonthLength: Record<string, number> = {};
-    for (const month of full) {
-      const [year, monthNumber] = month.split("-").map(Number);
-      const length = daysInMonth(year ?? 0, monthNumber ?? 1);
-      const key = String(length);
-      if (!(key in byMonthLength)) {
-        byMonthLength[key] = derivedServiceMonthUnits(auth, year ?? 0, monthNumber ?? 1);
-      }
-    }
-    const values = Object.values(byMonthLength);
-    checksum = {
-      fusion: state.headerUnits as number,
-      byMonthLength,
-      matches: values.includes(state.headerUnits as number),
-    };
-  }
-
   return {
     svc,
     tasks,
@@ -232,9 +220,44 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     allowance,
     months,
     monthlyAuthorizations,
+    prorated,
     results,
     checksum,
   };
+}
+
+/**
+ * IMP-15: our total from the tasks for each month length among the full months of Fusion's plan,
+ * and whether one of them is Fusion's figure (IMPORT-SPEC 1.2: the care plan screen shows the
+ * figure for a 30-day month).
+ */
+function checksumFor(state: QuickState, auth: ServiceAuthorization): QuickChecksum | null {
+  const fusion = state.headerUnits;
+  if (fusion === null || !Number.isInteger(fusion)) return null;
+  const byMonthLength: Record<string, number> = {};
+  for (const month of monthsBetween(state.plan.start, state.plan.end)) {
+    if (!isFullMonth(month, state.plan.start, state.plan.end)) continue;
+    const [year, monthNumber] = month.split("-").map(Number);
+    const key = String(daysInMonth(year ?? 0, monthNumber ?? 1));
+    if (!(key in byMonthLength)) byMonthLength[key] = derivedServiceMonthUnits(auth, year ?? 0, monthNumber ?? 1);
+  }
+  return { fusion, byMonthLength, matches: Object.values(byMonthLength).includes(fusion) };
+}
+
+/**
+ * IMP-10: the care plan screen's one figure, prorated to a month as Fusion does (Fusion FAQ, Jun
+ * 4, 2025): tasks done every day count that month's days, other tasks a set number of days. When
+ * our total from the tasks matches Fusion's figure, the month's figure is our total for that
+ * month: Fusion's own method on the same tasks. When it doesn't, rows may be missing, so the
+ * figure is never raised: Fusion's figure, lowered in a shorter month by what the daily tasks
+ * read lose there.
+ */
+function proratedUnits(fusion: number, checksum: QuickChecksum | null, auth: ServiceAuthorization, month: string): number {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const derived = derivedServiceMonthUnits(auth, year ?? 0, monthNumber ?? 1);
+  if (checksum?.matches) return derived;
+  const thirtyDay = checksum?.byMonthLength["30"];
+  return thirtyDay === undefined ? fusion : Math.min(fusion, fusion + derived - thirtyDay);
 }
 
 function validTask(task: QuickTask): task is QuickTask & { minPerDay: number } {
@@ -267,6 +290,7 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
     expanded,
     authorizedUnits,
     source: imported ? "fusion" : "calculated",
+    proratedDays: imported && model.prorated ? daysInMonth(y, m) : null,
     calculatedUnits,
     transportUnits,
     taskBudgetMinutes,

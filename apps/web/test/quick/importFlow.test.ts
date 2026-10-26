@@ -8,6 +8,8 @@ import fixtureD from "@fixtures/fusion/D-page1-only-incomplete.txt?raw";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
+/** Inside fixture D's plan (Sep 1, 2025 to Jun 30, 2026); on TODAY it has ended. */
+const DURING_D = new Date("2026-01-15T12:00:00-06:00");
 
 function readyState(flow: ReturnType<typeof emptyImportFlow>): QuickState {
   const outcome = next(flow, MO_2026_07, TODAY);
@@ -18,13 +20,13 @@ function readyState(flow: ReturnType<typeof emptyImportFlow>): QuickState {
 describe("import flow", () => {
   it("fixture D needs \"incomplete\"; accepting builds with the note", () => {
     const flow = addPage(emptyImportFlow(), fixtureD);
-    const needs = next(flow, MO_2026_07, TODAY);
+    const needs = next(flow, MO_2026_07, DURING_D);
     expect(needs.kind).toBe("needs");
     if (needs.kind === "needs") {
       expect(needs.issues.map((i) => i.code)).toContain("incomplete");
     }
 
-    const accepted = next(setChoice(flow, { kind: "acceptPartial" }), MO_2026_07, TODAY);
+    const accepted = next(setChoice(flow, { kind: "acceptPartial" }), MO_2026_07, DURING_D);
     expect(accepted.kind).toBe("ready");
     if (accepted.kind === "ready") {
       expect(accepted.state.notes.some((n) => n.code === "incomplete")).toBe(true);
@@ -54,6 +56,34 @@ describe("import flow", () => {
     const state = readyState(chosen);
     expect(state.tasks).toHaveLength(1);
     expect(state.plan).toEqual({ start: "2026-01-01", end: "2026-12-31" });
+  });
+
+  it("a plan that ended before this month needs \"plan-ended\" and doesn't build (D on Oct 21, 2026)", () => {
+    const outcome = next(setChoice(addPage(emptyImportFlow(), fixtureD), { kind: "acceptPartial" }), MO_2026_07, TODAY);
+    expect(outcome.kind).toBe("needs");
+    if (outcome.kind === "needs") {
+      expect(outcome.issues).toEqual([
+        { level: "error", code: "plan-ended", message: "This care plan ended on Jun 30, 2026." },
+      ]);
+    }
+  });
+
+  it("plan dates entered that have ended keep the date fields open, so they can be entered again", () => {
+    const flow = setChoice(addPage(emptyImportFlow(), "300 units Bathing 30 7"), {
+      kind: "plan",
+      plan: { start: "2025-01-01", end: "2025-12-31" },
+    });
+    const outcome = next(flow, MO_2026_07, TODAY);
+    expect(outcome.kind).toBe("needs");
+    if (outcome.kind === "needs") expect(outcome.issues.map((i) => i.code)).toEqual(["no-plan-dates", "plan-ended"]);
+    const fixed = setChoice(flow, { kind: "plan", plan: { start: "2026-10-01", end: "2027-09-30" } });
+    expect(readyState(fixed).plan).toEqual({ start: "2026-10-01", end: "2027-09-30" });
+  });
+
+  it("a plan ending this month still builds: this month is scheduled", () => {
+    const state = readyState(addPage(addPage(emptyImportFlow(), fixtureB1), fixtureB2));
+    expect(state.plan.end).toBe("2026-10-31");
+    expect(state.fromMonth).toBe("2026-10");
   });
 
   it("junk needs \"no-rows\"", () => {

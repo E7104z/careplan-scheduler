@@ -4,7 +4,9 @@ import { changeCell, fixtureText, pasteCarePlan } from "./helpers";
 
 // AC-19 at 390 × 844 (the phone project) for the public routes in AC-18 and the other public
 // pages: no sideways page scroll, and 44 × 44 px buttons and toggles (APP-SPEC 4.4).
-const FIXED_TIME = new Date("2026-10-21T12:00:00-05:00");
+// Nov 20, 2025: every fixture's plan is current or still to come (B starts Dec 1, 2025; D runs
+// Sep 2025 to Jun 2026). A schedule covers only months still to come (APP-SPEC 5.3 step 5).
+const FIXED_TIME = new Date("2025-11-20T12:00:00-06:00");
 
 test.beforeEach(async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone viewport only");
@@ -66,6 +68,17 @@ test("AC-19: /quick with a built plan and a refused change at phone size", async
   await expect(page.getByRole("button", { name: "Bathing, Monday, 30 minutes. Change minutes" })).toBeVisible();
   await changeCell(page, "Bathing", "Tuesday", 45, 60);
   await expect(page.getByRole("button", { name: "Use 55 minutes" })).toBeVisible();
+  await expectPhoneLayout(page);
+
+  // "Show in week" on a check about one task: 55 minutes is above Bathing's 45 (SCH-03).
+  await page.getByRole("button", { name: "Use 55 minutes" }).click();
+  await page.getByText("A day has more minutes than the task allows").click();
+  await expect(page.getByRole("button", { name: "Show in week" })).toBeVisible();
+  await expectPhoneLayout(page);
+
+  // "Let us choose" once a task's days are chosen by hand.
+  await page.getByRole("group", { name: "Bathing days" }).getByRole("button", { name: "Saturday" }).click();
+  await expect(page.getByRole("button", { name: "Let us choose" }).first()).toBeVisible();
   await expectPhoneLayout(page);
 });
 

@@ -64,6 +64,41 @@ and written into APP-SPEC, ENGINE-SPEC (Amendment B) and IMPORT-SPEC.
   to enter a month when it's left with something else (Safari and Firefox show a text box);
   the Rules page says Quick Schedule doesn't run the visit checks.
 
+**Review decisions (Oct 25, 2026, second review: dates, month-end cuts, EVV).** Built on
+`phase-2-app`; written into APP-SPEC, IMPORT-SPEC, ENGINE-SPEC (Amendment B) and
+`docs/DSDS-QUESTIONS.md`.
+- **No months that are over.** A schedule covers care still to come: from the month it was
+  built (`fromMonth`) or the plan's start, whichever is later. The examples start this month
+  (the fixtures are real plans from 2025), and a plan that ended before this month isn't built
+  ("This care plan has ended"). Tests that need a fixture's whole plan set their clock before it
+  (e2e: Nov 20, 2025); AC-25 checks Oct 21, 2026.
+- **Monthly figures follow Fusion's own proration** (Fusion FAQ, Jun 4, 2025; IMPORT-SPEC 1.2
+  answered, IMP-10). The care plan screen's one figure is for one month length (30 days for A
+  and B); each month gets that figure prorated, so B is 469 in 31-day months and 434 in
+  February. This ends the month-end cuts for plans whose tasks add up to Fusion's figure, and
+  stops February from going over Fusion's figure. Where cuts remain (the tasks need more than
+  Fusion authorizes), the month view lists every task cut on every date, and points to a care
+  plan change request (INFO 09-25-02). SCH-17 stays a product decision; the question for DSDS
+  is ready to send in `docs/DSDS-QUESTIONS.md`.
+- **SCH-11 and AUTH-07 copy** point to a care plan change request, with INFO 09-25-02's "should".
+  No copy says a rule is required by law; "Must fix" is only on rules whose source is a
+  regulation or a hard limit.
+- **New:** a daily task list with each visit's tasks, minutes and a visit length that is their
+  total (for the caregiver, the participant and EVV windows); the month balance (authorized,
+  scheduled, left) and every month's units; "Reviewed with the participant" with a date,
+  printed and cleared by any later change.
+- **CON-09 on the template:** `validatePlan` checks ILW and Respite's 49 hours a week on the
+  expanded template (Sunday–Saturday weeks, REVIEW), so a pattern over the limit is flagged
+  without visits.
+- **Open questions from PR #2, decided:** the toast's `role="status"` is on its message (APP-SPEC
+  4.2 updated); links inside sentences stay exempt from the 44 px rule (WCAG 2.5.8; APP-SPEC
+  4.4); "Show in week" and "Let us choose" are now measured at phone size (e2e phone spec);
+  AUTH-09 for plans built by hand stays WARN (a by-hand plan has no authorization yet, and a
+  BLOCK would also fire on imported partial months; when the person enters Fusion's units,
+  SCH-08 caps the schedule at them).
+- **Next:** with CI green and this review in, PR #2 merges to `main` (After Prompt 11, step 3),
+  then Prompt 12 (Windows installer) once production works on Vercel.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)

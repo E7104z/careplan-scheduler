@@ -9,6 +9,12 @@ import type { QuickAction } from "./state";
 import type { QuickState } from "./types";
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+/** QS-03: a whole month, and not one that's already over (a schedule covers care still to come). */
+function startError(month: string, fromMonth: string): string | undefined {
+  if (!MONTH.test(month)) return "Enter the month the plan starts, like 2026-11.";
+  return month < fromMonth ? `Choose ${monthName(fromMonth)} or later.` : undefined;
+}
 const monthInput = "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 text-ink focus:border-brand";
 
 /** APP-SPEC 5.2 by hand: QS-01 service and QS-03 plan start (the plan ends 11 months later). */
@@ -36,14 +42,15 @@ export function ServiceSection({ state, dispatch }: { state: QuickState; dispatc
             type="month"
             className={monthInput}
             value={month}
+            min={state.fromMonth}
             onChange={(event) => {
               setMonth(event.target.value);
-              if (MONTH.test(event.target.value)) {
+              if (MONTH.test(event.target.value) && event.target.value >= state.fromMonth) {
                 setError(undefined);
                 dispatch({ type: "setPlanStart", month: event.target.value });
               }
             }}
-            onBlur={() => setError(MONTH.test(month) ? undefined : "Enter the month the plan starts, like 2026-11.")}
+            onBlur={() => setError(startError(month, state.fromMonth))}
           />
         </Field>
         <div className="flex flex-col gap-1.5">

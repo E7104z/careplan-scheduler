@@ -1,13 +1,17 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
+import { BEFORE_B, pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 
-setUpQuickTests();
+// Fixture B's whole plan (Dec 2025 to Oct 2026) is still to come, so every month is scheduled.
+setUpQuickTests(BEFORE_B);
 
-async function buildB(user: UserEvent): Promise<void> {
-  await pasteText(user, fixtureB);
+/** B with Fusion's figure lowered to 440: its tasks need more, so months are cut at the end (SCH-17). */
+const B_AT_440 = fixtureB.replaceAll("455 units", "440 units");
+
+async function buildB(user: UserEvent, text: string = fixtureB): Promise<void> {
+  await pasteText(user, text);
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
 }
 
@@ -102,25 +106,47 @@ describe("Quick Schedule: weekly grid", () => {
 });
 
 describe("Quick Schedule: month", () => {
-  it("names a trimmed date for screen readers and marks it \"−95 min\"", async () => {
+  it("says exactly which tasks are cut on which dates when the month's units run out, and why", async () => {
     const { user } = renderQuick();
-    await buildB(user);
-    const previous = screen.getByRole("button", { name: "Previous month" });
-    for (let i = 0; i < 10; i++) await user.click(previous);
-    expect(screen.getByText("December 2025")).toBeInTheDocument();
+    await buildB(user, B_AT_440);
+    expect(screen.getByLabelText("Units in December 2025")).toBeInTheDocument();
 
-    const label = screen.getByText(/^Wednesday 31: \d+ minutes, 95 minutes trimmed because the month's units run out$/);
+    expect(
+      screen.getByText(/This month's tasks need more than Fusion's 440 units, so the schedule stops 320 minutes early, starting Dec 30, 2025\./),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min")).toBeInTheDocument();
+    expect(screen.getByText(/^Dec 31, 2025: Meal Prep\/Eating 60 min, Bathing 45 min, Clean Bath 20 min, /)).toBeInTheDocument();
+    expect(screen.getByText(/a consistent need to change a task should prompt a request to the care plan change team \(INFO 09-25-02\)/)).toBeInTheDocument();
+
+    const label = screen.getByText(/^Wednesday 31: \d+ minutes, 195 minutes trimmed because the month's units run out$/);
     expect(label).toHaveClass("sr-only");
-    expect(label.parentElement).toHaveTextContent("−95 min");
+    expect(label.parentElement).toHaveTextContent("−195 min");
     expect(label.parentElement).toHaveClass("border-warn");
     expect(screen.getByText(/^Monday 1: \d+ minutes$/)).toHaveClass("sr-only");
+  });
+
+  it("shows the month's units authorized, scheduled and left, and every month on request", async () => {
+    const { user } = renderQuick();
+    await buildB(user);
+    const balance = screen.getByLabelText("Units in December 2025");
+    expect(within(balance).getByText("469 units")).toBeInTheDocument();
+    expect(within(balance).getByText("Fusion, for 31 days")).toBeInTheDocument();
+    expect(within(balance).getByText(/for tasks, 23 for transportation$/)).toBeInTheDocument();
+    expect(screen.getByText("Fusion, for a 31-day month: 469 units − 23 transportation")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Show every month" }));
+    const table = screen.getByRole("table", { name: "Units by month" });
+    const february = within(table).getByRole("rowheader", { name: "February 2026" }).closest("tr")!;
+    expect(within(february).getAllByRole("cell")[0]).toHaveTextContent("434");
+    expect(within(table).getAllByRole("row")).toHaveLength(12);
   });
 });
 
 describe("Quick Schedule: print", () => {
   it("prints the Must fix and Needs review checks, not Worth checking, Good to know or the controls", async () => {
     const { user } = renderQuick();
-    await buildB(user);
+    // At 440 units Fusion's figure differs from the tasks, so there's a Needs review check (AUTH-07).
+    await buildB(user, B_AT_440);
     await changeCell(user, "Bathing", "Monday", 45, 30);
 
     expect(hiddenInPrint(screen.getByRole("heading", { level: 3, name: /^Needs review/ }))).toBe(false);
