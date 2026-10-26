@@ -17,9 +17,12 @@ npm run dist -w @careplan/desktop
 The installer lands in `apps/desktop/release/CarePlan-Scheduler-Setup-0.1.0.exe` (about 115 MB).
 `release/win-unpacked/` holds the same app unpacked, for a quick try without installing.
 
-To build it on GitHub instead: Actions → **Desktop** → **Run workflow**, then download the
-`windows-installer` artifact from the run. Pushing a tag such as `desktop-v0.1.0` also attaches
-the installer to a GitHub Release for that tag.
+To build it on GitHub instead, in this repository,
+[E7104z/careplan-scheduler](https://github.com/E7104z/careplan-scheduler) (default branch `main`):
+[Actions → **Desktop**](https://github.com/E7104z/careplan-scheduler/actions/workflows/desktop.yml)
+→ **Run workflow**, then download the `windows-installer` artifact from the run. GitHub lists the
+workflow once `.github/workflows/desktop.yml` is on `main`. Pushing a tag such as
+`desktop-v0.1.0` also runs it, and attaches the installer to a GitHub Release for that tag.
 
 The installer asks where to install (per user, no administrator rights needed), and adds a
 desktop shortcut and a Start menu entry.
