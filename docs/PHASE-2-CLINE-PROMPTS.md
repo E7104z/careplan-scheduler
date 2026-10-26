@@ -99,6 +99,19 @@ and written into APP-SPEC, ENGINE-SPEC (Amendment B) and IMPORT-SPEC.
 - **Next:** with CI green and this review in, PR #2 merges to `main` (After Prompt 11, step 3),
   then Prompt 12 (Windows installer) once production works on Vercel.
 
+**Prompt 12 decisions (Oct 25, 2026, Windows installer).** PR #2 merged; production on Vercel
+serves the merged code. Recorded in `apps/desktop/README.md`.
+- D-2's "block every permission request" keeps one exception: `clipboard-sanitized-write` from
+  the site's own origin, so "Copy invite link" works as in a browser (which grants it without
+  asking). Every other permission is refused.
+- Besides https, `mailto:` links open outside the app (the support address and the invite's
+  "open your mail app" link, APP-SPEC D-09); nothing else is handed to Windows.
+- Electron's fuses are set on the installed app (no Run as Node, no NODE_OPTIONS, no inspector,
+  only an integrity-checked app.asar, cookie encryption). GrantFileProtocolExtraPrivileges stays
+  on: with it off, a failed load crashed the renderer before the offline page could show.
+- The icon puts the logo mark on a white rounded tile, so it stays visible on a dark taskbar;
+  `apps/desktop/scripts/make-icon.py` redraws it from Logo.tsx's geometry.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)

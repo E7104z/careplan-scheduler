@@ -9,6 +9,9 @@ apps/web/dist-emulated
 apps/web/test-results
 apps/web/playwright-report
 
+# apps/desktop build output (dist/ is ignored above) and the installer
+apps/desktop/release
+
 # local env and Firebase emulator logs
 .env.local
 firebase-debug.log
