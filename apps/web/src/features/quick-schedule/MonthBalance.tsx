@@ -1,5 +1,6 @@
 import { cn } from "../../lib/cn";
 import { formatUnits, monthName, niceDate } from "../../lib/format";
+import { monthBalance } from "./model";
 import type { MonthFigures, QuickModel } from "./types";
 
 /** "Fusion: 455 units", "Fusion, for a 31-day month: 469 units" or "Calculated: 181 units". */
@@ -50,8 +51,7 @@ export function MonthBalance({ model, month, figures }: { model: QuickModel; mon
   const cap = Math.max(figures.taskBudgetMinutes, figures.scheduledTaskMinutes, 1);
   const fill = (Math.min(figures.scheduledTaskMinutes, figures.taskBudgetMinutes) / cap) * 100;
   const overPct = figures.over ? ((figures.scheduledTaskMinutes - figures.taskBudgetMinutes) / cap) * 100 : 0;
-  const scheduledMinutes = figures.transportUnits * 15 + figures.scheduledTaskMinutes;
-  const leftMinutes = figures.authorizedUnits * 15 - scheduledMinutes;
+  const { scheduledMinutes, leftMinutes } = monthBalance(figures);
   const firstTrim = figures.trims.length ? figures.trims.map((trim) => trim.date).sort()[0] : null;
   const days = trimmedDays(model, figures);
   const monthOnly = monthName(month).split(" ")[0];

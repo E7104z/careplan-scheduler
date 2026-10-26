@@ -48,6 +48,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./test/setup.ts"],
+    // The printed schedule reads its colors from tokens.css (?raw); vitest blanks other CSS.
+    css: { include: [/tokens\.css/] },
     include: ["test/**/*.test.{ts,tsx}"],
   },
 });

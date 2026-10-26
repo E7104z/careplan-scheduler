@@ -1,14 +1,9 @@
 import { useId, type Dispatch } from "react";
-import { niceDate } from "../../lib/format";
+import { niceDate, todayIso } from "../../lib/format";
 import { Field } from "../../ui/Field";
 import { Panel } from "../../ui/Panel";
 import type { QuickAction } from "./state";
 import type { QuickState } from "./types";
-
-function todayIso(): string {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-}
 
 const dateInput = "h-10 w-full rounded-sm border border-line-2 bg-surface px-3 text-ink focus:border-brand max-sm:h-11";
 

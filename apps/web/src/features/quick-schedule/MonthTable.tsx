@@ -2,7 +2,7 @@ import { useState } from "react";
 import { cn } from "../../lib/cn";
 import { formatUnits, monthName } from "../../lib/format";
 import { Button } from "../../ui/Button";
-import { monthFigures } from "./model";
+import { monthBalance, monthFigures } from "./model";
 import type { QuickModel } from "./types";
 
 const TABLE_ID = "qs-month-table";
@@ -51,8 +51,7 @@ export function MonthTable({ model }: { model: QuickModel }) {
           <tbody>
             {model.months.map((month) => {
               const figures = monthFigures(model, month);
-              const scheduled = figures.transportUnits * 15 + figures.scheduledTaskMinutes;
-              const left = figures.authorizedUnits * 15 - scheduled;
+              const { scheduledMinutes: scheduled, leftMinutes: left } = monthBalance(figures);
               return (
                 <tr key={month}>
                   <th scope="row" className={cn(cell, "font-normal")}>{monthName(month)}</th>

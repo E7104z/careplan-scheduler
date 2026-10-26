@@ -1,7 +1,7 @@
 import { useCallback, useState, type Dispatch } from "react";
 import { Link } from "react-router";
 import type { RulePack } from "@careplan/engine";
-import { niceDate } from "../../lib/format";
+import { niceDate, todayIso } from "../../lib/format";
 import { ChecksPanel } from "./ChecksPanel";
 import { DailyTaskList } from "./DailyTaskList";
 import { MonthPanel } from "./MonthPanel";
@@ -14,11 +14,6 @@ import type { QuickFeedback } from "./useQuickStore";
 
 const FOOTNOTE =
   'Unit math follows DHSS rules for 15-minute units: weekly frequency factors, short-month proration for daily tasks, and whole units only. A change that would break a rule isn\'t accepted; you\'ll see the limit instead. Checks marked "Needs review" use a rule DHSS hasn\'t confirmed yet, so they never count as passing.';
-
-function todayIso(): string {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-}
 
 interface SchedulePaneProps {
   state: QuickState;
