@@ -186,4 +186,35 @@ describe("validatePlan", () => {
     expect(validatePlan(plan)).toEqual(withVisitRules.filter((r) => r.ruleId !== "CON-13"));
     expect(validatePlan(plan).length).toBeGreaterThan(0);
   });
+
+  it("CON-09 on the expanded template: an ILW week over 49 hours needs review, 49 hours doesn't (Amendment B)", () => {
+    const ilw = (minPerDay: number): ValidatePlanInput => ({
+      pack: MO_2026_07,
+      authorizations: [
+        {
+          id: "auth-1", participantId: "P-TEST-01", program: "ILW", serviceCode: "T1019U6",
+          start: "2026-11-01", end: "2026-12-31", state: "active", suspensions: [], revision: 1,
+          tasks: [task("care", minPerDay, 7)],
+        },
+      ],
+      monthlyAuthorizations: [],
+      template: {
+        id: "tpl-1", participantId: "P-TEST-01", start: "2026-11-01", end: "2026-12-31", rulePackVersion: "mo-2026-07",
+        entries: ([0, 1, 2, 3, 4, 5, 6] as Weekday[]).map((weekday) => entry("care", weekday, minPerDay)),
+      },
+      exceptions: [],
+      months: ["2026-11", "2026-12"],
+    });
+    // 420 min a day = 49 hours a week exactly.
+    expect(validatePlan(ilw(420)).filter((r) => r.ruleId === "CON-09")).toEqual([]);
+    // 430 min a day = 50 h 10 min a week: every whole Sunday–Saturday week of Nov and Dec 2026.
+    const over = validatePlan(ilw(430)).filter((r) => r.ruleId === "CON-09");
+    expect(over.length).toBe(8);
+    expect(over.every((r) => r.severity === "REVIEW")).toBe(true);
+    expect(over[0]).toMatchObject({
+      message: "Sunday-Saturday week 2026-11-01 exceeds 49 h (3010 min)",
+      refs: { date: "2026-11-01", month: "2026-11", serviceAuthId: "auth-1" },
+    });
+  });
 });
+

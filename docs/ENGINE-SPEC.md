@@ -11,8 +11,9 @@ alias, `RULE_CATALOG`, and fixtures TC-38 to TC-40. Nothing else in this file ch
 **Amendment B (Oct 25, 2026, Phase 2 review of Fusion's care plan report):** the entry point
 `validatePlan` (section 5); agency personal care (AGENCY_PC) gains the seven household tasks
 Fusion lists under PC - Agency (section 3); and AUTH-09 also checks a month with no imported
-figure on its derived units, as WARN (a plan built by hand had no ceiling check at all). No
-formula or expected value changed.
+figure on its derived units, as WARN (a plan built by hand had no ceiling check at all); and
+`validatePlan` checks CON-09's Sunday–Saturday weeks on the expanded template (no visits needed).
+No formula or expected value changed.
 
 ---
 
@@ -187,9 +188,13 @@ for `trunc(x + 0.99)` use `Math.trunc((num + 0.99 * den) / den)` on integer nume
 Entry points (`src/validate.ts`): `validateSchedule(input)` runs every rule below, stamps each
 result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN, INFO.
 `validatePlan(input)` (Amendment B) takes the same input without `visits`, `caregivers`,
-`enrollments` and `tenantWorkweekStart`, and runs only the rules that read the plan: AUTH-03
-to AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12. For a plan with no visits its results are
-`validateSchedule`'s without the visit rules (SCH-14 and every CON rule), in the same order.
+`enrollments` and `tenantWorkweekStart`, and runs the rules that read the plan: AUTH-03 to
+AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, plus CON-09 on the expanded template: each
+ILW or Respite authorization's task minutes on each date (template plus exceptions), checked as
+visits would be, keeping only the Sunday–Saturday week results (REVIEW; a repeating week makes
+every rolling 7-day window equal its week or less), with `refs.month` the week's first month.
+For a plan with no visits its other results are `validateSchedule`'s without the visit rules
+(SCH-14 and every CON rule), in the same order.
 It is for a plan that is not scheduled as visits (Quick Schedule): run on no visits, CON-13
 would ask for a referral date it has no first visit to check. Only visit time (SCH-15) needs
 luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't load it.

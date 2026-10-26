@@ -223,6 +223,37 @@ function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   return results;
 }
 
+/**
+ * CON-09 on the expanded template, for a plan with no visits (Amendment B): the task minutes each
+ * ILW or Respite authorization's template puts on each date, checked as visits would be. The
+ * template repeats every week, so each rolling 7-day window equals its Sunday–Saturday week (or
+ * less, where a month-end trim shortens it): only the week results are kept.
+ */
+function templateWeeklyHours(input: ValidatePlanInput): ValidationResult[] {
+  const { authorizations, template, exceptions, months } = input;
+  const results: ValidationResult[] = [];
+  for (const auth of authorizations) {
+    if (!WEEKLY_HOUR_GROUPS[auth.serviceCode]) continue;
+    const taskIds = new Set(auth.tasks.map((task) => task.id));
+    const daily: Record<string, number> = {};
+    for (const month of months) {
+      const { year, month: monthNum } = parseMonth(month);
+      for (const [date, day] of Object.entries(expandMonth(template, exceptions, year, monthNum, auth.start, auth.end))) {
+        const minutes = Object.entries(day).reduce((sum, [taskId, m]) => (taskIds.has(taskId) ? sum + m : sum), 0);
+        if (minutes > 0) daily[date] = (daily[date] ?? 0) + minutes;
+      }
+    }
+    for (const result of ruleCON09WeeklyHours(daily)) {
+      if (result.severity !== "REVIEW") continue;
+      results.push({
+        ...result,
+        refs: { ...result.refs, serviceAuthId: auth.id, month: (result.refs.date ?? "").slice(0, 7) },
+      });
+    }
+  }
+  return results;
+}
+
 /** AUTH-13: stamp each result with the rule-pack version, ordered BLOCK, REVIEW, WARN, INFO. */
 function stamped(results: ValidationResult[], pack: RulePack): ScheduleValidationResult[] {
   return results
@@ -241,13 +272,14 @@ export function validateSchedule(input: ValidateScheduleInput): ScheduleValidati
 }
 
 /**
- * Entry point for a plan with no visits (Amendment B): only the plan rules, stamped and ordered
- * like {@link validateSchedule}. SCH-14 and the CON rules check visits, so they are left out
- * rather than run on none (CON-13 would ask for a referral date it has no visit to check).
+ * Entry point for a plan with no visits (Amendment B): the plan rules, and CON-09 on the expanded
+ * template, stamped and ordered like {@link validateSchedule}. SCH-14 and the other CON rules
+ * check visits, so they are left out rather than run on none (CON-13 would ask for a referral
+ * date it has no visit to check).
  * Visit time is the only code that needs luxon, so a page that calls only this doesn't load it.
  * @rule AUTH-13
  * @source Product decision approved Oct 20, 2026 (P-06)
  */
 export function validatePlan(input: ValidatePlanInput): ScheduleValidationResult[] {
-  return stamped(planRules(input), input.pack);
+  return stamped([...planRules(input), ...templateWeeklyHours(input)], input.pack);
 }
