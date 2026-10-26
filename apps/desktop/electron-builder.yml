@@ -1,0 +1,43 @@
+# Windows installer for CarePlan Scheduler: `npm run dist -w @careplan/desktop`.
+# Unsigned until a code-signing certificate is added (D-4, README).
+appId: com.goldencarealliance.careplan
+productName: CarePlan Scheduler
+copyright: Copyright © 2026 Golden Care Alliance, LLC
+directories:
+  output: release
+  buildResources: assets
+files:
+  - dist/**/*
+  - "!dist/**/*.test.js"
+  - assets/**/*
+  - package.json
+# The app has no runtime dependencies to rebuild: it only loads the live site.
+npmRebuild: false
+# Electron's security checklist: the installed exe can't be used as a Node runtime or opened to
+# a debugger, and loads only its own checked app.asar.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  enableCookieEncryption: true
+  # Left on (Electron's default): with it off, a failed load crashes the renderer before the
+  # offline page (assets/offline.html, inside app.asar) can show.
+  grantFileProtocolExtraPrivileges: true
+win:
+  icon: assets/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CarePlan Scheduler
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  artifactName: CarePlan-Scheduler-Setup-${version}.exe

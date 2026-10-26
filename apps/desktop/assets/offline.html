@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; form-action https://careplan-scheduler.vercel.app"
+    />
+    <title>You're offline | CarePlan Scheduler</title>
+    <!--
+      Shown when the site can't load. It can't use the web bundle, so it has its own plain styles:
+      system fonts, and only black, white and the Signature blue (--brand in tokens.css).
+      "Try again" loads the site (APP_URL in src/config.ts) the way a link would; no script.
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #FFFFFF;
+        color: #000000;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      main {
+        max-width: 32rem;
+        padding: 2rem 1.5rem;
+      }
+      h1 {
+        margin: 0 0 0.75rem;
+        font-size: 1.75rem;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        font-size: 1rem;
+        line-height: 1.5;
+      }
+      button {
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        border: 2px solid #26348C;
+        border-radius: 4px;
+        background: #26348C;
+        color: #FFFFFF;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 3px solid #26348C;
+        outline-offset: 3px;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #000000;
+          color: #FFFFFF;
+        }
+        button {
+          border-color: #FFFFFF;
+          background: #FFFFFF;
+          color: #000000;
+        }
+        button:focus-visible {
+          outline-color: #FFFFFF;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>You're offline</h1>
+      <p>CarePlan Scheduler needs an internet connection to open. Check your connection, then try again.</p>
+      <form action="https://careplan-scheduler.vercel.app/" method="get">
+        <button type="submit">Try again</button>
+      </form>
+    </main>
+  </body>
+</html>
