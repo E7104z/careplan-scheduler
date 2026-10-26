@@ -47,7 +47,8 @@ GitHub Actions secrets, never in the repository). No signing settings are in thi
   sign-in (`accounts.google.com`, `care-plan-scheduler.firebaseapp.com`), which opens in a child
   window that closes itself. Lookalike hosts, other schemes and other ports don't load.
 - **Other links** open in the person's own browser (https) or mail app (`mailto:`, the support
-  address and the invite's "open your mail app" link). Nothing else is handed to Windows.
+  address and the invite's "open your mail app" link). Nothing else is handed to Windows but the
+  schedule PDF the person has just saved (below).
 - **Permissions** (D-2): every request is refused but one: the site writing text to the clipboard,
   so "Copy invite link" works as it does in a browser. No camera, microphone, location or
   notifications.
@@ -57,8 +58,12 @@ GitHub Actions secrets, never in the repository). No signing settings are in thi
   only there while developing.
 - **Offline**: if the site can't load, `assets/offline.html` says so. **Try again** loads the site,
   and so does View → Reload.
-- **Print**: the page's own Print schedule button, or File → Print, opens the Windows print
-  dialog, so printed schedules match the web version.
+- **Print** (APP-SPEC 5.4, D-17): on Quick Schedule, Print schedule, Save as PDF, Ctrl+P and
+  File → Print all make the same one-page landscape PDF as the website. Windows' Save dialog asks
+  where to keep it (Downloads, "Care schedule 2026-10-26.pdf"), then it opens in the person's PDF
+  app, ready to print. File → Print asks the page first (the `careplan:print` event,
+  `src/config.ts`); any other page prints as it is, through the Windows print dialog. Only a PDF
+  from the site itself, saved as a .pdf, is ever opened (`opensAfterSaving`).
 - **One window**: opening the app again brings the open window forward.
 - No auto-update, telemetry or crash reporting (D-4).
 

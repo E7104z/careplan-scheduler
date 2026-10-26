@@ -1,7 +1,16 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { APP_URL, PRIVACY_URL, allowsPermission, isAllowedNavigation, opensOutside } from "./config";
+import {
+  APP_URL,
+  PRIVACY_URL,
+  SITE_PRINT_SCRIPT,
+  allowsPermission,
+  isAllowedNavigation,
+  opensAfterSaving,
+  opensOutside,
+  sitePrinted,
+} from "./config";
 
 describe("APP_URL", () => {
   it("is the production site, and the privacy page is on it", () => {
@@ -78,6 +87,38 @@ describe("allowsPermission (D-2)", () => {
     expect(allowsPermission("clipboard-sanitized-write", "https://careplan-scheduler.vercel.app.evil.com/")).toBe(false);
     for (const permission of ["clipboard-read", "media", "geolocation", "notifications", "openExternal", "fullscreen", "unknown"]) {
       expect(allowsPermission(permission, "https://careplan-scheduler.vercel.app/"), permission).toBe(false);
+    }
+  });
+});
+
+describe("File > Print (APP-SPEC 5.4)", () => {
+  it("asks the page first: the page cancels the event when it makes its own one-page PDF", () => {
+    expect(SITE_PRINT_SCRIPT).toBe('window.dispatchEvent(new Event("careplan:print", { cancelable: true }))');
+    // dispatchEvent returns false only when a listener cancelled the event.
+    expect(sitePrinted(false)).toBe(true);
+    for (const result of [true, undefined, null, "false", 0]) expect(sitePrinted(result), String(result)).toBe(false);
+  });
+});
+
+describe("opensAfterSaving", () => {
+  const SITE_PDF = "blob:https://careplan-scheduler.vercel.app/2f1c7a7e-4c1d-4a77-9a55-0d7b9f1e2a10";
+
+  it("opens the site's own PDF once saved as a .pdf, so it can be printed from the PDF app", () => {
+    expect(opensAfterSaving(SITE_PDF, "application/pdf", "C:\\Users\\p-test\\Downloads\\Care schedule 2026-10-26.pdf")).toBe(true);
+    expect(opensAfterSaving(SITE_PDF, "application/pdf", "C:\\Users\\p-test\\Documents\\SCHEDULE.PDF")).toBe(true);
+  });
+
+  it("opens nothing else: other sources, other types, or a file saved under another extension", () => {
+    for (const [url, mime, path] of [
+      ["blob:https://careplan-scheduler.vercel.app.evil.com/x", "application/pdf", "C:\\x.pdf"],
+      ["blob:https://evil.com/x", "application/pdf", "C:\\x.pdf"],
+      ["https://careplan-scheduler.vercel.app/report.pdf", "application/pdf", "C:\\x.pdf"],
+      [SITE_PDF, "text/html", "C:\\x.pdf"],
+      [SITE_PDF, "application/pdf", "C:\\x.exe"],
+      [SITE_PDF, "application/pdf", "C:\\x.pdf.exe"],
+      [SITE_PDF, "application/pdf", ""],
+    ] as const) {
+      expect(opensAfterSaving(url, mime, path), `${url} ${mime} ${path}`).toBe(false);
     }
   });
 });

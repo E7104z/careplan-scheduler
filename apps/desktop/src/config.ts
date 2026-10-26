@@ -51,6 +51,26 @@ export function opensOutside(url: string): boolean {
 }
 
 /**
+ * File > Print asks the page first (APP-SPEC 5.4): Quick Schedule makes its one-page PDF and
+ * cancels this event; any other page leaves it, and the app prints the page as it is.
+ */
+export const SITE_PRINT_SCRIPT = 'window.dispatchEvent(new Event("careplan:print", { cancelable: true }))';
+
+/** `dispatchEvent` returns false only when the page cancelled the event: it is printing. */
+export function sitePrinted(result: unknown): boolean {
+  return result === false;
+}
+
+/**
+ * The schedule PDF the site makes (Print schedule, Save as PDF) is saved where the person
+ * chooses, then opened in their PDF app to print. Only a PDF from the site itself, and only when
+ * saved as a .pdf: Windows opens a file by its extension, so a renamed file is never run.
+ */
+export function opensAfterSaving(url: string, mimeType: string, savePath: string): boolean {
+  return url.startsWith(`blob:${APP_ORIGIN}/`) && mimeType === "application/pdf" && /\.pdf$/i.test(savePath);
+}
+
+/**
  * D-2: every permission request is refused but one: writing text to the clipboard, asked by the
  * site itself, so "Copy invite link" works as it does in a browser (which grants it without
  * asking). Reading the clipboard, the camera, location, notifications and the rest stay off.
