@@ -1,7 +1,7 @@
 import type { MenuItemConstructorOptions } from "electron";
 
 export interface MenuActions {
-  /** The system print dialog for the page, as its own Print button gives. */
+  /** The page's own printout where it has one (Quick Schedule's one-page PDF), else the system print dialog. */
   print: () => void;
   /** Reload the site (from the offline page too, which has nothing of its own to reload). */
   reload: () => void;

@@ -8,6 +8,7 @@ import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { CarePlanPane } from "./CarePlanPane";
 import { buildQuickModel } from "./model";
+import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
@@ -15,6 +16,10 @@ import type { QuickModel, QuickState } from "./types";
 import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
 
 const PACK = MO_2026_07;
+
+const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
+
+type PrintAction = "print" | "save";
 
 /** A refusal that belongs in a toast, or the QS-02 "Removed …" message after a service change. */
 function toastMessage(feedback: QuickFeedback | null, model: QuickModel): string | null {
@@ -68,6 +73,50 @@ export function QuickSchedule() {
     focusAfter.current = PASTE_BOX_ID;
   };
 
+  // APP-SPEC 5.4 Print: the one-page PDF. Print errors get their own toasts, numbered below the
+  // store's feedback so the two never share a key.
+  const [printing, setPrinting] = useState<PrintAction | null>(null);
+  // Set at once (state waits for a render): Ctrl+P can reach the page and the Windows app's menu
+  // in the same moment, and that is one printout.
+  const making = useRef(false);
+  const printErrors = useRef(0);
+  const canPrint = model.tasks.length > 0;
+  /** Makes the printout; false when there's nothing to print (no tasks yet). */
+  const makePrintout = (action: PrintAction): boolean => {
+    if (!canPrint) return false;
+    if (making.current) return true;
+    making.current = true;
+    setPrinting(action);
+    const source = { state, model, pack: PACK };
+    (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source))
+      .catch(() => setToast({ seq: --printErrors.current, message: PRINT_FAILED }))
+      .finally(() => {
+        making.current = false;
+        setPrinting(null);
+      });
+    return true;
+  };
+  const latestPrintout = useRef(makePrintout);
+  useEffect(() => {
+    latestPrintout.current = makePrintout;
+  });
+  // Ctrl+P (and the Windows app's File > Print) make the printout rather than print the page.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "p") return;
+      if (latestPrintout.current("print")) event.preventDefault();
+    };
+    const onShellPrint = (event: Event) => {
+      if (latestPrintout.current("print")) event.preventDefault();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener(SHELL_PRINT_EVENT, onShellPrint);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(SHELL_PRINT_EVENT, onShellPrint);
+    };
+  }, []);
+
   return (
     <div className="mx-auto grid w-full max-w-[1440px] gap-6 px-[max(16px,env(safe-area-inset-left))] pb-16 pt-6">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 print:hidden">
@@ -86,8 +135,11 @@ export function QuickSchedule() {
               New care plan
             </Button>
           )}
-          <Button variant="secondary" onClick={() => window.print()}>
+          <Button variant="secondary" disabled={!canPrint} busy={printing === "print"} onClick={() => makePrintout("print")}>
             Print schedule
+          </Button>
+          <Button variant="secondary" disabled={!canPrint} busy={printing === "save"} onClick={() => makePrintout("save")}>
+            Save as PDF
           </Button>
         </div>
       </div>

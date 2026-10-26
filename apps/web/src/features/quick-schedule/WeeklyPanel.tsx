@@ -11,7 +11,8 @@ import type { QuickModel, QuickState } from "./types";
 
 const WEEKDAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
-function daysText(days: number): string {
+/** "every day", or "5 days a week" (a task's days in the weekly grid and on the printout). */
+export function daysText(days: number): string {
   return days === 7 ? "every day" : `${days} ${days === 1 ? "day" : "days"} a week`;
 }
 

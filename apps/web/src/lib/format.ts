@@ -41,6 +41,12 @@ export function shortMonth(month: string): string {
   return `${MONTH_NAMES[monthNumber - 1]!.slice(0, 3)} ${month.slice(0, 4)}`;
 }
 
+/** Today on the person's own calendar, as "YYYY-MM-DD" (not `toISOString()`, which is UTC). */
+export function todayIso(): string {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
 /** "2025-12-31" -> "Dec 31, 2025". */
 export function niceDate(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);

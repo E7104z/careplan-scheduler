@@ -1,6 +1,15 @@
 import { join } from "node:path";
 import { app, BrowserWindow, Menu, session, shell, type WebContents, type WebPreferences } from "electron";
-import { APP_URL, PRIVACY_URL, allowsPermission, isAllowedNavigation, opensOutside } from "./config";
+import {
+  APP_URL,
+  PRIVACY_URL,
+  SITE_PRINT_SCRIPT,
+  allowsPermission,
+  isAllowedNavigation,
+  opensAfterSaving,
+  opensOutside,
+  sitePrinted,
+} from "./config";
 import { menuTemplate } from "./menu";
 
 // D-1: a window onto the live site. No schedule logic, no storage of its own, no copy of apps/web.
@@ -68,8 +77,41 @@ function blockPermissions(): void {
   );
 }
 
+/**
+ * The schedule PDF the site makes (APP-SPEC 5.4): Windows' Save dialog for PDFs, then the saved
+ * file opens in the person's PDF app, ready to print. Any other download keeps Electron's own
+ * Save dialog and isn't opened.
+ */
+function handleDownloads(): void {
+  session.defaultSession.on("will-download", (_event, item) => {
+    if (!opensAfterSaving(item.getURL(), item.getMimeType(), item.getFilename())) return;
+    item.setSaveDialogOptions({
+      title: "Save the schedule",
+      defaultPath: join(app.getPath("downloads"), item.getFilename()),
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    item.once("done", (_doneEvent, state) => {
+      if (state === "completed" && opensAfterSaving(item.getURL(), item.getMimeType(), item.getSavePath())) {
+        void shell.openPath(item.getSavePath());
+      }
+    });
+  });
+}
+
 function showingOfflinePage(window: BrowserWindow): boolean {
   return window.webContents.getURL().startsWith("file:");
+}
+
+/** File > Print: the page's own printout where it has one (Quick Schedule's PDF), else the page. */
+async function print(): Promise<void> {
+  if (!mainWindow) return;
+  const contents = mainWindow.webContents;
+  if (!showingOfflinePage(mainWindow)) {
+    // As the person's own action, so the page may download its PDF.
+    const result: unknown = await contents.executeJavaScript(SITE_PRINT_SCRIPT, true).catch(() => true);
+    if (sitePrinted(result)) return;
+  }
+  contents.print();
 }
 
 function createWindow(): BrowserWindow {
@@ -115,10 +157,11 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(() => {
     blockPermissions();
+    handleDownloads();
     Menu.setApplicationMenu(
       Menu.buildFromTemplate(
         menuTemplate(app.isPackaged, {
-          print: () => mainWindow?.webContents.print(),
+          print: () => void print(),
           reload,
           openPrivacy: () => void mainWindow?.loadURL(PRIVACY_URL),
         }),

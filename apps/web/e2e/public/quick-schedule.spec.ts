@@ -1,4 +1,6 @@
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { PDFDocument } from "pdf-lib";
 import { changeCell, fixturePdf, fixtureText, pasteCarePlan, statusPanel } from "./helpers";
 
 // Nov 20, 2025: every fixture's plan is current or still to come (B starts Dec 1, 2025; D runs
@@ -350,6 +352,47 @@ test("AC-19: no page scroll at phone size; the grid scrolls inside its panel", a
 });
 
 
+
+test("AC-27: the printout is one US Letter landscape page, made in the browser from same-origin files", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the PDF is the same at any width; covered on desktop");
+  const urls: string[] = [];
+  page.on("request", (request) => urls.push(request.url()));
+  await buildB(page);
+
+  // Save as PDF: the file name carries the date only, never the participant's name or DCN.
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Save as PDF" }).click()]);
+  expect(download.suggestedFilename()).toBe("Care schedule 2025-11-20.pdf");
+  const pdf = await PDFDocument.load(readFileSync(await download.path()));
+  expect(pdf.getPageCount()).toBe(1);
+  expect(pdf.getPage(0).getSize()).toEqual({ width: 792, height: 612 });
+  expect(pdf.getTitle()).toBe("Weekly care schedule");
+
+  // Print schedule in a browser that shows no PDFs (this headless one): the same file, named, no tab.
+  expect(await page.evaluate(() => navigator.pdfViewerEnabled)).toBe(false);
+  let tabs = 0;
+  page.on("popup", () => tabs++);
+  const [printed] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Print schedule" }).click()]);
+  expect(printed.suggestedFilename()).toBe("Care schedule 2025-11-20.pdf");
+  expect(tabs).toBe(0);
+
+  // pdf-lib, fontkit and the fonts come from this site, and only when printing.
+  expect(urls.filter((url) => !url.startsWith("http://127.0.0.1:4173") && !url.startsWith("blob:"))).toEqual([]);
+  expect(urls.some((url) => /public-sans-latin-700-normal-[\w-]+\.woff$/.test(url))).toBe(true);
+});
+
+test("AC-27: Print schedule opens the PDF in a new tab where the browser shows PDFs", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the same at any width; covered on desktop");
+  // Chrome, Edge, Firefox and Safari show PDFs; this headless browser doesn't, so it says it does.
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "pdfViewerEnabled", { get: () => true }));
+  await buildB(page);
+
+  const [tab] = await Promise.all([page.waitForEvent("popup"), page.getByRole("button", { name: "Print schedule" }).click()]);
+  // The tab is sent to the PDF; with no viewer to show it, this browser hands it over as a download.
+  const shown = await tab.waitForEvent("download");
+  expect(shown.url()).toMatch(/^blob:http:\/\/127\.0\.0\.1:4173\//);
+  const pdf = await PDFDocument.load(readFileSync(await shown.path()));
+  expect(pdf.getPageCount()).toBe(1);
+});
 
 test("two panes side by side: no Skip to the schedule link", async ({ page, isMobile }) => {
   test.skip(isMobile, "desktop viewport only; the phone test clicks the link");

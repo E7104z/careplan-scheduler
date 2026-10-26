@@ -112,6 +112,42 @@ serves the merged code. Recorded in `apps/desktop/README.md`.
 - The icon puts the logo mark on a white rounded tile, so it stays visible on a dark taskbar;
   `apps/desktop/scripts/make-icon.py` redraws it from Logo.tsx's geometry.
 
+**Decisions (Oct 26, 2026, the printout).** The user found the printout not acceptable: "It
+should print a one page landscape oriented pdf. It should display beautifully the sunday thru
+saturday schedule. All other pertinent info should be included." Written into APP-SPEC (D-17,
+5.4 Print, section 10, AC-27) and `apps/desktop/README.md`.
+- **A PDF, not the print dialog.** `window.print()` sent the whole schedule pane to the dialog:
+  several pages, and each browser and the Windows app split, turned and captioned it its own way
+  (Electron's dialog uses the printer's own orientation). The schedule is now drawn as a PDF in
+  the browser with pdf-lib, one US Letter landscape page, identical everywhere. Nothing is
+  uploaded. New pinned packages: pdf-lib 1.17.1, @pdf-lib/fontkit 1.1.1, @fontsource/public-sans
+  5.3.0 (static weights, OFL); no new `npm audit` findings.
+- **Public Sans in the PDF**, embedded and subset, with colors read from tokens.css (light theme),
+  so the printout matches the app. fontkit makes the lazy print chunk about 515 KB gzip
+  (Helvetica would be about 200 KB); it loads only when someone prints and is cached for a year,
+  so no page budget changes (`/quick` 160.0 KB of 180).
+- **What it holds:** everything the old print list had (APP-SPEC 5.4), laid out for one page:
+  the daily task list became each day's column with its visit length, minutes and units; the
+  month calendar became the every-month table with a "Starting" date for months cut at month
+  end. Worth checking is printed too (AUTH-09 "More units than this service allows" is
+  pertinent); Good to know isn't. A plan built by hand gets lines to write the name and DCN on.
+- **Print schedule opens it in a new tab**, in the browser's PDF viewer, ready to print; **Save
+  as PDF** downloads it. The file name carries the date only ("Care schedule 2026-10-26.pdf"),
+  never the name or DCN (D-16): browsers keep download names in their history. Where the browser
+  shows no PDFs (`navigator.pdfViewerEnabled` false, such as Chrome set to download PDFs) the
+  PDF downloads instead of leaving a blank tab with an unnamed file.
+- **Ctrl+P** on Quick Schedule makes the printout instead of printing the page (as Google Docs
+  does). The Windows app's File → Print asks the page first through a cancelable
+  `careplan:print` event and prints the page itself only when the page doesn't take it (any page
+  but Quick Schedule). A guard makes Ctrl+P one printout even if the page and the app's menu
+  both get it.
+- **Windows app:** the site's PDF downloads (it opens no windows for the site), Windows' Save
+  dialog asks where, and the saved file opens in the person's PDF app to print. Only a blob PDF
+  from the site's own origin, saved under a .pdf name, is opened. Checked in Electron 44 against
+  a local build. The installer needs rebuilding after this merges to get it.
+- Checked in real Chrome and Edge under the production CSP (`vercel.json`): the tab shows "1 / 1"
+  in the browser's viewer; no CSP errors; no `eval` in the print chunk.
+
 ---
 
 ## Before Prompt 1 (you, once, about 30 minutes)

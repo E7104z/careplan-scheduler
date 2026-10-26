@@ -41,6 +41,7 @@ acceptance check in section 11 passes.
 | D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
 | D-15 | PDFs are read in the browser with `pdfjs-dist` 4.10.38, loaded only when a PDF is opened (its own chunk and worker file). Nothing is uploaded. | Keeps public pages fast; keeps participant data on the person's computer. |
 | D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are pasted into it. |
+| D-17 | **The printout is a one-page PDF** (US Letter landscape), drawn in the browser with `pdf-lib` 1.17.1 and `@pdf-lib/fontkit` 1.1.1 in Public Sans (`@fontsource/public-sans` 5.3.0, static weights), loaded only when someone prints (5.4). Nothing is uploaded. | Decided Oct 26, 2026, at the user's request: the page sent to the print dialog came out on several pages, and each browser and the Windows app split, turned and captioned it its own way. A PDF is the same one page everywhere. |
 
 ### Pinned versions (verified to install, typecheck, test and build together on Node 22)
 
@@ -71,6 +72,9 @@ acceptance check in section 11 passes.
 | @axe-core/playwright | 4.14.0 | web (dev) |
 | @firebase/rules-unit-testing | 5.0.2 | web (dev) |
 | pdfjs-dist | 4.10.38 | web; import (dev, for the PDF fixture tests) |
+| pdf-lib | 1.17.1 | web (the printout, D-17) |
+| @pdf-lib/fontkit | 1.1.1 | web (the printout's fonts) |
+| @fontsource/public-sans | 5.3.0 | web (the printout's static weights) |
 | firebase-tools | 14.27.0 | root (dev) |
 
 Do not use newer majors (Vite 8, React Router 8, Vitest 5, TypeScript 7, Firebase 13). They
@@ -246,7 +250,8 @@ Two ways in, one schedule:
 ### 5.1 Layout
 - Page intro: `h1` "Quick Schedule"; "Paste a care plan from Fusion or open its PDF. You get a
   ready schedule that follows Missouri's rules, and you can change it within them."; actions
-  "New care plan" (only while a pasted plan is showing) and "Print schedule".
+  "New care plan" (only while a pasted plan is showing), "Print schedule" and "Save as PDF"
+  (5.4 Print).
 - **Import panel** (shown until a real plan is built, and again after "New care plan"), two
   columns at ≥ 860px:
   - Left: `h2` "Paste the care plan from Fusion"; numbered steps (a real sequence): "In
@@ -363,8 +368,9 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   in care plan order, essential transportation on its usual day, and "Visit length 5 h 15 min"
   with "315 minutes = 21 units" (and "(175 for tasks, 60 for transportation)" on the
   transportation day); "No visit" on other days. Intro: "The tasks for each visit and their
-  minutes. Set each EVV visit window to its visit length." Printed on its own page. The visit
-  length is the sum of what's listed, so an EVV window set from it agrees with the schedule.
+  minutes. Set each EVV visit window to its visit length." On the printout each day's column
+  ends in its visit length. The visit length is the sum of what's listed, so an EVV window set
+  from it agrees with the schedule.
 - **Month**: previous/next limited to the schedule's months (5.3 step 5). Balance, three
   figures for the viewed month: Authorized ("455 units", "Fusion", "Fusion, for 31 days" or
   "Calculated from the tasks"), Scheduled ("452 units + 10 min", "429 units + 10 min for tasks,
@@ -380,7 +386,7 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   change a task should prompt a request to the care plan change team (INFO 09-25-02)."
   Calendar: one cell per date with minutes and units; trimmed dates get a warn border and
   "−195 min"; dates outside the plan and days without care are dashed. "Show every month"
-  opens a table (always printed): month, authorized, scheduled, left, cut at month end.
+  opens a table (on the printout too): month, authorized, scheduled, left, cut at month end.
 - **Review with the participant** (optional, after Checks): the checkbox "I went over this
   schedule with the participant" and "Date reviewed" (today by default, not later). INFO
   09-25-02: "Collaborating with the participant to create this schedule is key." Not a change
@@ -390,12 +396,41 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   that would break a rule isn't accepted; you'll see the limit instead. Checks marked "Needs
   review" use a rule DHSS hasn't confirmed yet, so they never count as passing." Link "See
   every rule and its source" → `/rules`.
-- **Print**: "Print schedule" → `window.print()`. Print: participant name and DCN (if read),
-  service, plan dates, PA number, weekly grid with day totals, the daily task list, the viewed
-  month's balance and calendar (with trims) and every month's units, status line, Must fix /
-  Needs review checks, "Reviewed with the participant on Oct 21, 2026." (or a line to write the
-  date on); footer "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>". US
-  Letter landscape.
+- **Print** (D-17): "Print schedule" and "Save as PDF" make the same one-page PDF, US Letter
+  landscape (792 × 612 pt, 30 pt margins), in Public Sans with the light theme's colors from
+  tokens.css. `scheduleSheet.ts` works out what it says from the model and the screen's copy;
+  `schedulePdf.ts` lays it out. It holds:
+  - Heading: the logo and "CarePlan Scheduler", "Weekly care schedule, Sunday to Saturday"; the
+    participant's name ("Example care plan" for the example; lines to write the name and DCN on
+    for a plan built by hand); the status as a pill ("Ready to use" or "N things to fix"); the
+    facts DCN, Service ("PC - CDS · T1019U2"), Plan, Schedule starts (when later than the plan),
+    Fusion units, Provider and Prior authorization.
+  - The week, Sunday to Saturday: a row per task in care plan order with "45 min · 5 days a
+    week" (beside the name when a long plan needs the room), then essential transportation on
+    its usual day ("Set aside, not a task"); each day's minutes, changed minutes underlined,
+    minutes above the task's own on the warn fill; days without care shaded; a Week column; then
+    each day's Visit length, Minutes and Units ("15 + 10 min"), or "No visit".
+  - Beside the week: This week (task minutes a week, care days, transportation), Checks (the
+    status line, then each Must fix, Needs review and Worth checking group with its task and
+    months; "And N more checks. See Checks in Quick Schedule." when they don't all fit),
+    "Reviewed with the participant" (the date, or a line to write it on) and a key.
+  - Below: Units by month (month, authorized, scheduled, left, cut at month end, and "Starting"
+    with the first date cut when a month is cut), a line saying where "authorized" comes from,
+    and, when months are cut, the INFO 09-25-02 note.
+  - Footer: "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>" and "Set each
+    EVV visit window to its visit length."
+  - It stays one page up to the most a week can hold (25 CDS tasks and transportation, 12
+    months): rows get shorter, never a second page.
+
+  "Print schedule" opens the PDF in a new tab, in the browser's own viewer, ready to print. It
+  downloads instead where the browser shows no PDFs (`navigator.pdfViewerEnabled` is false), a
+  popup is blocked, or in the Windows app. "Save as PDF" downloads it. The file is named "Care
+  schedule 2026-10-26.pdf", never with the participant's name or DCN (D-16); the PDF's title is
+  "Weekly care schedule". Ctrl+P (⌘P) on the page and the Windows app's File → Print (the
+  `careplan:print` event, cancelled by the page) make the same printout, once even if both fire.
+  With no tasks the two buttons are off and Ctrl+P is left to the browser. If the PDF can't be
+  made: toast "Couldn't make the PDF. Check your connection, then try again." Printing the page
+  from the browser's own menu still prints the page itself.
 
 ### 5.5 Checks: grouping and copy (`grouping.ts`, `ruleCopy.ts`)
 - Group results by `ruleId + severity + refs.taskId`; each group keeps its months in order.
@@ -857,6 +892,10 @@ percentages, meter widths). No inline scripts are allowed.
 - luxon is never in those chunks either (search for `Invalid DateTime`). It times visits
   (ENGINE-SPEC SCH-15), and public pages have none: they validate with `validatePlan`. Decided
   in the Oct 25, 2026 review: luxon was 21 KB gzip of both `/` and `/quick`.
+- The printout (D-17) loads through `import()` only when someone prints: its own chunk
+  (pdf-lib and fontkit, about 515 KB gzip, fontkit being most of it) and three Public Sans font
+  files of about 18 KB each, all same-origin and cached for a year. It is never in a page's
+  static imports, so it counts toward no page budget.
 - Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
   times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
   pasted plan takes under 20 ms.
@@ -898,6 +937,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-24 | Opening `fusion-care-plan-report.pdf` (Fusion's care plan report, IMPORT-SPEC 1.3) builds the plan with no button press: read summary "SAMPLE PARTICIPANT E", "Read from Fusion · DCN 10000005", the 229 match line, the note "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule.", and "Ready to use". | Playwright |
 | AC-25 | On Oct 21, 2026: the 5-day example's month view starts at October 2026 with Previous month disabled; B (Dec 2025 to Oct 2026) builds with "Schedule starts Oct 1, 2026" and "for the one month left in the plan"; D (ended Jun 30, 2026) shows "This care plan has ended" and builds nothing. | Playwright |
 | AC-26 | Daily task list: B's Monday "Visit length 5 h 15 min", "315 minutes = 21 units"; Sunday with transportation "235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)". Month balance: B in December 2025 "469 units", "Fusion, for 31 days"; every month's units on request (February 434). Review with the participant: today's date, printed, and cleared by a change. | Component tests |
+| AC-27 | The printout (5.4 Print): B's PDF is one US Letter landscape page titled "Weekly care schedule", with "SAMPLE PARTICIPANT B", Sunday to Saturday, "5 h 15 min" and "3 h 55 min", every month's units and the footer, each day's minutes centered under its name, and every piece of text inside the margins with none overlapping, also with every CDS task and transportation. "Save as PDF" downloads "Care schedule 2025-11-20.pdf"; "Print schedule" opens it in a new tab, or downloads it where the browser shows no PDFs; Ctrl+P and `careplan:print` make the same printout once; only same-origin requests. | unit (read back with pdf.js) + component + Playwright |
 
 ---
 

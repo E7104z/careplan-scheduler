@@ -270,6 +270,15 @@ function validTask(task: QuickTask): task is QuickTask & { minPerDay: number } {
   );
 }
 
+/**
+ * APP-SPEC 5.4 month balance: the month's scheduled minutes (transportation and tasks) and the
+ * minutes left of its authorization (negative when over).
+ */
+export function monthBalance(figures: MonthFigures): { scheduledMinutes: number; leftMinutes: number } {
+  const scheduledMinutes = figures.transportUnits * 15 + figures.scheduledTaskMinutes;
+  return { scheduledMinutes, leftMinutes: figures.authorizedUnits * 15 - scheduledMinutes };
+}
+
 /** APP-SPEC 5.3 step 11: one month's figures, using the same test as SCH-08. */
 export function monthFigures(model: QuickModel, month: string): MonthFigures {
   const [year, monthNumber] = month.split("-").map(Number);
