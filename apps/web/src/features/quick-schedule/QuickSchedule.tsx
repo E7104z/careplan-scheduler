@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { MO_2026_07 } from "@careplan/engine";
+import { todayIso } from "../../lib/format";
 import { usePageTitle } from "../../lib/usePageTitle";
 import { Button } from "../../ui/Button";
 import { PageLoading } from "../../ui/PageLoading";
@@ -9,7 +10,7 @@ import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { CarePlanPane } from "./CarePlanPane";
 import { buildQuickModel } from "./model";
-import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
+import { openPrintout, printSchedulePdf, savePrintout, saveSchedulePdf, SHELL_PRINT_EVENT, worksheetFileName, type Printout } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
@@ -26,6 +27,8 @@ const WorksheetPanel = lazy(() => import("./worksheet/WorksheetPanel").then((mod
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
 
 type PrintAction = "print" | "save";
+/** What is being made: the schedule's printout or the worksheet's, printed or saved. */
+type Printing = `${QuickView}-${PrintAction}`;
 
 /** A refusal that belongs in a toast, or the QS-02 "Removed …" message after a service change. */
 function toastMessage(feedback: QuickFeedback | null, model: QuickModel): string | null {
@@ -85,20 +88,34 @@ export function QuickSchedule() {
 
   // APP-SPEC 5.4 Print: the one-page PDF. Print errors get their own toasts, numbered below the
   // store's feedback so the two never share a key.
-  const [printing, setPrinting] = useState<PrintAction | null>(null);
+  const [printing, setPrinting] = useState<Printing | null>(null);
   // Set at once (state waits for a render): Ctrl+P can reach the page and the Windows app's menu
   // in the same moment, and that is one printout.
   const making = useRef(false);
   const printErrors = useRef(0);
   const canPrint = model.tasks.length > 0;
-  /** Makes the printout; false when there's nothing to print (no tasks yet). */
-  const makePrintout = (action: PrintAction): boolean => {
-    if (!canPrint) return false;
+  /**
+   * Makes the printout of the view that is open (or the one named): false when there's nothing to
+   * print (a schedule with no tasks yet). The worksheet always prints: a blank form is still a form.
+   */
+  const makePrintout = (action: PrintAction, what: QuickView = view): boolean => {
+    if (what === "schedule" && !canPrint) return false;
     if (making.current) return true;
     making.current = true;
-    setPrinting(action);
+    setPrinting(`${what}-${action}`);
     const source = { state, model, pack: PACK };
-    (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source))
+    const today = todayIso();
+    const worksheetPrintout: Printout = {
+      title: "Worksheet",
+      waiting: "Making the worksheet…",
+      fileName: worksheetFileName(today),
+      // The worksheet's layout and pdf-lib load only now, in their own chunks (APP-SPEC 10).
+      make: () => import("./worksheet/worksheetPrintout").then((module) => module.worksheetPdf({ ...source, fields: worksheet }, today)),
+    };
+    const job = what === "worksheet"
+      ? (action === "print" ? openPrintout(worksheetPrintout) : savePrintout(worksheetPrintout))
+      : (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source));
+    job
       .catch(() => setToast({ seq: --printErrors.current, message: PRINT_FAILED }))
       .finally(() => {
         making.current = false;
@@ -145,10 +162,10 @@ export function QuickSchedule() {
               New care plan
             </Button>
           )}
-          <Button variant="secondary" disabled={!canPrint} busy={printing === "print"} onClick={() => makePrintout("print")}>
+          <Button variant="secondary" disabled={!canPrint} busy={printing === "schedule-print"} onClick={() => makePrintout("print", "schedule")}>
             Print schedule
           </Button>
-          <Button variant="secondary" disabled={!canPrint} busy={printing === "save"} onClick={() => makePrintout("save")}>
+          <Button variant="secondary" disabled={!canPrint} busy={printing === "schedule-save"} onClick={() => makePrintout("save", "schedule")}>
             Save as PDF
           </Button>
         </div>
@@ -192,7 +209,11 @@ export function QuickSchedule() {
           {view === "worksheet" ? (
             <div role="tabpanel" id={viewPanelId("worksheet")} aria-labelledby={viewTabId("worksheet")} className="min-w-0 print:hidden">
               <Suspense fallback={<PageLoading />}>
-                <WorksheetPanel state={state} model={model} pack={PACK} seq={feedback?.seq ?? 0} dispatch={dispatch} fields={worksheet} change={changeWorksheet} />
+                <WorksheetPanel
+                  state={state} model={model} pack={PACK} seq={feedback?.seq ?? 0} dispatch={dispatch} fields={worksheet} change={changeWorksheet}
+                  printing={printing === "worksheet-print" ? "print" : printing === "worksheet-save" ? "save" : null}
+                  onPrint={(action) => makePrintout(action, "worksheet")}
+                />
               </Suspense>
             </div>
           ) : null}

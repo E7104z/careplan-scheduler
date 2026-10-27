@@ -19,7 +19,7 @@ has no test named after it.
 | WS-H07 | 3c | Start date: earliest date CDS can begin | DONE | plan start, read-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-H08 | 3c,3a | Edition stamp per tab (CDS 10/26, ILW 07/26, 3a 07/26) | DONE | rule pack editions; `packages/engine/test/guidance.test.ts` |
 | WS-H09 | 3c,3a | Emergency contact name and phone | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
-| WS-H10 | 3c,3a | Signature and date line (3c: the individual completing it; 3a: DSDS staff): printed blank, never filled or signed by the app | PLANNED | W-3 |
+| WS-H10 | 3c,3a | Signature and date line (3c: the individual completing it; 3a: DSDS staff): printed blank, never filled or signed by the app | DONE | W-3; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/test/quick/worksheetPdf.test.ts` |
 | WS-H11 | 3a | CDS box: participant receives or is being authorized for Personal Care Assistance (Consumer-Directed) in addition to other HCBS | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-H12 | 3c | Once units are calculated, the monthly units are entered after the program type (State Plan / ILW) | DONE | shown pre-filled from the Total, editable only through the care plan; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 
@@ -80,7 +80,7 @@ has no test named after it.
 | WS-A18 | 3a | Line costs and total cost (O122 = sum of line costs) at the rate sheet's rates | DONE | rates PARTIAL (source Sheet2, not Appendix 1); `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
 | WS-A19 | 3a | Description of needs required only for ILW requests | DONE | rule WS-R02 with `ilwRequest`; `packages/engine/test/worksheet-rules-3a.test.ts` |
 | WS-A20 | 3a | Comments carry the months for the General Health Evaluation | DONE | rule WS-R06; `packages/engine/test/worksheet-rules-3a.test.ts` |
-| WS-A21 | 3a | Print one copy when a paper copy is needed | PLANNED | Prompt 6 |
+| WS-A21 | 3a | Print one copy when a paper copy is needed | DONE | `apps/web/src/features/quick-schedule/worksheet/worksheetPdf.ts`; `apps/web/test/quick/worksheetPdf.test.ts`; `apps/web/test/quick/ui-worksheet-print.test.tsx` |
 | WS-A22 | 3a | Rate sheet: PC 8.14 (RCF/ALF 7.66), APC 8.17 (7.68), RN 60.99 (57.18), respite 8.14, ADC/ADCW 3.32, homemaker/chore 8.14, meals 10.99 | DONE | PARTIAL; rule pack `worksheet3a.rates`; `packages/engine/test/worksheet-golden-3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` |
 | WS-A23 | 3a | Medically Related Household box: Homemaker units move into the Personal Care total and are priced at the Personal Care rate | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
 | WS-A24 | 3a | Nurse visits: visits per month × RN rate, no units | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
@@ -94,7 +94,7 @@ has no test named after it.
 | WS-M02 | both | Shaded (computed) cells cannot be edited — computed cells are read-only in the view | DONE | computed cells are text in `apps/web/src/features/quick-schedule/worksheet/WorksheetTable.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-M03 | both | Keyboard path through the fields in order (the manual recommends the Tab key) | DONE | a11y test; `apps/web/e2e/public/worksheet.spec.ts` |
 | WS-M04 | both | Services are task-oriented and generally authorized on an ongoing basis | DONE | note only; `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
-| WS-M05 | 3a | Upload to the electronic case record only when used for an ILW authorization; one copy when a copy is needed | DONE | note on the Worksheet view (print: Prompt 6); `apps/web/src/features/quick-schedule/worksheet/Worksheet3aBody.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-M05 | 3a | Upload to the electronic case record only when used for an ILW authorization; one copy when a copy is needed | DONE | note on the Worksheet view and print; `apps/web/src/features/quick-schedule/worksheet/Worksheet3aBody.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/test/quick/worksheetPdf.test.ts` |
 
 ### Beyond DSDS's worksheet (the "and more")
 | ID | Form | Item | Status | Refs |

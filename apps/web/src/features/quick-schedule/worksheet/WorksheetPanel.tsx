@@ -23,6 +23,9 @@ export interface WorksheetPanelProps {
   dispatch: Dispatch<QuickAction>;
   fields: WorksheetFields;
   change: Dispatch<WorksheetChange>;
+  /** Which worksheet printout is being made, if any (Prompt 6). */
+  printing: "print" | "save" | null;
+  onPrint: (action: "print" | "save") => void;
 }
 
 /**
@@ -30,7 +33,7 @@ export interface WorksheetPanelProps {
  * every number from `calculate3c`/`calculate3a` (rule 13). Min/Day and Days/Wk are the care plan's own
  * values; a change here is the same reducer action as in the care plan pane, so it goes through the guard.
  */
-export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, change }: WorksheetPanelProps) {
+export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, change, printing, onPrint }: WorksheetPanelProps) {
   const [showMath, setShowMath] = useState(false);
   const form = formFor(state.serviceCode);
   const sheet = useMemo(
@@ -65,9 +68,17 @@ export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, chan
             {form === "3a" ? "In-Home Services Worksheet (HCBS-3a)" : `Consumer Directed Services Worksheet (HCBS-3c), ${form === "3c-ilw" ? "ILW" : "CDS"} tab`} · {edition}
           </p>
         </div>
-        <Button variant="secondary" size="sm" aria-pressed={showMath} onClick={() => setShowMath((on) => !on)}>
-          {WORKSHEET_COPY.showMath}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" aria-pressed={showMath} onClick={() => setShowMath((on) => !on)}>
+            {WORKSHEET_COPY.showMath}
+          </Button>
+          <Button variant="secondary" size="sm" busy={printing === "print"} onClick={() => onPrint("print")}>
+            Print worksheet
+          </Button>
+          <Button variant="secondary" size="sm" busy={printing === "save"} onClick={() => onPrint("save")}>
+            Save worksheet as PDF
+          </Button>
+        </div>
       </div>
       <p className="text-[13px] text-ink-2">{WORKSHEET_COPY.memoryOnly}</p>
 

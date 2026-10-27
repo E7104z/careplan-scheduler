@@ -131,6 +131,22 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   ("_QuickSchedule-<hash>.js"). The budget itself is unchanged: `/quick` is 162.8 KB gzip of 180.
 - The worksheet tables scroll inside their own panel on a phone. The page never scrolls sideways (phone e2e).
 
+**Review decisions (Oct 27, 2026, Prompt 6).**
+- The worksheet prints the way the schedule does, through the same open-a-tab-then-fill code. That code is
+  now `openPrintout`/`savePrintout` in `printSchedule.ts`. The PDF loads lazily (pdf-lib, then the
+  worksheet's layout) and is named by date only ("Worksheet 2026-10-27.pdf"; its title is "Worksheet").
+- Ctrl+P and the Windows app's File > Print print what's on screen: the worksheet while its tab is open,
+  otherwise the schedule. The desktop app sends the same print event as before, so `apps/desktop` is
+  unchanged (D-5).
+- Portrait US Letter. The 3c fits one page. The 3a takes two when its sections and lines don't fit, and a
+  block never splits across pages. Every page has the footer (rule pack and edition) and "Page n of m".
+  The printout lists every row of DSDS's form, blank where the care plan has no task, as the paper form does.
+  A note line under a task carries "Under Personal Care" and its description of needs.
+- The signature line prints as a blank rule with the manual's label under it ("for the person completing the
+  form" on the 3c, "DSDS staff" on the 3a). A typed assessor name prints beside the 3c's label only if the
+  person typed one. People fields print only when typed. The 3a printout carries the manual's note about one
+  copy and uploading only for ILW (WS-M05).
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

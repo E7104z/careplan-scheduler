@@ -636,7 +636,7 @@ export async function renderSchedulePdf(sheet: ScheduleSheet, files: FontFiles, 
 }
 
 /** Public Sans (static weights, latin) from this site, so the PDF's type matches the screen's. */
-async function fontFiles(): Promise<FontFiles> {
+export async function fontFiles(): Promise<FontFiles> {
   const load = async (url: string): Promise<Uint8Array> => {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Font request failed with ${response.status}`);
