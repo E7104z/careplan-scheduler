@@ -164,6 +164,17 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
 - DSDS questions 4–7 are added. Question 7 reflects the rate sheet's own "retired" legend (Prompt 4) and the
   missing Homemaker RCF/ALF box. Question 6 also notes that the 3c workbook prints "DSDS STAFF NAME".
 
+**Review decisions (Oct 27, 2026, Prompt 9).**
+- The watcher reads the manual pages at their current addresses (`/providers/manuals/…-10` and `-11`). It finds
+  the 3a's link inside the Office viewer link the page uses (`view.officeapps.live.com/…?src=`) and the 3c's
+  plain link. It compares each file's URL and SHA-256 with `docs/fixtures/state/README.md`. The issue lists the
+  file, the old and new hash, and the page's "Revised" date. Run live on Oct 27, 2026, it reported no change.
+  With one README hash changed by hand, it reported that file.
+- The two pages are saved whole (`pages/*.html`, in the README with their hashes) for `--self-test`, which
+  uses no network. The workflow runs the self-test first, then the check with `--open-issue` (`issues: write`,
+  `contents: read`). A failed download fails the job without opening an issue.
+- `packages/engine/test/watch.test.ts` runs the self-test under vitest, so WS-X09 has a test named after it (W-6).
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

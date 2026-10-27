@@ -1,0 +1,26 @@
+name: State forms watch
+
+# Weekly: have DSDS's HCBS-3c or HCBS-3a worksheets (or the manual pages that link them) changed?
+# A change opens (or adds to) one issue, "DSDS changed a worksheet". A failed download fails the job
+# and opens nothing. This workflow never commits and never opens a pull request.
+on:
+  schedule:
+    - cron: "0 14 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/state/watch.mjs --self-test
+      - run: node scripts/state/watch.mjs --open-issue
+        env:
+          GH_TOKEN: ${{ github.token }}

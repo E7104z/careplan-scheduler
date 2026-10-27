@@ -107,4 +107,4 @@ has no test named after it.
 | WS-X06 | beyond | Worksheet total reconciled with the schedule's units and Fusion's figure | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-X07 | beyond | Public proof page (/conformance) | DONE | `apps/web/src/pages/Conformance.tsx`; `apps/web/test/conformance.test.ts`; `apps/web/e2e/public/conformance.spec.ts` |
 | WS-X08 | beyond | Export into DSDS's own workbook with only the input cells filled | PLANNED | Prompt 8, optional |
-| WS-X09 | beyond | Weekly watch for a changed DSDS worksheet | PLANNED | Prompt 9 |
+| WS-X09 | beyond | Weekly watch for a changed DSDS worksheet | DONE | Prompt 9; `scripts/state/watch.mjs`; `.github/workflows/state-forms-watch.yml`; `packages/engine/test/watch.test.ts` |

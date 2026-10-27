@@ -250,7 +250,7 @@ export const WORKSHEET_LEDGER: readonly LedgerEntry[] = [
   { id: "WS-X08", form: "beyond", status: "PLANNED",
     item: "Export into DSDS's own workbook with only the input cells filled",
     refs: "Prompt 8, optional" },
-  { id: "WS-X09", form: "beyond", status: "PLANNED",
+  { id: "WS-X09", form: "beyond", status: "DONE",
     item: "Weekly watch for a changed DSDS worksheet",
-    refs: "Prompt 9" },
+    refs: "Prompt 9; `scripts/state/watch.mjs`; `.github/workflows/state-forms-watch.yml`; `packages/engine/test/watch.test.ts`" },
 ];
