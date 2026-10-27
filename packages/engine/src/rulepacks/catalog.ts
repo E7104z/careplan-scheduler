@@ -181,6 +181,36 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "The 3c's CDS tab total is above its maximum (641) → INFO \"consider the Independent Living Waiver\".",
     source: "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026)",
   },
+  {
+    id: "WS-R04", area: "Worksheet", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "Advanced Personal Care with exactly one task that has units, whose minutes aren't a multiple of 15 → BLOCK.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  },
+  {
+    id: "WS-R05", area: "Worksheet", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "Advanced Personal Care with units, no ongoing nurse visits and fewer than 2 nurse visits in its first month → REVIEW.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  },
+  {
+    id: "WS-R06", area: "Worksheet", severities: ["WARN"], status: "VERIFIED",
+    rule: "General Health Evaluation checked and the Comments name no month → WARN \"only for semi-annual visits; name the months\".",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits and Comments",
+  },
+  {
+    id: "WS-R07", area: "Worksheet", severities: ["INFO"], status: "VERIFIED",
+    rule: "The nurse task \"Other\" checked → INFO \"needs prior approval and authorization from DSDS or its designee\".",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits",
+  },
+  {
+    id: "WS-R08", area: "Worksheet", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "Adult Day Care or Adult Day Care Waiver minutes not a multiple of 15, above 600 a day, or days above 5 a week → BLOCK.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Adult Day Care",
+  },
+  {
+    id: "WS-R09", area: "Worksheet", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "Home Delivered Meals above 2 a day → REVIEW.",
+    source: "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
+  },
 ];
 
 export function ruleById(id: string): RuleCatalogEntry | undefined {

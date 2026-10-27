@@ -37,6 +37,12 @@ const SOURCES: Record<string, string> = {
   "WS-R01": "HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns",
   "WS-R02": "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests",
   "WS-R03": "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026)",
+  "WS-R04": "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  "WS-R05": "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  "WS-R06": "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits and Comments",
+  "WS-R07": "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits",
+  "WS-R08": "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Adult Day Care",
+  "WS-R09": "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
 };
 
 const SRC = fileURLToPath(new URL("../src/", import.meta.url));

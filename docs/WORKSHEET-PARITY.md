@@ -17,7 +17,7 @@ has no test named after it.
 | WS-H05 | 3c | IHS box: participant receives or is being authorized for other HCBS besides CDS | PLANNED | |
 | WS-H06 | 3c | Program: State Plan (CDS tab) or ILW (ILW tab) | PLANNED | |
 | WS-H07 | 3c | Start date: earliest date CDS can begin | PLANNED | plan start already exists |
-| WS-H08 | 3c,3a | Edition stamp per tab (CDS 10/26, ILW 07/26, 3a 07/26) | PLANNED | |
+| WS-H08 | 3c,3a | Edition stamp per tab (CDS 10/26, ILW 07/26, 3a 07/26) | DONE | rule pack editions; `packages/engine/test/guidance.test.ts` |
 | WS-H09 | 3c,3a | Emergency contact name and phone | PLANNED | memory-only |
 | WS-H10 | 3c,3a | Signature and date line (3c: the individual completing it; 3a: DSDS staff): printed blank, never filled or signed by the app | PLANNED | W-3 |
 | WS-H11 | 3a | CDS box: participant receives or is being authorized for Personal Care Assistance (Consumer-Directed) in addition to other HCBS | PLANNED | |
@@ -60,32 +60,32 @@ has no test named after it.
 ### 3a calculation and services
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
-| WS-A01 | 3a | RCF/ALF checkbox on Personal Care, Homemaker, Advanced PC, Nurse Visits | PLANNED | |
+| WS-A01 | 3a | RCF/ALF checkbox on Personal Care, Homemaker, Advanced PC, Nurse Visits | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts`; `packages/engine/test/worksheet-golden-3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` (the workbook has no Homemaker RCF/ALF box: recorded only) |
 | WS-A02 | 3a | Personal Care: Bathing, Dietary, Dressing/Grooming, Mobility/Transfer/Position, Self Admin of Medications, Toileting, with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
-| WS-A03 | 3a | "Med Rel HC Tasks" box under Personal Care; the tasks to be done are indicated in the Homemaker section | PLANNED | |
+| WS-A03 | 3a | "Med Rel HC Tasks" box under Personal Care; the tasks to be done are indicated in the Homemaker section | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
 | WS-A04 | 3a | Homemaker: 11 tasks with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
 | WS-A05 | 3a | Advanced Personal Care: 7 tasks with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
-| WS-A06 | 3a | APC with a single task: minutes in 15-minute increments | PLANNED | rule WS-R04 |
-| WS-A07 | 3a | APC: two nurse visits in the first month; none extra when the plan already has ongoing nurse visits | PLANNED | rule WS-R05 (PARTIAL) |
-| WS-A08 | 3a | Authorized Nurse Visits: visits per month; days per month (not per week) when less than weekly; task boxes | PLANNED | |
-| WS-A09 | 3a | General Health Evaluation only for semiannual nurse visits | PLANNED | rule WS-R06 |
-| WS-A10 | 3a | Nurse "Other" (venipuncture, physician-ordered injections) needs prior approval and authorization | PLANNED | rule WS-R07 |
-| WS-A11 | 3a | Total units exclude nurse visits | PLANNED | |
-| WS-A12 | 3a | Respite Basic and Advanced: min/day and days/wk; combined total cannot exceed 868 | EXISTING | AUTH-09, TC-17; worksheet line Prompt 4 |
-| WS-A13 | 3a | Home Delivered Meals: units/day and days/wk; Units = ROUNDUP(Units/Day × MaxDays) | PLANNED | verified in 3a workbook row 106 |
-| WS-A14 | 3a | Adult Day Care (63+): minutes in multiples of 15, at most 10 h a day, at most 5 days a week | PLANNED | rule WS-R08 |
-| WS-A15 | 3a | Adult Day Care Waiver (18–62): same limits | PLANNED | rule WS-R08 |
-| WS-A16 | 3a | Chore: min/day and days/wk | EXISTING | service S5120 (`packages/engine/src/rulepacks/mo-2026-07.ts`); worksheet line Prompt 4 |
-| WS-A17 | 3a | Units/Day left blank except for Home Delivered Meals | PLANNED | |
-| WS-A18 | 3a | Line costs and total cost (O122 = sum of line costs) at the rate sheet's rates | PLANNED | rates PARTIAL (source Sheet2, not Appendix 1) |
-| WS-A19 | 3a | Description of needs required only for ILW requests | PLANNED | |
-| WS-A20 | 3a | Comments carry the months for the General Health Evaluation | PLANNED | |
+| WS-A06 | 3a | APC with a single task: minutes in 15-minute increments | DONE | rule WS-R04; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A07 | 3a | APC: two nurse visits in the first month; none extra when the plan already has ongoing nurse visits | DONE | rule WS-R05 (PARTIAL); `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A08 | 3a | Authorized Nurse Visits: visits per month; days per month (not per week) when less than weekly; task boxes | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts` |
+| WS-A09 | 3a | General Health Evaluation only for semiannual nurse visits | DONE | rule WS-R06; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A10 | 3a | Nurse "Other" (venipuncture, physician-ordered injections) needs prior approval and authorization | DONE | rule WS-R07; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A11 | 3a | Total units exclude nurse visits | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A12 | 3a | Respite Basic and Advanced: min/day and days/wk; combined total cannot exceed 868 | DONE | worksheet line; the 868 limit is AUTH-09, TC-17; `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts`; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A13 | 3a | Home Delivered Meals: units/day and days/wk; Units = ROUNDUP(Units/Day × MaxDays) | DONE | verified in 3a workbook row 106; `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A14 | 3a | Adult Day Care (63+): minutes in multiples of 15, at most 10 h a day, at most 5 days a week | DONE | rule WS-R08; `packages/engine/test/worksheet-rules-3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` |
+| WS-A15 | 3a | Adult Day Care Waiver (18–62): same limits | DONE | rule WS-R08; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A16 | 3a | Chore: min/day and days/wk | DONE | service S5120 (`packages/engine/src/rulepacks/mo-2026-07.ts`); worksheet line `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A17 | 3a | Units/Day left blank except for Home Delivered Meals | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts` |
+| WS-A18 | 3a | Line costs and total cost (O122 = sum of line costs) at the rate sheet's rates | DONE | rates PARTIAL (source Sheet2, not Appendix 1); `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A19 | 3a | Description of needs required only for ILW requests | DONE | rule WS-R02 with `ilwRequest`; `packages/engine/test/worksheet-rules-3a.test.ts` |
+| WS-A20 | 3a | Comments carry the months for the General Health Evaluation | DONE | rule WS-R06; `packages/engine/test/worksheet-rules-3a.test.ts` |
 | WS-A21 | 3a | Print one copy when a paper copy is needed | PLANNED | Prompt 6 |
-| WS-A22 | 3a | Rate sheet: PC 8.14 (RCF/ALF 7.66), APC 8.17 (7.68), RN 60.99 (57.18), respite 8.14, ADC/ADCW 3.32, homemaker/chore 8.14, meals 10.99 | PLANNED | PARTIAL |
-| WS-A23 | 3a | Medically Related Household box: Homemaker units move into the Personal Care total and are priced at the Personal Care rate | PLANNED | |
-| WS-A24 | 3a | Nurse visits: visits per month × RN rate, no units | PLANNED | |
-| WS-A25 | 3a | Chore entered on its own row; chore task boxes (6) recorded, no calculation effect | PLANNED | |
-| WS-A26 | 3a | Nurse task boxes (8) recorded, no calculation effect | PLANNED | |
+| WS-A22 | 3a | Rate sheet: PC 8.14 (RCF/ALF 7.66), APC 8.17 (7.68), RN 60.99 (57.18), respite 8.14, ADC/ADCW 3.32, homemaker/chore 8.14, meals 10.99 | DONE | PARTIAL; rule pack `worksheet3a.rates`; `packages/engine/test/worksheet-golden-3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` |
+| WS-A23 | 3a | Medically Related Household box: Homemaker units move into the Personal Care total and are priced at the Personal Care rate | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A24 | 3a | Nurse visits: visits per month × RN rate, no units | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-golden-3a.test.ts` |
+| WS-A25 | 3a | Chore entered on its own row; chore task boxes (6) recorded, no calculation effect | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` |
+| WS-A26 | 3a | Nurse task boxes (8) recorded, no calculation effect | DONE | `packages/engine/src/worksheet/calc3a.ts`; `packages/engine/test/worksheet-calc3a.test.ts`; `packages/engine/test/worksheet-3a-sheet.test.ts` |
 
 ### Manual (both pages)
 | ID | Form | Item | Status | Refs |

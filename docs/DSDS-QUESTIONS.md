@@ -77,3 +77,57 @@ section 5, status and source), IMP-10 and APP-SPEC 5.4's month view to match.
 
 **When DSDS answers:** record the answer here with its date, then set AUTH-03's status and source
 (ENGINE-SPEC section 5) and the Worksheet view's reconcile line (APP-SPEC) to match.
+
+## 3. Nurse visits in Advanced Personal Care's first month (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** on the HCBS-3a Worksheet view, a plan with
+Advanced Personal Care, no ongoing nurse visits, and fewer than 2 nurse visits entered for APC's first month
+gets REVIEW (WS-R05, PARTIAL). The manual (4.00 Appendix 3) says: "Two (2) nurse visits are required in the
+first month of authorization … A care plan with ongoing nurse visits will not require the additional nurse
+visit for the first full month of the PCCP." We read "ongoing" as at least one nurse visit a month.
+
+**Email (ready to send):**
+
+> Subject: Question: nurse visits in the first month of Advanced Personal Care (HCBS-3a)
+>
+> Hello,
+>
+> We're building a scheduling tool for in-home services providers that follows the In-Home Services Worksheet
+> (HCBS-3a, HCBS Manual 4.00 Appendix 3). The instructions say two nurse visits are required in the first month
+> of an Advanced Personal Care authorization, and that a care plan with ongoing nurse visits will not require
+> "the additional nurse visit" for the first full month. Two questions:
+>
+> 1. Does a care plan with ongoing nurse visits of at least one a month meet the first-month requirement with
+>    that one visit, or does it still need two in the first month?
+> 2. Is "the first month of authorization" the first calendar month, or the first full month of the PCCP?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then set WS-R05's rule text and status
+(ENGINE-SPEC Amendment C.2) to match.
+
+## 3b. Home Delivered Meals: at most 2 a day? (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** more than 2 meals a day on the HCBS-3a Worksheet view
+gets REVIEW (WS-R09, PARTIAL). The only source is the note "Max 2/day" printed beside the meals rate on the 3a
+workbook's rate sheet (Sheet2 G14). The manual page only says "Enter the units per day and the number of days
+per week the meals are received", and the workbook doesn't enforce any limit.
+
+**Email (ready to send):**
+
+> Subject: Question: Home Delivered Meals per day on the HCBS-3a
+>
+> Hello,
+>
+> The HCBS-3a workbook's rate sheet notes "Max 2/day" beside the Home Delivered Meals rate ($10.99). The manual
+> page (4.00 Appendix 3) doesn't mention a limit. Is two meals a day the maximum DSDS authorizes, and where is
+> that limit written in policy?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then set WS-R09's status and source (ENGINE-SPEC
+Amendment C.2) to match.

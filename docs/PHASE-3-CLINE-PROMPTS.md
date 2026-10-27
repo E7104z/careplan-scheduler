@@ -82,6 +82,27 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   box, not a task, so its `taskCode` is null. `ValidationResult.refs` gains `taskCode`, because a worksheet
   row has a task but no Quick Schedule task id.
 
+**Review decisions (Oct 27, 2026, Prompt 4).**
+- **The 3a's 19 checkboxes, read from the workbook's drawing** (`worksheet-guidance.json` `3a.checkboxes`):
+  the CDS box (K5), Personal Care, APC and Nurse RCF/ALF (linked to H9, H10, H11), Medically Related (L2,
+  in the Homemaker header at D31), 8 nurse task boxes and 6 chore task boxes. There is **no Homemaker RCF/ALF
+  box**: the "Homemaker RCF/ALF box" in Prompt 4's count is the CDS box. The manual still asks for a Homemaker
+  RCF/ALF box, so the input keeps `homemakerRcfAlf` to record only. A test checks every box's cell, link and
+  label against the workbook.
+- **The rate sheet marks the block respite and nurse respite rates "retired" itself.** Its colour legend
+  (G16:H18) says yellow is "Change these rates for increases", orange is a formula, and the theme colour is
+  "retired". Rows 4, 6, 7 and 8 (81.07, 106.66, 267.79, 5.97) carry exactly that colour. A test shows it, and
+  DSDS question 7 (Prompt 7) now asks DSDS to confirm instead of asking whether they are retired.
+- WS-R05 needs a number the 3a has no cell for: the nurse visits planned in APC's first month
+  (`nurse.firstMonthVisits`). "Ongoing nurse visits" is read as at least one a month; DSDS question 3 asks.
+  Nurse visits a month must be 0–31, since CON-10 allows at most one a day.
+- The limits in WS-R04, WS-R08 and WS-R09 live in the rule pack (W-1). A test reads the first two from the
+  manual page's own sentences, and "Max 2/day" from the rate sheet.
+- AUTH-09's respite limit is called on the worksheet's two respite lines for "a 31-day month"; it isn't copied.
+  Results on a line with no task (adult day care, meals, the nurse block) carry `refs.line`.
+- WS-A19 and WS-A20 are DONE here because the engine rules exist; Prompt 5 shows them on the screen.
+  `calculate3a` also gives each line's cost in words (`costText`), and the box labels exactly as DSDS prints them.
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

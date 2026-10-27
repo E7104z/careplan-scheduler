@@ -921,6 +921,205 @@
     "row": 119,
     "label": "CHORE SERVICES"
    }
-  ]
+  ],
+  "checkboxes": [
+   {
+    "cell": "K5",
+    "linkedCell": null,
+    "label": null
+   },
+   {
+    "cell": "D9",
+    "linkedCell": "Sheet2!H9",
+    "label": null
+   },
+   {
+    "cell": "D31",
+    "linkedCell": "Sheet2!L2",
+    "label": null
+   },
+   {
+    "cell": "D67",
+    "linkedCell": "Sheet2!H10",
+    "label": null
+   },
+   {
+    "cell": "D91",
+    "linkedCell": "Sheet2!H11",
+    "label": null
+   },
+   {
+    "cell": "A92",
+    "linkedCell": null,
+    "label": "FILL INSULIN SYRINGES"
+   },
+   {
+    "cell": "C92",
+    "linkedCell": null,
+    "label": "MONITOR SKIN COND"
+   },
+   {
+    "cell": "F92",
+    "linkedCell": null,
+    "label": "MED SETUP"
+   },
+   {
+    "cell": "A93",
+    "linkedCell": null,
+    "label": "EVAL APC PLAN"
+   },
+   {
+    "cell": "C93",
+    "linkedCell": null,
+    "label": "TRAIN APC"
+   },
+   {
+    "cell": "F93",
+    "linkedCell": null,
+    "label": "NAIL CARE"
+   },
+   {
+    "cell": "A94",
+    "linkedCell": null,
+    "label": "OTHER (SEE BELOW)"
+   },
+   {
+    "cell": "C94",
+    "linkedCell": null,
+    "label": "GENERAL HEALTH EVALUATION"
+   },
+   {
+    "cell": "A115",
+    "linkedCell": null,
+    "label": "CLEAN CLOSETS/BASEMENT & ATTICS"
+   },
+   {
+    "cell": "E115",
+    "linkedCell": null,
+    "label": "AIR MATTRESSES/BEDDING"
+   },
+   {
+    "cell": "A116",
+    "linkedCell": null,
+    "label": "PROVIDE RODENT CONTROL WITHIN HOME USING OTC"
+   },
+   {
+    "cell": "E116",
+    "linkedCell": null,
+    "label": "WASH WALLS AND WOODWORK"
+   },
+   {
+    "cell": "A117",
+    "linkedCell": null,
+    "label": "SPRAY FOR INSECTS WITHIN HOME USING OTC"
+   },
+   {
+    "cell": "E117",
+    "linkedCell": null,
+    "label": "SHAMPOO RUGS"
+   }
+  ],
+  "rateSheet": {
+   "rows": [
+    {
+     "row": 3,
+     "service": "Basic Respite",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 4,
+     "service": "Basic",
+     "note": "Block (9-12)",
+     "rate": 81.07,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 5,
+     "service": "Advanced",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 6,
+     "service": "Advanced (block)",
+     "note": "6-8",
+     "rate": 106.66,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 7,
+     "service": "Advanced (daily)",
+     "note": "17-24",
+     "rate": 267.79,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 8,
+     "service": "Nurse respite",
+     "note": "4hr",
+     "rate": 5.97,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 9,
+     "service": "Personal Care",
+     "note": "RCF/ALF",
+     "rate": "=IF(H9=TRUE,7.66,IF(H9=FALSE,8.14))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 10,
+     "service": "APC",
+     "note": "RCF/ALF",
+     "rate": "=IF(H10=TRUE,7.68,IF(H10=FALSE,8.17))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 11,
+     "service": "RN",
+     "note": "RCF/ALF",
+     "rate": "=IF(H11=TRUE,57.18,IF(H11=FALSE,60.99))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 12,
+     "service": "ADC",
+     "note": null,
+     "rate": 3.32,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 13,
+     "service": "HC/Chore",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 14,
+     "service": "DM",
+     "note": "Max 2/day",
+     "rate": 10.99,
+     "fill": "FFFF00"
+    }
+   ],
+   "legend": [
+    {
+     "fill": "FFFF00",
+     "meaning": "Change these rates for increases"
+    },
+    {
+     "fill": "FFC000",
+     "meaning": "Orange=formula (change rates)"
+    },
+    {
+     "fill": "theme 3 tint 0.4",
+     "meaning": "retired"
+    }
+   ]
+  }
  }
 }

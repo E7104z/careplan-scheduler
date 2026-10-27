@@ -192,6 +192,30 @@ const WORKSHEET_COPY: Record<string, RuleCopy> = {
     title: "Needs more than the State Plan maximum",
     whatToDo: "The manual says to consider the Independent Living Waiver.",
   },
+  "WS-R04/BLOCK": {
+    title: "One Advanced Personal Care task needs 15-minute steps",
+    whatToDo: "With one Advanced Personal Care task, enter its minutes in 15-minute steps.",
+  },
+  "WS-R05/REVIEW": {
+    title: "Two nurse visits in Advanced Personal Care's first month",
+    whatToDo: "Plan two nurse visits in the first month, unless the plan has ongoing nurse visits.",
+  },
+  "WS-R06/WARN": {
+    title: "General Health Evaluation needs its months",
+    whatToDo: "Check this only for semi-annual visits and name the months in Comments.",
+  },
+  "WS-R07/INFO": {
+    title: "This nurse task needs prior approval",
+    whatToDo: "Needs prior approval and authorization from DSDS or its designee.",
+  },
+  "WS-R08/BLOCK": {
+    title: "Adult day care is outside its limits",
+    whatToDo: "Enter adult day care in 15-minute steps, at most 10 hours a day and 5 days a week.",
+  },
+  "WS-R09/REVIEW": {
+    title: "More than 2 meals a day",
+    whatToDo: "DSDS's rate sheet notes a maximum of 2 meals a day. Check the number.",
+  },
 };
 
 /**

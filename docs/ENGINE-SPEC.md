@@ -364,7 +364,57 @@ each result with the rule-pack version, ordered BLOCK, REVIEW, WARN, INFO, like 
 | WS-R01 | A task's Min/Day is below the form's suggested time, or above it for a task with a weekly frequency ("1-7 X WK"; a task done as needed, per transfer or as ordered can happen several times a day) → INFO "Outside DSDS's suggested range". Rows whose suggested time isn't minutes are skipped. | INFO | VERIFIED basis | HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns |
 | WS-R02 | An ILW request (the 3c's ILW tab, or a 3a marked part of an ILW request) with a task that has units and no Description of needs → REVIEW. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests |
 | WS-R03 | The 3c's CDS tab total is above its maximum (641) → INFO "consider the Independent Living Waiver". | INFO | VERIFIED | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) |
+| WS-R04 | Advanced Personal Care with exactly one task that has units, whose minutes aren't a multiple of 15 → BLOCK. | BLOCK | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care |
+| WS-R05 | Advanced Personal Care with units, no ongoing nurse visits and fewer than 2 nurse visits in its first month → REVIEW. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care |
+| WS-R06 | General Health Evaluation checked and the Comments name no month → WARN "only for semi-annual visits; name the months". | WARN | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits and Comments |
+| WS-R07 | The nurse task "Other" checked → INFO "needs prior approval and authorization from DSDS or its designee". | INFO | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits |
+| WS-R08 | Adult Day Care or Adult Day Care Waiver minutes not a multiple of 15, above 600 a day, or days above 5 a week → BLOCK. | BLOCK | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Adult Day Care |
+| WS-R09 | Home Delivered Meals above 2 a day → REVIEW. | REVIEW | PARTIAL | HCBS-3a (07/26) rate sheet cell G14: "Max 2/day" |
+
+`validateWorksheet3a(input, pack)` runs WS-R01, WS-R02 (only when the 3a is part of an ILW request), WS-R04
+to WS-R09, and AUTH-09's combined respite limit. It calls `ruleAUTH09Ceiling` on the two respite lines for
+"a 31-day month" rather than copying the rule. Results on a 3a line with no task carry `refs.line`.
 
 The task library (section 3) gains the HCBS-3a's spellings as aliases, so every label on both forms maps
 to exactly one task: "Asst Trans Device", "Dressing/ Grooming", "Mobility/ Transfer/ Position", "Self Admin
 of Medications", "Make Bed/ Change Linens", "Shopping/ Errands", "Wash Windows/ Blinds". No task code changed.
+
+### C.3 `calculate3a(input, pack)` (`src/worksheet/calc3a.ts`)
+
+Every number on DSDS's HCBS-3a (In-Home Services) worksheet, as its workbook (`DSDS-HCBS-3a (07/26)`,
+sheet `HCBS-3a` plus the rate sheet `Sheet2`) calculates it. It is proved by `test/worksheet-golden-3a.test.ts`,
+which replays all 508 recalculated workbooks (10,811 task rows, every RCF/ALF and Medically Related
+combination) in `hcbs3a-golden.json`. The reviewer's independent model `scripts/state/reference-model-3a.py`
+matches the same file.
+
+| Sheet | Formula in DSDS's workbook | `calculate3a` |
+|---|---|---|
+| 29 task rows: Personal Care 6, Homemaker 11, Advanced PC 7, Respite Basic and Advanced, Adult Day Care, Adult Day Care Waiver, Chore (row 119) | the 3c's arithmetic: `IF(I="","",ROUNDUP(I*K,0))`, I = Min/Wk ÷ 15 ÷ Days/Wk | the same row function as `calculate3c`; Min/Wk (`G*J`) as `minPerWeek` |
+| Home Delivered Meals (row 106) | `ROUNDUP(I106*K106,0)`, I = meals a day (entered) | meals a day × Max Days/Mo |
+| Nurse visits (row 96) | one entry, visits a month; cost `IF(N96>=1, N96 × RN rate)` | no units; cost from 1 visit |
+| Medically Related box (Sheet2!L2) | N29 = Σ Homemaker if on; N30 = Σ Personal Care + N29; N66 = Σ Homemaker if off | `subtotals` |
+| Line costs | `IF(N30>0, N30 × PC rate)`, `IF(N66>0, …)`, `IF(N90>0, …)`; one-row lines `IF(J>0, N × rate)` (0 with days and no minutes) | `costs` in cents, `costText` in words |
+| Total cost (O122) | `SUM(O30:O119)` | `totalCostCents` |
+
+There is no grand total of units, only the subtotals. "Excludes nurse visits" means nurse visits add no units.
+Entries a care plan can't have go to `issues` and count nothing: minutes, days, meals that aren't a whole
+number 0 or more, and nurse visits other than 0–31.
+
+Rates (rule pack `worksheet3a.rates`, cents; **PARTIAL**, source "Sheet2 of DSDS-HCBS-3a (07/26); not yet
+checked against 3.00 Appendix 1"): Personal Care 814 (RCF/ALF 766); Advanced PC 817 (768); RN visit 6,099
+(5,718); Respite Basic 814; Respite Advanced 814; Adult Day Care and Adult Day Care Waiver 332; Homemaker
+and Chore 814; Home Delivered Meals 1,099 ("Max 2/day"). Only the Personal Care, Advanced PC and Nurse Visits
+RCF/ALF boxes change a rate. The 3c's CDS rate is a different number (523). The manual's limits are in the
+rule pack too (`apcSingleTaskStep` 15; `adultDayCare` 15-minute steps, 600 minutes a day, 5 days a week), and
+a test reads each one from the manual page's text.
+
+**State quirks not copied**, and why:
+- Row 115's `N115`/`O115` read cells that are always empty (chore is entered on row 119). They never show a
+  value, so the calculator has no such line. The golden file records them as blank in every workbook.
+- `Sheet2!R2:R3` ("Respite Calc", block lookups) feeds no cell, and its two lists have 66 and 64 entries.
+- The block respite rates (81.07, 106.66, 267.79) and the nurse respite rate (5.97) feed no formula. The rate
+  sheet's own colour legend marks those four rows "retired" (`worksheet-guidance.json` `3a.rateSheet`).
+- Of the 3a's 19 checkboxes, four feed a formula (the three RCF/ALF boxes and Medically Related). The others
+  are the CDS box (K5), 8 nurse task boxes and 6 chore task boxes. The calculator records them and never
+  calculates with them. The manual mentions a Homemaker RCF/ALF box; the workbook has none, and no rate for one.
+  The input keeps it (`homemakerRcfAlf`) to record only.

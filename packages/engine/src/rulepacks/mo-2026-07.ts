@@ -127,6 +127,23 @@ export const MO_2026_07: RulePack = {
     ceilingSource: "HCBS-3c conditional format on cell L93: red above 641 (CDS tab), above 868 (ILW tab)",
     daysBasis: 31,
   },
+  worksheet3a: {
+    edition: "DSDS-HCBS-3a (07/26)",
+    rates: {
+      personalCare: 814, personalCareRcfAlf: 766,
+      apc: 817, apcRcfAlf: 768,
+      nurseVisit: 6099, nurseVisitRcfAlf: 5718,
+      respiteBasic: 814, respiteAdvanced: 814,
+      adultDayCare: 332, homemakerChore: 814, homeDeliveredMeals: 1099,
+    },
+    ratesStatus: "PARTIAL",
+    ratesSource: "Sheet2 of DSDS-HCBS-3a (07/26); not yet checked against 3.00 Appendix 1",
+    hdmMaxUnitsPerDayNote: 2,
+    hdmSource: "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
+    apcSingleTaskStep: 15,
+    adultDayCare: { minuteStep: 15, maxMinutesPerDay: 600, maxDaysPerWeek: 5 },
+    limitsSource: "HCBS Manual 4.00 Appendix 3 (rev. May 2025): Advanced Personal Care; Adult Day Care",
+  },
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule {
     if (a === b) return "prohibited";
     if ((a === "CDS" && b === "NURSE") || (a === "NURSE" && b === "CDS")) return "allowed";

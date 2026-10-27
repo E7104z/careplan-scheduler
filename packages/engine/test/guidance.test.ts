@@ -96,9 +96,10 @@ describe("the 3a's task sections", () => {
 });
 
 describe("WS-H08 edition stamp per tab", () => {
-  it("the rule pack's 3c editions are the ones DSDS's tabs print", () => {
+  it("the rule pack's editions are the ones DSDS's tabs and the 3a print", () => {
     expect(MO_2026_07.worksheet3c?.tabs.CDS.edition).toBe(json["3c"].CDS.edition);
     expect(MO_2026_07.worksheet3c?.tabs.ILW.edition).toBe(json["3c"].ILW.edition);
+    expect(MO_2026_07.worksheet3a?.edition).toBe(json["3a"].edition);
   });
 });
 
