@@ -19,6 +19,30 @@ Order: 1 files, ledger, rules · 2 exact 3c calculator and golden test · 3 sugg
 task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 print and PDF ·
 7 `/conformance` proof page · 8 export into DSDS's own workbook (optional) · 9 watch DSDS for changes.
 
+**Review decisions (Oct 27, 2026, Prompt 1).** Built on `phase-3-worksheet`.
+- **State files.** This delivery had the prompts, `hcbs3a-golden.json`, `make-golden-3a.py` and
+  `reference-model-3a.py`. The rest of the list in Prompt 1 was made here from primary sources. Both
+  workbooks were downloaded from health.mo.gov on Oct 27, 2026. The 3a's SHA-256 is the one in Prompt 4
+  (`b32c35e5…`) and the 3c's is `701aaa12…`. The two manual pages have moved to
+  `https://health.mo.gov/providers/manuals/home-and-community-based-services-manual/400-home-and-community-based-services-10`
+  (3a, "Revised - May 2025") and `…-11` (3c, "Revised - July 2026"); their page bodies are saved as text.
+  `scripts/state/make-golden.py` (the 3c recalculation, built the same way as the 3a script) and
+  `scripts/state/extract-guidance.py` were written from these prompts. `worksheet-guidance.json` comes
+  from the second script, and the 3a CSV from the workbook's stored values (`scripts/state/sheet-to-csv.py`).
+  `reference-model-3a.py` replays all 508 workbooks / 10,811 rows of `hcbs3a-golden.json` with 0 differences.
+- **`hcbs3c-golden.json` needs LibreOffice**, and it isn't installed here. The 3c golden test (Prompt 2)
+  and the conformance samples (Prompt 7) wait for it; see the note under Prompt 2.
+- **Ledger refs are checkable.** The ledger test needs every `EXISTING` row to name a rule, a TC, a
+  formula or a file that exists. WS-C01, A02, A04, A05 and A16 now also name
+  `packages/engine/src/rulepacks/mo-2026-07.ts`. The "Beyond" table now has Form (`beyond`) and Refs
+  columns, so X01–X04 name their file or rules, and X08/X09's "(Prompt 8, optional)" / "(Prompt 9)"
+  moved into Refs. The test compares refs too, not only id, status and item.
+- `.gitattributes`: `docs/fixtures/state/** -text`. Git on Windows (`core.autocrlf`) would otherwise
+  check the JSON, CSV and text fixtures out with CRLF, and their SHA-256 would stop matching.
+- The 3c workbook prints "DSDS STAFF NAME:" and "DATE:" on both tabs, while its manual page says
+  "Assessor Signature and Date" for "the individual completing the document". W-3 stands (leave it blank;
+  label it as the manual words it). DSDS question 6 (Prompt 7) asks which is right.
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

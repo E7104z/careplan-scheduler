@@ -99,3 +99,24 @@ D-5. Never change apps/web, packages/* or firestore.rules in the desktop prompt.
   `America/Chicago` converted with luxon only inside `src/calendar/time.ts`.
 - App: function components and hooks; state with `useReducer` where several inputs interact;
   pure logic in `.ts` files next to the feature, tested without rendering.
+
+## Phase 3 rules (worksheet parity)
+W-1. No state number is typed by hand in `src/`. Days-per-month table, ceilings, the unit rate,
+     ADC limits and suggested ranges live in the rule pack with a `source` string. A test
+     compares each with `docs/fixtures/state/`.
+W-2. When the engine and DSDS's workbook disagree, stop and report. Never edit a golden file,
+     a fixture or a test expectation to make a test pass.
+W-3. The app never calls its output an official DSDS/DHSS form. Title: "Worksheet view". Always
+     show: "Follows DSDS-HCBS-3c (10/26). Not an official DSDS form." Never sign for anyone and never pre-fill a
+     signature or date. The 3c's "Assessor Signature and Date" is for "the individual completing the document";
+     the 3a's is for "DSDS staff". The app leaves both blank (the 3c may carry an optional typed assessor name
+     the person fills in, blank by default). Do not use the state's seal or the words
+     "Missouri Department of Health and Senior Services" as a heading.
+W-4. Participant name, DCN, provider phone, emergency contact and any person's name are memory-only
+     like `identity` (rule 19, I-3): never sessionStorage, localStorage, Firestore, URL, console.
+W-5. Do not invent billing codes, ceilings or rates. Where the state files do not give one, add it
+     with status OPEN and make the app show REVIEW ("Waiting on DHSS").
+W-6. Every ledger row (docs/WORKSHEET-PARITY.md) that is DONE has a test whose name contains its
+     ID, e.g. `describe("WS-C09 ...")`. The ledger test enforces this.
+W-7. Worksheet results (WS-*) never feed the Quick Schedule guard or its "Follows every rule" status.
+     They appear only in the Worksheet view and on /conformance.

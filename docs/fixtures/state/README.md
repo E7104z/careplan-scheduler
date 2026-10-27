@@ -1,0 +1,28 @@
+# State worksheet files
+
+DSDS's own worksheet workbooks, and the files made from them, that Phase 3's tests compare
+CarePlan Scheduler with. The two workbooks were downloaded from health.mo.gov on Oct 27, 2026 and
+are unchanged. Git keeps every file here byte for byte (`.gitattributes`), and
+`packages/engine/test/ledger.test.ts` checks each SHA-256 below against the file.
+
+| File | Where it came from | SHA-256 | Edition printed inside |
+|---|---|---|---|
+| `4.00appendix4da-3cform.xlsx` | HCBS-3c, https://health.mo.gov/sites/health/files/2026-10/4.00appendix4da-3cform_0.xlsx (saved without the `_0`) | `701aaa1287cbf8a0612e7ac99c3ddc78ff348167fac637616adc46700cb5d36e` | DSDS-HCBS-3c (10/26) on the CDS tab (Q101); DSDS-HCBS-3c (07/26) on the ILW tab (Q107) |
+| `4.00appendix3da3aform.xlsx` | HCBS-3a, https://health.mo.gov/sites/health/files/2026-07/4.00appendix3da3aform.xlsx | `b32c35e555b1ec493c1745b1ca8f5fd90237a3cd6c50ddf149b11b24629de0b8` | DSDS-HCBS-3a (07/26) (O129) |
+| `hcbs3a-in-home-services-worksheet.csv` | The 3a saved as CSV: the HCBS-3a sheet's stored values, written by `scripts/state/sheet-to-csv.py` | `a575077798eff9c267a092612181dbc9c43627b803bfc479e98f981c11f2298f` | DSDS-HCBS-3a (07/26) |
+| `hcbs3a-golden.json` | DSDS's 3a workbook recalculated by LibreOffice 24.2.7.2 (508 workbooks, 10,811 task rows), written by `scripts/state/make-golden-3a.py` | `e8c38276c278b39266c55cf27e3750f49a730a4b0a651a97064cb53c7f90d615` | DSDS-HCBS-3a (07/26) (`meta.edition`) |
+| `worksheet-guidance.json` | Suggested times, frequencies, row labels and editions read from both workbooks by `scripts/state/extract-guidance.py` | `2b18c886c5c3fc208599cb773330888b5648025e269ab6acaf4da45170a03bfc` | DSDS-HCBS-3c (10/26), DSDS-HCBS-3c (07/26), DSDS-HCBS-3a (07/26) |
+| `pages/manual-hcbs3c-cds-worksheet.txt` | Text of HCBS Manual 4.00 Appendix 4, https://health.mo.gov/providers/manuals/home-and-community-based-services-manual/400-home-and-community-based-services-11, read Oct 27, 2026 (page body only) | `b4e3037c940c0dad9be28fdc25f30e5a0d2d61da0dfceae08362e2aa7777d501` | Revised - July 2026 |
+| `pages/manual-hcbs3a-in-home-services-worksheet.txt` | Text of HCBS Manual 4.00 Appendix 3, https://health.mo.gov/providers/manuals/home-and-community-based-services-manual/400-home-and-community-based-services-10, read Oct 27, 2026 (page body only) | `01438944b3b48c0f65e868c10c4bdc3f635e7fee98258512df0443a685dbc7e2` | Revised - May 2025 |
+
+## Remaking the generated files
+
+Each script says what it needs at the top. None runs in CI.
+
+- `python scripts/state/make-golden.py docs/fixtures/state/4.00appendix4da-3cform.xlsx docs/fixtures/state/hcbs3c-golden.json` (needs LibreOffice)
+- `python scripts/state/make-golden-3a.py docs/fixtures/state/4.00appendix3da3aform.xlsx docs/fixtures/state/hcbs3a-golden.json` (needs LibreOffice)
+- `python scripts/state/extract-guidance.py docs/fixtures/state/4.00appendix4da-3cform.xlsx docs/fixtures/state/4.00appendix3da3aform.xlsx docs/fixtures/state/worksheet-guidance.json`
+- `python scripts/state/sheet-to-csv.py docs/fixtures/state/4.00appendix3da3aform.xlsx HCBS-3a docs/fixtures/state/hcbs3a-in-home-services-worksheet.csv`
+
+`scripts/state/reference-model-3a.py` is an independent model of the 3a's formulas; it matches every
+case in `hcbs3a-golden.json`. After remaking a file, update its SHA-256 here.

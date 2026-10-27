@@ -1,0 +1,137 @@
+Home and Community Based Services Manual
+
+4.00 Appendix 3 In-Home Services Worksheet Instructions and Form
+
+In Home Services Worksheet
+
+Print
+
+Revised - May 2025
+
+The In-Home Services Worksheet (HCBS-3a) shall be used when the Division of Senior and Disability Services (DSDS) staff or its designee cannot access the participant’s electronic case record or when necessary to support the development of a Person-Centered Care Plan (PCCP). It contributes to a more consistent approach when determining the appropriate amount of services necessary to meet a participant's unmet needs. Suggested times and frequencies have been developed with the care needs of an average or typical participant in mind.
+
+The HCBS-3a is an Excel document. When filling out the form electronically, there are auto-calculations built within the body of the document. In addition, there are certain restricted fields that do not allow data entry. Those fields can be identified by the shaded cells. To navigate the form efficiently, it is suggested to use the tab key to go from field to field.
+
+Number of Copies
+
+When necessary, one copy of the HCBS-3a shall be made
+
+Instructions
+
+The HCBS-3a shall be completed for all other Home and Community Based Services (HCBS) authorizations when DSDS or its designee cannot access the electronic case record. The form should only be uploaded in the participant's electronic case record when used for ILW authorization.
+
+Participant Information
+
+NAME: Enter the participant’s name
+
+DCN: Enter the participant’s Departmental Client Number (DCN)
+
+CDS: Check if the participant currently receives, or is being authorized for, Personal Care Assistance (Consumer-Directed Model) (CDS) in addition to other HCBS
+
+PROVIDER NAME: Enter the name of the participant’s chosen provider
+
+PROVIDER PHONE: Enter the chosen provider’s phone number
+
+Calculations
+
+Each of the services included are task-oriented and generally authorized on an ongoing basis.
+
+#MIN/DAY: Enter the estimated minutes required to complete the task per day
+
+#UNITS/DAY: No entry (With the Exception of Home Delivered Meals)
+
+#DAY/WK: Enter the number of days per week
+
+MAX DAYS/MONTH: No entry
+
+#MIN/WK: No entry
+
+UNITS/WK: No entry
+
+TOTAL UNITS CALCULATION: (Excludes nurse visits)
+
+TOTAL COST: No entry
+
+Description Of Needs
+
+Enter any comments regarding care planning needs to be used as a reference upon return to the office. Completion of this column is only mandatory for Independent Living Waiver (ILW) requests, and the information should provide a clear explanation of why each task is being requested and why the amount of time requested is appropriate.
+
+Services
+
+Personal Care
+
+- RCF/ALF
+
+- Check the box when the participant is a resident of an RCF/ALF
+
+- Enter time and frequency for all suggested task
+
+- Check the hen Medically Related Household tasks are checked, and indicate which tasks are to be completed in the Homemaker section.
+
+Homemaker
+
+- Check the RCF/ALF box when the participant is a resident of either entity
+
+- Check the Medically Related Household tasks box when the Homemaker tasks are to be provided under the Personal Care authorization
+
+Advanced Personal Care
+
+- Check the RCF/ALF box if the participant is a resident of either entity
+
+- When entering only one task, the task needs to be in 15-minute increments.
+
+- Two (2) nurse visits are required in the first month of authorization to assist in developing the PCCP and to sufficiently train the APC aide. A care plan with ongoing nurse visits will not require the additional nurse visit for the first full month of the PCCP.
+
+Authorized Nurse Visits
+
+The following shall be completed for authorized nurse visits:
+
+- Check the RCF/ALF box when the participant is a resident of either entity
+
+- Check the appropriate boxes for the necessary tasks to be completed during the nurse visit
+
+- Enter the number of visits per month in the total units box.
+
+- When the nurse visit occurs on a less than weekly basis, do not enter days per week; enter days per month.
+
+- General Health Evaluation
+
+- This task should only be checked for the semi-annual nurse visits
+
+- Other
+
+- This task should be used when DSDS or its designee requests the provider nurse to make a home visit for ‘other’ non-routine nurse tasks. Those tasks, such as venipuncture, physician ordered injections, etc. must be prior approved and authorized by DSDS or its designee.
+
+Respite Care
+
+- Check the box for the appropriate type of Respite (Basic or Advanced)
+
+- Enter the number of minutes per day and days per week the service will be provided
+
+Home Delivered Meals
+
+- Enter the units per day and the number of days per week the meals are received
+
+Chore Services
+
+- Enter the number of minutes per day and the number of days per week
+
+Adult Day Care
+
+- Adult Day Care (ADC) (ages 63 and older) and Adult Day Care Waiver (ADCW) (ages 18-62)
+
+- Enter the number of minutes per day and the number of days per week. A number in multiples of 15, which cannot exceed 10 hours per day. The maximum number of days per week cannot exceed five (5).
+
+Comments
+
+- Enter any comments regarding nursing services, including adding the specific months for the General Health Evaluation.
+
+- Enter any comments or necessary information
+
+DSDS Staff Signature and Date
+
+- DSDS staff shall sign and date the HCBS-3a the day the worksheet is completed.
+
+Emergency Contact/Phone
+
+- Enter the participant’s emergency contact name and phone number

@@ -1,0 +1,97 @@
+Home and Community Based Services Manual
+
+4.00 Appendix 4 Worksheet for Consumer Directed Services Instructions and Form
+
+Consumer Directed Services Worksheet
+
+Print
+
+Revised - July 2026
+
+The Consumer-Directed Services (CDS) Worksheet (HCBS-3c) shall be used when the Division of Senior and Disability Services (DSDS) staff or its designee cannot access the participant’s electronic case record or when necessary to support the development of a Person-Centered Care Plan (PCCP) and authorization of the Independent Living Waiver (ILW). It contributes to a more consistent approach when determining the appropriate amount of services necessary to meet a participant's unmet needs. Suggested times and frequencies have been developed with the care needs of an average or typical participant in mind.
+
+The HCBS-3c is an Excel document with build-in auto-calculations, including two separate tabs, one for CDS authorizations and one for ILW authorizations.
+
+- The CDS tab should be used only for CDS authorization. The total units will automatically calculate, and the total amount will appear in red font if it exceeds the maximum allowed units.
+
+- The ILW tab is designed for ILW authorizations. As with the CDS tab, the total units will auto-calculate, and the total will appear in red font if it exceeds the maximum allowed units.
+
+Some fields in the worksheet are restricted and cannot be edited; these appear as shaded cells. For easier navigation throughout the form, it is recommended to use the Tab key to move between fields.
+
+Consumer-Directed Services Instructions
+
+Participant Information
+
+- Participant Names: Enter the participant’s name
+
+- DCN: Enter the participant’s Departmental Client Number (DCN)
+
+- IHS: Check if the participant currently receives, or is being authorized for, other HCBS in addition to CDS
+
+- Provider Name: Enter the name of the participant’s chosen provider
+
+- Provider Phone: Enter the chosen provider’s phone number.
+
+- Personal Care Assistance: Check the type(s) of program in which the participant is enrolled (i.e., State Plan or ILW). Once units are calculated, enter the monthly units after the type of assistance.
+
+- Start Date: Enter the earliest date CDS can begin.
+
+Calculations
+
+- Suggested Time: No Entry
+
+- Suggested Frequency: No Entry
+
+- Min/Day: Enter the estimated amount of time required to complete each task per day
+
+- Units/Day: No entry
+
+- Days/Week: Enter the number of days per week
+
+- Total Units/Day: No Entry
+
+- Max Days/Month: No Entry
+
+- Units/Week: No Entry
+
+- Total Units/Mo: No Entry
+
+Description of Needs
+
+- Enter any care planning comments to reference upon return to the office.
+
+Comments
+
+- Enter any additional information necessary to justify care planning tasks.
+
+Assessor Signature and Date
+
+- The individual completing the document shall sign and date the HCBS-3c on the date the worksheet is completed.
+
+Emergency Contact/Phone
+
+- Enter the participant’s emergency contact name and phone number.
+
+Independent Living Waiver Instructions
+
+Andy participant who requires more monthly State Plan Personal Care than the established cost maximums should be considered for the ILW. The ILW tab on the HCBS-4c shall be used when ILW is requested. The following outlines the authorization process:
+
+- Follow the above CDS instructions to complete the ILW worksheet.
+
+- Description of Needs
+
+- This is required for all ILW requests and should clearly explain why each task is needed and why the requested time is appropriate.
+
+- Include any requests for the following:
+
+- Environmental Accessibility Adaptations (EAA).
+
+- Specialized Medical Equipment (SME)
+
+- Specialized Medical Supplies (SMS) on the worksheet.
+
+- Submit for approval
+
+- Submit the completed ILW request to the Bureau of Federal Programs (BFP).
+
+Note: BFP approval is required before authorizing ILW.

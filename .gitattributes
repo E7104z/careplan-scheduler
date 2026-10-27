@@ -4,3 +4,7 @@
 
 # The Windows icon is binary too.
 *.ico binary
+
+# The state worksheet fixtures are compared byte for byte with the SHA-256 in their README, so
+# git never converts their line endings.
+docs/fixtures/state/** -text
