@@ -175,6 +175,31 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   `contents: read`). A failed download fails the job without opening an issue.
 - `packages/engine/test/watch.test.ts` runs the self-test under vitest, so WS-X09 has a test named after it (W-6).
 
+**Review decisions (Oct 27, 2026, Prompt 8, optional; done after Prompt 9).**
+- **Done, not skipped.** The instruction was to make all the changes, and this is the strongest proof. It was
+  safe on both counts the prompt names. `fflate` 0.8.2 (exact) loads only in the export's lazy chunk:
+  `check-bundle` now fails if fflate's code reaches a public page, and `/quick` is 163.9 KB gzip. The XML edit
+  writes only cells DSDS left unlocked for input.
+- **What is written is DSDS's own definition of an input.** The test reads each changed cell's style in the
+  workbook's `styles.xml` and requires `<protection locked="0"/>`: every cell the export writes is one DSDS
+  left unlocked for typing. A cell holding a formula is refused, as are the staff name and date cells.
+  Everything else in the file is byte-identical, apart from `fullCalcOnLoad="1"` in `workbook.xml` and the
+  checkboxes' `checked` state.
+- **3c:** name A6, DCN I6, provider A8 and L8, start date P9, the program's monthly units after its box (G9
+  State Plan, J9 ILW: the manual's "enter the monthly units after the type of assistance"), Min/Day (L) and
+  Days/Wk (N) on each task's row, transportation F88, descriptions (D on the row below), ILW units O96–O100,
+  comments, and the emergency contact (K100 / K106). The IHS box and the MSP or ILW box are checked from the
+  view. **3a** (beyond the prompt's 3c list, since both workbooks ship): the same header, task and line
+  minutes and days, meals I106/J106, nurse visits N96, comments C123 and the emergency contact G128. It also
+  writes the four rate-sheet cells the RCF/ALF and Medically Related boxes are linked to (Sheet2 H9, H10, H11,
+  L2), and the CDS, nurse-task and chore-task boxes.
+- **Verified:** `scripts/state/verify-export.py` exports the three samples (CDS tab, ILW tab, 3a), has
+  LibreOffice recalculate them, and compares DSDS's own L93/O93 and N30/N66/N90/O122 with the engine's. All 8
+  values match. LibreOffice keeps an .xlsx's cached results unless told otherwise, so the script gives it a
+  throwaway "always recalculate" profile; Excel follows the file's `fullCalcOnLoad`.
+- The download is named by form and date only ("DSDS HCBS-3c worksheet 2026-10-27.xlsx"). The people fields
+  go into that file and nowhere else (W-4), and the note says DSDS staff complete and sign it.
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

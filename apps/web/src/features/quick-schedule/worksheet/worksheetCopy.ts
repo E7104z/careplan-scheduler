@@ -29,6 +29,9 @@ export const WORKSHEET_COPY = {
   checksTitle: "Worksheet checks",
   noChecks: "No worksheet checks to show.",
   checksNote: "These checks are for the worksheet only. They never change the schedule's status.",
+  exportButton: "Download as DSDS's worksheet (.xlsx)",
+  exportNote:
+    "This is DSDS's own file with your numbers typed in. DSDS staff complete and sign it. What you typed above goes into the file you download and nowhere else.",
 } as const;
 
 export function overMaximum(ceiling: number): string {

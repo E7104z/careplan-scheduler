@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { schedulePdfBlob } from "../../src/features/quick-schedule/schedulePdf";
@@ -56,5 +58,20 @@ describe("WS-A21 printing the worksheet", () => {
     fireEvent.keyDown(window, { key: "p", ctrlKey: true });
     await waitFor(() => expect(worksheetPdfBlob).toHaveBeenCalledTimes(2));
     expect(schedulePdfBlob).not.toHaveBeenCalled();
+  });
+});
+
+describe("WS-X08 downloading DSDS's own worksheet", () => {
+  it("fills DSDS's workbook from this site and downloads it, named by form and date only", { timeout: 20000 }, async () => {
+    const workbook = readFileSync(join(import.meta.dirname, "../../public/state/4.00appendix4da-3cform.xlsx"));
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(new Uint8Array(workbook)));
+    const { user } = renderQuick();
+    await user.click(screen.getByRole("tab", { name: "Worksheet" }));
+    await screen.findByRole("heading", { name: "Worksheet view" }, { timeout: 5000 });
+    expect(screen.getByText(/This is DSDS's own file with your numbers typed in. DSDS staff complete and sign it./)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Download as DSDS's worksheet (.xlsx)" }));
+    // Unzipping and re-zipping DSDS's workbook takes a few seconds under jsdom.
+    await waitFor(() => expect(downloads).toEqual(["DSDS HCBS-3c worksheet 2026-10-21.xlsx"]), { timeout: 15000 });
+    expect(fetchSpy).toHaveBeenCalledWith("/state/4.00appendix4da-3cform.xlsx");
   });
 });

@@ -8,3 +8,6 @@
 # The state worksheet fixtures are compared byte for byte with the SHA-256 in their README, so
 # git never converts their line endings.
 docs/fixtures/state/** -text
+
+# DSDS's workbooks served by the web app (Prompt 8): byte for byte, like the fixtures they copy.
+apps/web/public/state/** -text

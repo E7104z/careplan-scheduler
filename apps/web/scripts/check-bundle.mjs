@@ -30,6 +30,7 @@ const FORBIDDEN = [
   { pattern: /@firebase\/|firebase\/app/, what: "the Firebase SDK; Firebase must load only through lazy app routes" },
   { pattern: /GlobalWorkerOptions/, what: "pdfjs-dist; pdf.js must load only when a PDF is opened" },
   { pattern: /Invalid DateTime/, what: "luxon; public pages have no visits, so they call validatePlan, not validateSchedule" },
+  { pattern: /invalid zip data/, what: "fflate; it loads only when someone downloads DSDS's worksheet (Phase 3, Prompt 8)" },
 ];
 
 function fail(message) {

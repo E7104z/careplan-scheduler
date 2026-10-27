@@ -26,6 +26,9 @@ export interface WorksheetPanelProps {
   /** Which worksheet printout is being made, if any (Prompt 6). */
   printing: "print" | "save" | null;
   onPrint: (action: "print" | "save") => void;
+  /** Prompt 8: DSDS's own workbook with these numbers typed in. */
+  exporting: boolean;
+  onDownloadWorkbook: () => void;
 }
 
 /**
@@ -33,7 +36,7 @@ export interface WorksheetPanelProps {
  * every number from `calculate3c`/`calculate3a` (rule 13). Min/Day and Days/Wk are the care plan's own
  * values; a change here is the same reducer action as in the care plan pane, so it goes through the guard.
  */
-export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, change, printing, onPrint }: WorksheetPanelProps) {
+export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, change, printing, onPrint, exporting, onDownloadWorkbook }: WorksheetPanelProps) {
   const [showMath, setShowMath] = useState(false);
   const form = formFor(state.serviceCode);
   const sheet = useMemo(
@@ -81,6 +84,12 @@ export function WorksheetPanel({ state, model, pack, seq, dispatch, fields, chan
         </div>
       </div>
       <p className="text-[13px] text-ink-2">{WORKSHEET_COPY.memoryOnly}</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-sm bg-sunk px-3.5 py-2.5">
+        <Button variant="secondary" size="sm" busy={exporting} onClick={onDownloadWorkbook}>
+          {WORKSHEET_COPY.exportButton}
+        </Button>
+        <p className="min-w-0 flex-1 text-[13px] text-ink-2">{WORKSHEET_COPY.exportNote}</p>
+      </div>
 
       <WorksheetHeader form={form} fields={fields} change={change} planStart={state.plan.start} monthlyUnits={form === "3a" ? null : total} />
 

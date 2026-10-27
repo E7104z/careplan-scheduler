@@ -59,6 +59,12 @@ export interface Printout {
   make: () => Promise<Blob>;
 }
 
+/** Downloads a file whose bytes and name come from code loaded only now (DSDS's workbook, Prompt 8). */
+export async function saveDownload(make: () => Promise<{ blob: Blob; fileName: string }>): Promise<void> {
+  const { blob, fileName } = await make();
+  download(blob, fileName);
+}
+
 /** Downloads a printout as a file (the "Save … as PDF" buttons). */
 export async function savePrintout(printout: Printout): Promise<void> {
   download(await printout.make(), printout.fileName);

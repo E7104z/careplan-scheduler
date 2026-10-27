@@ -24,6 +24,15 @@ are unchanged. Git keeps every file here byte for byte (`.gitattributes`), and
 downloads every `.xlsx` they link and compares its URL and SHA-256 with the table above. A difference opens (or
 adds to) one issue, "DSDS changed a worksheet". `node scripts/state/watch.mjs` runs the same check locally.
 
+## Copies the web app serves
+
+`apps/web/public/state/` holds unchanged copies of the two workbooks, for "Download as DSDS's worksheet (.xlsx)"
+(Phase 3, Prompt 8). The app writes only DSDS's unlocked input cells into a copy and sets `fullCalcOnLoad`, so Excel
+recalculates every formula when the file opens. `apps/web/test/quick/exportWorkbook.test.ts` checks the copies'
+SHA-256 against this table and checks that an export changes nothing but those cells.
+`python scripts/state/verify-export.py` (needs LibreOffice; not in CI) recalculates three exported samples and
+checks DSDS's totals and costs against the engine's.
+
 ## Remaking the generated files
 
 Each script says what it needs at the top. None runs in CI. On Windows with long paths off, give

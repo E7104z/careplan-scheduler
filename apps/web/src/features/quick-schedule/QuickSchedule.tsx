@@ -10,7 +10,7 @@ import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { CarePlanPane } from "./CarePlanPane";
 import { buildQuickModel } from "./model";
-import { openPrintout, printSchedulePdf, savePrintout, saveSchedulePdf, SHELL_PRINT_EVENT, worksheetFileName, type Printout } from "./printSchedule";
+import { openPrintout, printSchedulePdf, saveDownload, savePrintout, saveSchedulePdf, SHELL_PRINT_EVENT, worksheetFileName, type Printout } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
@@ -25,6 +25,7 @@ const PACK = MO_2026_07;
 const WorksheetPanel = lazy(() => import("./worksheet/WorksheetPanel").then((module) => ({ default: module.WorksheetPanel })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
+const EXPORT_FAILED = "Couldn't make DSDS's worksheet file. Check your connection, then try again.";
 
 type PrintAction = "print" | "save";
 /** What is being made: the schedule's printout or the worksheet's, printed or saved. */
@@ -123,6 +124,15 @@ export function QuickSchedule() {
       });
     return true;
   };
+  // Prompt 8: DSDS's own workbook with the plan's numbers typed in. fflate and the workbook load only now.
+  const [exporting, setExporting] = useState(false);
+  const downloadWorkbook = () => {
+    if (exporting) return;
+    setExporting(true);
+    saveDownload(() => import("./worksheet/exportWorkbook").then((module) => module.exportWorkbookFile({ state, model, pack: PACK, fields: worksheet }, todayIso())))
+      .catch(() => setToast({ seq: --printErrors.current, message: EXPORT_FAILED }))
+      .finally(() => setExporting(false));
+  };
   const latestPrintout = useRef(makePrintout);
   useEffect(() => {
     latestPrintout.current = makePrintout;
@@ -213,6 +223,8 @@ export function QuickSchedule() {
                   state={state} model={model} pack={PACK} seq={feedback?.seq ?? 0} dispatch={dispatch} fields={worksheet} change={changeWorksheet}
                   printing={printing === "worksheet-print" ? "print" : printing === "worksheet-save" ? "save" : null}
                   onPrint={(action) => makePrintout(action, "worksheet")}
+                  exporting={exporting}
+                  onDownloadWorkbook={downloadWorkbook}
                 />
               </Suspense>
             </div>

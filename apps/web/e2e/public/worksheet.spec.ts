@@ -80,6 +80,18 @@ test("W-4: the name, DCN, phones and emergency contact never reach sessionStorag
   for (const typed of ["P-TEST-01", "99999999", "555-0100", "P-TEST-02", "555-0101"]) expect(stored).not.toContain(typed);
 });
 
+test("WS-X08: the download is DSDS's own workbook from this site, with the plan's minutes typed in", async ({ page }) => {
+  await byHand(page, ["bathing"]);
+  await setRow(page, "Bathing", 45, 5);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Download as DSDS's worksheet (.xlsx)" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("DSDS HCBS-3c worksheet 2026-10-21.xlsx");
+  const bytes = readFileSync((await download.path())!);
+  expect(bytes.subarray(0, 2).toString("latin1")).toBe("PK");
+});
+
 test("WS-M03: the Tab key goes through the header in the form's order", async ({ page }) => {
   await byHand(page, ["bathing"]);
   await page.getByRole("textbox", { name: "Participant name" }).focus();
