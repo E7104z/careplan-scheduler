@@ -147,6 +147,23 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   person typed one. People fields print only when typed. The 3a printout carries the manual's note about one
   copy and uploading only for ILW (WS-M05).
 
+**Review decisions (Oct 27, 2026, Prompt 7).**
+- `/conformance` is a public lazy page (no Firebase) linked from the footer and the Rules page. It is in
+  `check-bundle.mjs`'s public pages, within the 180 KB budget. APP-SPEC section 3 still lists the Phase 2
+  routes; rule 20 keeps APP-SPEC unedited, so the route is recorded here and in the router.
+- The page says "0 differences" for both forms. It counts the 20,511 3c rows typed on its two tabs, and the
+  3a's 10,811. The 0 is a type: the samples module is `as const` and the page assigns its `differences` to a
+  `0`, so a nonzero count stops `tsc` and the build. `make-conformance-samples.mjs` counts the differences
+  with its own plain statement of the 3c's formulas, and `apps/web/test/conformance.test.ts` replays the
+  samples with the engine and compares every field with the golden files.
+- The twelve sample rows are 309×5, 61×7, 45×3, 1×1, 1440×7, 15×7, 7×3, 10×2, 100×6 and 600×4, plus two
+  "Total Units/Mo" rows of one task and transportation that land on 641 and 642. Each "DSDS workbook says" is the
+  recorded value; each "CarePlan Scheduler says" is `calculate3c` as the page loads.
+- "Still to come" lists any row not done. After this prompt that is only WS-X08 (Prompt 8, optional) and
+  WS-X09 (Prompt 9). The ledger test now fails on any other `PLANNED` row.
+- DSDS questions 4–7 are added. Question 7 reflects the rate sheet's own "retired" legend (Prompt 4) and the
+  missing Homemaker RCF/ALF box. Question 6 also notes that the 3c workbook prints "DSDS STAFF NAME".
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

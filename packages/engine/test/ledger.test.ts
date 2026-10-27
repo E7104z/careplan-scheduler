@@ -78,6 +78,11 @@ describe("worksheet parity ledger", () => {
     expect(unchecked.map((entry) => `${entry.id}: ${entry.refs}`)).toEqual([]);
   });
 
+  it("has no PLANNED row except the optional ones for Prompts 8 and 9 (Phase 3, Prompt 7)", () => {
+    const planned = WORKSHEET_LEDGER.filter((entry) => entry.status === "PLANNED" && !/Prompt [89]\b/.test(entry.refs));
+    expect(planned.map((entry) => entry.id)).toEqual([]);
+  });
+
   it("has a test named after every DONE row", () => {
     const names = testNames();
     const untested = WORKSHEET_LEDGER.filter((entry) => entry.status === "DONE" && !names.some((name) => name.includes(entry.id)));

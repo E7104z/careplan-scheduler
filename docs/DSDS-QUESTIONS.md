@@ -131,3 +131,116 @@ per week the meals are received", and the workbook doesn't enforce any limit.
 
 **When DSDS answers:** record the answer here with its date, then set WS-R09's status and source (ENGINE-SPEC
 Amendment C.2) to match.
+
+## 4. The HCBS-3c's two editions, its ILW amounts and the $5.23 rate (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** the Worksheet view follows each tab's own edition. The
+CDS tab is stamped `DSDS-HCBS-3c (10/26)`, and the ILW tab, in the same file, `DSDS-HCBS-3c (07/26)`. Costs use
+the workbook's own numbers: $5.23 a unit on both tabs, and on the ILW tab $157.89 a unit for Financial
+Management Services, a flat $458.09 for Case Management and $100 a unit for SMS, SME and EAA. Every cost is
+labelled an estimate at the worksheet's rate, and the rate is PARTIAL on the Rules page.
+
+**Email (ready to send):**
+
+> Subject: Question: HCBS-3c editions, ILW service amounts and the unit rate
+>
+> Hello,
+>
+> In the HCBS-3c workbook published in October 2026 (4.00appendix4da-3cform_0.xlsx), the CDS tab is stamped
+> 10/26 and the ILW tab 07/26. Three questions:
+>
+> 1. Do the ILW tab's formulas and amounts ($157.89 per Financial Management Services unit, $458.09 for Case
+>    Management, $100 per unit for SMS, SME and EAA) follow the 10/26 edition, or is an updated ILW tab coming?
+> 2. Both tabs multiply the total units by $5.23. Where does that rate come from? Is it the current CDS rate
+>    in 3.00 Appendix 1?
+> 3. Should the $5.23 match the CDS rate whenever Appendix 1 changes?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then update `worksheet3c` in the rule pack (rate,
+status and source) and ENGINE-SPEC Amendment C.1.
+
+## 5. "ILW tab on the HCBS-4c" or the HCBS-3c? (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** the ILW worksheet is the ILW tab of the HCBS-3c, the
+form the page links to and the one whose tab is stamped `DSDS-HCBS-3c (07/26)`.
+
+**Email (ready to send):**
+
+> Subject: Question: which form has the ILW tab
+>
+> Hello,
+>
+> The Independent Living Waiver section of HCBS Manual 4.00 Appendix 4 says "The ILW tab on the HCBS-4c shall
+> be used when ILW is requested", but the form on that page is the HCBS-3c, which has the ILW tab. Is "HCBS-4c"
+> a typo for HCBS-3c, or is there a separate HCBS-4c form?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date; if there is an HCBS-4c, add it to
+`docs/fixtures/state/` and the parity ledger.
+
+## 6. Who completes and signs the HCBS-3c, and which edition is current (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** the Worksheet view and its printout never sign or
+date anything. They print a blank line labelled as the manual words it: "for the person completing the form" on
+the 3c, "DSDS staff" on the 3a. The 3c may carry an assessor name only if the person types one. Every page says
+"Not an official DSDS form."
+
+**Email (ready to send):**
+
+> Subject: Question: completing and signing the HCBS-3c
+>
+> Hello,
+>
+> The HCBS-3c instructions (4.00 Appendix 4) say "The individual completing the document shall sign and date the
+> HCBS-3c", while the HCBS-3a instructions say "DSDS staff shall sign and date the HCBS-3a". The 3c workbook
+> itself prints "DSDS STAFF NAME" and "DATE" on both tabs. Two questions:
+>
+> 1. May a provider (or another DSDS designee) complete and sign the HCBS-3c, or only DSDS staff? Does DSDS want
+>    providers to prepare a worksheet at all, for example to support a care plan change request?
+> 2. The 3c's manual page says "Revised - July 2026", but the workbook's CDS tab is stamped 10/26 and sits in the
+>    site's 2026-10 folder. Which edition is current?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then update W-3 in `.clinerules`, the signature
+copy in the Worksheet view and printout, and the editions in the rule pack.
+
+## 7. The HCBS-3a's rate sheet (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):** the 3a's costs use the rates on the workbook's own rate
+sheet (Sheet2): Personal Care $8.14 ($7.66 RCF/ALF), Advanced Personal Care $8.17 ($7.68), RN visit $60.99
+($57.18), respite $8.14, adult day care $3.32, homemaker and chore $8.14, meals $10.99. They are labelled estimates
+and PARTIAL. The sheet's block respite rates ($81.07, $106.66, $267.79) and nurse respite rate ($5.97) feed no
+formula, and its own colour legend marks those four rows "retired". Its "Respite Calc" lookup feeds no cell. The
+manual mentions a Homemaker RCF/ALF box, but the workbook has none and no rate for one. The app copies none of
+these.
+
+**Email (ready to send):**
+
+> Subject: Question: rates on the HCBS-3a's rate sheet
+>
+> Hello,
+>
+> The HCBS-3a workbook (07/26) calculates costs from a rate sheet on a hidden second sheet. Three questions:
+>
+> 1. That sheet colours the block respite rates ($81.07, $106.66, $267.79) and the nurse respite rate ($5.97) as
+>    "retired", and its "Respite Calc" lookup isn't used by any cell. Can you confirm they are retired?
+> 2. Personal Care is $8.14 a unit on the 3a, and the HCBS-3c (CDS) uses $5.23. Is that the current pair of rates,
+>    and where in 3.00 Appendix 1 are they?
+> 3. The instructions ask to check an RCF/ALF box in the Homemaker section, but the workbook has no such box and no
+>    Homemaker RCF/ALF rate. Is there a Homemaker RCF/ALF rate?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then update `worksheet3a.rates` (and `ratesStatus`)
+in the rule pack and ENGINE-SPEC Amendment C.3.

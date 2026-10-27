@@ -21,6 +21,7 @@ const PUBLIC_PAGES = {
   "/quick": "src/features/quick-schedule/QuickSchedule.tsx",
   "/rules": "src/pages/Rules.tsx",
   "/privacy": "src/pages/Privacy.tsx",
+  "/conformance": "src/pages/Conformance.tsx",
 };
 // Only when a visitor opens their own page (Firebase) or a PDF (pdf.js); never in the above.
 // luxon (21 KB gzip) only times visits, and public pages have none: they validate with the

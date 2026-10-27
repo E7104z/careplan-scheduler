@@ -10,6 +10,7 @@ import { PageLoading } from "./ui/PageLoading";
 const Landing = lazy(() => import("./pages/Landing").then((module) => ({ default: module.Landing })));
 const Rules = lazy(() => import("./pages/Rules").then((module) => ({ default: module.Rules })));
 const Privacy = lazy(() => import("./pages/Privacy").then((module) => ({ default: module.Privacy })));
+const Conformance = lazy(() => import("./pages/Conformance").then((module) => ({ default: module.Conformance })));
 const QuickSchedule = lazy(() =>
   import("./features/quick-schedule/QuickSchedule").then((module) => ({ default: module.QuickSchedule })),
 );
@@ -58,6 +59,7 @@ export const routes = [
       { path: "quick", element: <QuickSchedule /> },
       { path: "rules", element: <Rules /> },
       { path: "privacy", element: <Privacy /> },
+      { path: "conformance", element: <Conformance /> },
       { path: "*", element: <NotFound /> },
     ],
   },

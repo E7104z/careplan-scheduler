@@ -105,6 +105,6 @@ has no test named after it.
 | WS-X04 | beyond | Caregiver, overlap, 49-hour and nurse-visit-cap checks | EXISTING | CON-04, CON-05, CON-09, CON-10 |
 | WS-X05 | beyond | "Show the math" for every number (formula in words) | DONE | `formulaText`, `costText`; `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-X06 | beyond | Worksheet total reconciled with the schedule's units and Fusion's figure | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
-| WS-X07 | beyond | Public proof page (/conformance) | PLANNED | |
+| WS-X07 | beyond | Public proof page (/conformance) | DONE | `apps/web/src/pages/Conformance.tsx`; `apps/web/test/conformance.test.ts`; `apps/web/e2e/public/conformance.spec.ts` |
 | WS-X08 | beyond | Export into DSDS's own workbook with only the input cells filled | PLANNED | Prompt 8, optional |
 | WS-X09 | beyond | Weekly watch for a changed DSDS worksheet | PLANNED | Prompt 9 |

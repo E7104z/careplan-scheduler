@@ -1,4 +1,5 @@
 import { MO_2026_07, RULE_CATALOG, type RuleArea, type RuleStatus } from "@careplan/engine";
+import { Link } from "react-router";
 import { niceDate } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
 import { SeverityPill } from "../ui/SeverityPill";
@@ -38,6 +39,12 @@ export function Rules() {
         checks, and the 49-hour weekly limit (CON-09) on the pattern. SCH-14 and the other conflict
         and eligibility checks are for visits, caregivers and enrollments, which come in a later
         release.
+      </p>
+      <p className="mt-2 max-w-[62ch] text-ink-2">
+        The Worksheet checks appear only in Quick Schedule's Worksheet view, never in the schedule's status.{" "}
+        <Link to="/conformance" className="font-semibold text-brand underline hover:text-brand-hover">
+          How we match DSDS's worksheets
+        </Link>
       </p>
 
       <section className="mt-8">

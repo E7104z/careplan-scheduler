@@ -130,6 +130,9 @@ export function PublicLayout() {
             <Link to="/rules" className="rounded-sm hover:underline">
               Rules and sources
             </Link>
+            <Link to="/conformance" className="rounded-sm hover:underline">
+              How we match DSDS's worksheets
+            </Link>
           </nav>
           <p>
             Questions:{" "}
