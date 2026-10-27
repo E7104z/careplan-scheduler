@@ -47,3 +47,33 @@ until then and where that is written down. Send to **LTSS@health.mo.gov** (the c
 
 **When DSDS answers:** record the answer here with its date, then update SCH-17 (ENGINE-SPEC
 section 5, status and source), IMP-10 and APP-SPEC 5.4's month view to match.
+
+## 2. Rounding a task's monthly units: HCBS-3c or the Appendix 14a/14b scheduler (asked: not yet)
+
+**What the app does now (decided Oct 27, 2026, Phase 3):**
+- The Worksheet view gives the HCBS-3c's own numbers: `ROUNDUP(Min/Day ÷ 15 × MaxDays)` (ENGINE-SPEC
+  F-2a, `calculate3c`), checked against DSDS's 3c workbook for every whole minute 1–1,440 × 1–7 days.
+- The schedule uses the Person-Centered Care Plan Scheduler's (4.00 Appendix 14a/14b) `TRUNC(x + 0.99)`
+  (F-2b). For whole minutes a day the two always agree. They differ only when a task's weekly minutes
+  don't divide evenly by its days, e.g. 61 minutes a week over 7 days: 14a/14b gives 18 units and the
+  3c's rounding 19. The app then shows both and marks the task REVIEW (AUTH-03, PARTIAL).
+
+**Email (ready to send):**
+
+> Subject: Question: rounding a task's monthly units (HCBS-3c vs. Appendix 14a/14b)
+>
+> Hello,
+>
+> We're building a scheduling tool for in-home services providers that follows the HCBS-3c worksheet
+> (HCBS Manual 4.00 Appendix 4) and the Person-Centered Care Plan Scheduler (4.00 Appendix 14a and 14b).
+> The HCBS-3c rounds a task's monthly units up (`ROUNDUP`); the scheduler workbooks add 0.99 and drop
+> the fraction (`TRUNC(x + 0.99)`). They agree for whole minutes a day. For a task whose weekly minutes
+> don't divide evenly by its days (for example 61 minutes a week over 7 days), the 3c's rounding gives
+> 19 units and the scheduler's 18. Which one does Fusion use when it calculates a task's units?
+>
+> Thank you,
+>
+> (name, agency, phone)
+
+**When DSDS answers:** record the answer here with its date, then set AUTH-03's status and source
+(ENGINE-SPEC section 5) and the Worksheet view's reconcile line (APP-SPEC) to match.

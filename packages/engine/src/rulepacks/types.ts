@@ -24,6 +24,23 @@ export interface TaskDef {
 
 export type OverlapRule = "allowed" | "prohibited" | "unknown";
 
+export interface Worksheet3cTab {
+  edition: string;
+  ceiling: number;
+}
+
+/** What DSDS's HCBS-3c workbook prints and calculates with (ENGINE-SPEC Amendment C). */
+export interface Worksheet3cPack {
+  tabs: { CDS: Worksheet3cTab; ILW: Worksheet3cTab };
+  unitRateCents: number;
+  unitRateStatus: "PARTIAL";
+  unitRateSource: string;
+  ilwExtras: { fmsRateCents: number; caseManagementCents: number; smsCents: number; smeCents: number; eaaCents: number };
+  ilwExtrasSource: string;
+  ceilingSource: string;
+  daysBasis: 31;
+}
+
 export interface RulePack {
   id: string;
   effectiveDate: string;
@@ -32,4 +49,5 @@ export interface RulePack {
   tasks: TaskDef[];
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule;
   sources: string[];
+  worksheet3c?: Worksheet3cPack;
 }

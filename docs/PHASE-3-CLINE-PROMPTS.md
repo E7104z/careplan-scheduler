@@ -43,6 +43,28 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   "Assessor Signature and Date" for "the individual completing the document". W-3 stands (leave it blank;
   label it as the manual words it). DSDS question 6 (Prompt 7) asks which is right.
 
+**Review decisions (Oct 27, 2026, Prompt 2).**
+- **The 3c golden file was made here.** I used the reviewer's LibreOffice version, 24.2.7.2 (the official
+  Windows build, checksum-verified, unpacked without installing), and `scripts/state/make-golden.py`.
+  First, the same LibreOffice re-ran the reviewer's `make-golden-3a.py`: all 508 workbooks came out
+  identical to the committed `hcbs3a-golden.json`. So the two machines' recalculations agree.
+  The 3c file also records the Units/Day and Units/Wk text as LibreOffice displays it (a CSV saved
+  "as shown"), so the "0.0" display is checked as well as the numbers.
+- On Windows with long paths off, LibreOffice crashes without a message when its profile path is
+  long. The README now says to give it a short profile path (`UserInstallation`).
+- `formulaText`: an exact result reads "45 min ÷ 15 × 15 days = 45 units". A rounded one reads
+  "309 min ÷ 15 × 23 days = 473.8, rounded up to 474 units". (The prompt's example said "rounded up"
+  where nothing is rounded.) The fraction is never a whole number or `.0`, so one decimal is always
+  clear. `calculate3c` also returns `costText` ("72 units × $5.23 = $376.56") for "Show the math".
+- Inputs the sheet takes but a care plan can't have go to `issues`. That covers transportation
+  minutes or ILW service units that aren't a whole number 0 or more, on top of the prompt's minutes
+  and days. The sheet's Case Management line gives $458.09 for any entry, 0 included; that is copied,
+  and the golden file confirms it.
+- `worksheet3c` also carries `ilwExtrasSource` and `ceilingSource`, so every state number has a source (W-1).
+- DSDS question 2 (the 3c's ROUNDUP against Appendix 14a/14b's TRUNC(x + 0.99), AUTH-03) fills the
+  gap the prompts leave: they add questions 3, 3b and 4–7.
+- Still for Jason: the three-value Excel check above. LibreOffice, not Excel, recalculated both golden files.
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

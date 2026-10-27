@@ -306,3 +306,47 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-40 | "Essential Correspond" | `findTaskByName` → ESSENTIAL_CORRESPONDENCE |
 
 TC-19 (app-level), TC-23 (amendment), TC-34 (GHE) and TC-36 (exports) belong to later phases.
+
+---
+
+## Amendment C (Oct 27, 2026, Phase 3): DSDS's worksheets
+
+Phase 3 reproduces DSDS's HCBS-3c (Consumer Directed Services) worksheet exactly. The proof
+is a replay of DSDS's own workbook, recalculated (`docs/fixtures/state/`, `docs/WORKSHEET-PARITY.md`).
+Worksheet code lives in `src/worksheet/`. It is separate from `validatePlan` and `validateSchedule`,
+and its results never feed them (W-7).
+
+### C.1 `calculate3c(input, pack)` (`src/worksheet/calc3c.ts`)
+
+Input: the tab (`CDS` or `ILW`), task rows (`taskCode`, Min/Day, Days/Wk), transportation minutes per
+month and, on the ILW tab, the units of its five service lines. Output: every number the sheet shows,
+plus `formulaText` in words for each row, and `issues`. It follows the workbook cell by cell:
+
+| Sheet (both tabs) | Formula in DSDS's workbook | `calculate3c` |
+|---|---|---|
+| Units/Day (M) | `IF(N="","",P/N)`, shown `0.0` | `unitsPerDay` = Min/Day ÷ 15 as an exact fraction; `unitsPerDayDisplay` rounds it to one decimal, halves away from zero |
+| Max Days/Mo (O) | 1→5, 2→10, 3→15, 4→19, 5→23, 6→27, 7→31 | F-1 table from the rule pack |
+| Units/Wk (P) | `(L*N)/15`, shown `0.0` | `unitsPerWeek` = Min/Day × Days/Wk ÷ 15 |
+| Total Units (Q) | `IF(M="","",ROUNDUP(M*O,0))` | `floor((Min/Day × MaxDays + 14) / 15)`, the same as F-2a; blank (null) when Days/Wk is blank |
+| Transportation (L88) | `ROUNDDOWN(F88/15,0)` | `floor(minutes / 15)`, plus `unallocatedMinutes` (the sheet hides them) |
+| Total Units/Mo (L93) | Σ Q + L88 | `totalUnits` |
+| Cost (O93) | `L93*5.23` | `costCents` = `totalUnits × unitRateCents` |
+| Red total | conditional format: L93 > 641 (CDS), > 868 (ILW) | `overCeiling` = `totalUnits > ceiling` |
+| ILW Q96 / Q97 / Q98–Q100 | `O96*157.89` / `IF(O97="","",458.09)` / `O*100` | `ilwExtras` in cents; Case Management's flat amount for any entry, 0 included |
+
+Entries the sheet would take but a care plan can't have are listed in `issues` and count nothing:
+Min/Day other than whole minutes 0–1,440 ("Enter whole minutes from 0 to 1,440."), Days/Wk other
+than 1–7 ("Choose 1 to 7 days."), transportation minutes other than a whole number 0 or more, and
+ILW service units other than a whole number 0 or more. `calculate3c` never throws on input. It
+uses integer arithmetic only.
+
+Rule pack `worksheet3c` (each value with its source): editions `DSDS-HCBS-3c (10/26)` (CDS tab) and
+`DSDS-HCBS-3c (07/26)` (ILW tab); ceilings 641 and 868 (also the services' AUTH-09 ceilings);
+the unit rate 523 cents, **PARTIAL** (the sheet's own number, not yet checked against 3.00 Appendix 1);
+the ILW amounts 15,789 / 45,809 / 10,000 cents; `daysBasis` 31 (every figure is for a 31-day month).
+A test derives each one from `docs/fixtures/state/hcbs3c-golden.json` rather than repeating it.
+
+Proof: `test/worksheet-golden.test.ts` checks that the golden file was made from the workbook in
+`docs/fixtures/state/` (SHA-256). It then replays every recorded workbook, both tabs, every whole
+minute 1–1,440 × 1–7 days. Each row's Total Units, the Units/Day and Units/Wk text, the
+transportation units, the total, the cost and the ILW lines must equal what DSDS's workbook gave.

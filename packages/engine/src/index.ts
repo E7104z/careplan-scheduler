@@ -21,3 +21,5 @@ export * from "./rules/fit.js";
 export * from "./rules/conflicts.js";
 export * from "./validate.js";
 export * from "./worksheet/ledger.js";
+export * from "./worksheet/rowMath.js";
+export * from "./worksheet/calc3c.js";

@@ -114,6 +114,19 @@ export const MO_2026_07: RulePack = {
   services,
   tasks,
   sources: [SRC_APPENDIX, SRC_POLICY, SRC_HCBS],
+  worksheet3c: {
+    tabs: {
+      CDS: { edition: "DSDS-HCBS-3c (10/26)", ceiling: 641 },
+      ILW: { edition: "DSDS-HCBS-3c (07/26)", ceiling: 868 },
+    },
+    unitRateCents: 523,
+    unitRateStatus: "PARTIAL",
+    unitRateSource: "HCBS-3c (10/26) cell O93 (=L93*5.23, both tabs); not yet checked against 3.00 Appendix 1",
+    ilwExtras: { fmsRateCents: 15789, caseManagementCents: 45809, smsCents: 10000, smeCents: 10000, eaaCents: 10000 },
+    ilwExtrasSource: "HCBS-3c ILW tab (07/26) cells Q96-Q100",
+    ceilingSource: "HCBS-3c conditional format on cell L93: red above 641 (CDS tab), above 868 (ILW tab)",
+    daysBasis: 31,
+  },
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule {
     if (a === b) return "prohibited";
     if ((a === "CDS" && b === "NURSE") || (a === "NURSE" && b === "CDS")) return "allowed";

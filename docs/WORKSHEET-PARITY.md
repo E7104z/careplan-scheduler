@@ -29,18 +29,18 @@ has no test named after it.
 | WS-C01 | 3c | The 25 tasks with DSDS's exact names, in DSDS's order | EXISTING | rule pack tasks (`packages/engine/src/rulepacks/mo-2026-07.ts`); Prompt 3 adds order and a both-directions test |
 | WS-C02 | 3c | Suggested time shown for every task | PLANNED | |
 | WS-C03 | 3c | Suggested frequency shown for every task | PLANNED | |
-| WS-C04 | 3c | Min/Day entry (whole minutes) | PLANNED | |
-| WS-C05 | 3c | Days/Wk entry (1–7) | PLANNED | |
-| WS-C06 | 3c | Units/Day = Min/Day ÷ 15, shown as the sheet shows it | PLANNED | |
+| WS-C04 | 3c | Min/Day entry (whole minutes) | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` (every whole minute 1–1,440) |
+| WS-C05 | 3c | Days/Wk entry (1–7) | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` (every 1–7 days) |
+| WS-C06 | 3c | Units/Day = Min/Day ÷ 15, shown as the sheet shows it | DONE | `packages/engine/src/worksheet/calc3c.ts` (exact fraction and the sheet's "0.0" text); `packages/engine/test/worksheet-golden.test.ts` |
 | WS-C07 | 3c | Max Days/Mo from the table 1→5, 2→10, 3→15, 4→19, 5→23, 6→27, 7→31 | EXISTING | F-1 `factorFor`; rule pack |
-| WS-C08 | 3c | Units/Wk = Min/Day × Days/Wk ÷ 15 | PLANNED | |
-| WS-C09 | 3c | Total Units per task = ROUNDUP(Units/Day × Max Days/Mo) | EXISTING | F-2a `hcbs3cTaskUnits`; Prompt 2 adds the golden test |
-| WS-C10 | 3c | Essential Transportation: minutes per month ÷ 15, rounded down | EXISTING | F-4, AUTH-08 |
-| WS-C11 | 3c | Total Units/Mo = Σ task units + transportation units | PLANNED | |
-| WS-C12 | 3c | Cost = Total Units × the sheet's rate ($5.23) | PLANNED | rate PARTIAL |
+| WS-C08 | 3c | Units/Wk = Min/Day × Days/Wk ÷ 15 | DONE | `packages/engine/src/worksheet/calc3c.ts` (exact fraction and the sheet's "0.0" text); `packages/engine/test/worksheet-golden.test.ts` |
+| WS-C09 | 3c | Total Units per task = ROUNDUP(Units/Day × Max Days/Mo) | DONE | F-2a `hcbs3cTaskUnits`; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-C10 | 3c | Essential Transportation: minutes per month ÷ 15, rounded down | DONE | F-4, AUTH-08; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-C11 | 3c | Total Units/Mo = Σ task units + transportation units | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-C12 | 3c | Cost = Total Units × the sheet's rate ($5.23) | DONE | rate PARTIAL; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-C13 | 3c | Total turns red above 641 (CDS tab) / 868 (ILW tab) | EXISTING | AUTH-09 ceilings; Prompt 5 shows it |
-| WS-C14 | 3c | A row with no Days/Wk counts as nothing | PLANNED | |
-| WS-C15 | 3c | "Based on a 31 day month" footnote | PLANNED | |
+| WS-C14 | 3c | A row with no Days/Wk counts as nothing | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-C15 | 3c | "Based on a 31 day month" footnote | DONE | rule pack `worksheet3c.daysBasis`; `packages/engine/test/worksheet-calc3c.test.ts` |
 | WS-C16 | 3c,3a | Description of needs for each task | PLANNED | memory-only |
 | WS-C17 | 3c,3a | Comments | PLANNED | memory-only |
 | WS-C18 | 3c | Units shown with the task's suggested range check (outside range → INFO) | PLANNED | rule WS-R01 |
@@ -48,11 +48,11 @@ has no test named after it.
 ### 3c ILW tab only
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
-| WS-I01 | 3c-ilw | Financial Management Services: units × 157.89 | PLANNED | rate PARTIAL |
-| WS-I02 | 3c-ilw | Case Management: flat 458.09 when entered | PLANNED | rate PARTIAL |
-| WS-I03 | 3c-ilw | Specialized Medical Supplies: units × 100 | PLANNED | |
-| WS-I04 | 3c-ilw | Specialized Medical Equipment: units × 100 | PLANNED | |
-| WS-I05 | 3c-ilw | Environmental Accessibility Adaptations: units × 100 | PLANNED | |
+| WS-I01 | 3c-ilw | Financial Management Services: units × 157.89 | DONE | rate PARTIAL; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-I02 | 3c-ilw | Case Management: flat 458.09 when entered | DONE | rate PARTIAL; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-I03 | 3c-ilw | Specialized Medical Supplies: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-I04 | 3c-ilw | Specialized Medical Equipment: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
+| WS-I05 | 3c-ilw | Environmental Accessibility Adaptations: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-I06 | 3c-ilw | Description of Needs required for every ILW request (manual 4.00 App 4d) | PLANNED | rule WS-R02 |
 | WS-I07 | 3c-ilw | Request goes to the Bureau of Federal Programs; BFP approval required before authorizing ILW | EXISTING | AUTH-12; Prompt 5 shows the note |
 | WS-I08 | 3c | A participant needing more State Plan personal care than the cost maximum should be considered for ILW | PLANNED | rule WS-R03 |

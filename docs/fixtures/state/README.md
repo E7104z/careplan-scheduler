@@ -10,6 +10,7 @@ are unchanged. Git keeps every file here byte for byte (`.gitattributes`), and
 | `4.00appendix4da-3cform.xlsx` | HCBS-3c, https://health.mo.gov/sites/health/files/2026-10/4.00appendix4da-3cform_0.xlsx (saved without the `_0`) | `701aaa1287cbf8a0612e7ac99c3ddc78ff348167fac637616adc46700cb5d36e` | DSDS-HCBS-3c (10/26) on the CDS tab (Q101); DSDS-HCBS-3c (07/26) on the ILW tab (Q107) |
 | `4.00appendix3da3aform.xlsx` | HCBS-3a, https://health.mo.gov/sites/health/files/2026-07/4.00appendix3da3aform.xlsx | `b32c35e555b1ec493c1745b1ca8f5fd90237a3cd6c50ddf149b11b24629de0b8` | DSDS-HCBS-3a (07/26) (O129) |
 | `hcbs3a-in-home-services-worksheet.csv` | The 3a saved as CSV: the HCBS-3a sheet's stored values, written by `scripts/state/sheet-to-csv.py` | `a575077798eff9c267a092612181dbc9c43627b803bfc479e98f981c11f2298f` | DSDS-HCBS-3a (07/26) |
+| `hcbs3c-golden.json` | DSDS's 3c workbook recalculated by LibreOffice 24.2.7.2 (894 workbooks: 10,242 CDS and 10,269 ILW task rows, every whole minute 1–1,440 × 1–7 days on each tab, plus transportation, ILW service lines, blank rows and the 641/868 boundaries), written by `scripts/state/make-golden.py` | `6b2a6c395888a69961ec6c2665492f4c9f0a04748747c0d415c7a77b2e610d83` | DSDS-HCBS-3c (10/26) and (07/26) (`meta.tabs.*.edition`) |
 | `hcbs3a-golden.json` | DSDS's 3a workbook recalculated by LibreOffice 24.2.7.2 (508 workbooks, 10,811 task rows), written by `scripts/state/make-golden-3a.py` | `e8c38276c278b39266c55cf27e3750f49a730a4b0a651a97064cb53c7f90d615` | DSDS-HCBS-3a (07/26) (`meta.edition`) |
 | `worksheet-guidance.json` | Suggested times, frequencies, row labels and editions read from both workbooks by `scripts/state/extract-guidance.py` | `2b18c886c5c3fc208599cb773330888b5648025e269ab6acaf4da45170a03bfc` | DSDS-HCBS-3c (10/26), DSDS-HCBS-3c (07/26), DSDS-HCBS-3a (07/26) |
 | `pages/manual-hcbs3c-cds-worksheet.txt` | Text of HCBS Manual 4.00 Appendix 4, https://health.mo.gov/providers/manuals/home-and-community-based-services-manual/400-home-and-community-based-services-11, read Oct 27, 2026 (page body only) | `b4e3037c940c0dad9be28fdc25f30e5a0d2d61da0dfceae08362e2aa7777d501` | Revised - July 2026 |
@@ -17,7 +18,10 @@ are unchanged. Git keeps every file here byte for byte (`.gitattributes`), and
 
 ## Remaking the generated files
 
-Each script says what it needs at the top. None runs in CI.
+Each script says what it needs at the top. None runs in CI. On Windows with long paths off, give
+LibreOffice a short profile path, or it exits without converting anything:
+`UserInstallation=file:///C:/Users/<you>/AppData/Local/Temp/lop` in the environment (and put LibreOffice's
+`program` folder at the end of `PATH`, after Python, since it has its own `python.exe`).
 
 - `python scripts/state/make-golden.py docs/fixtures/state/4.00appendix4da-3cform.xlsx docs/fixtures/state/hcbs3c-golden.json` (needs LibreOffice)
 - `python scripts/state/make-golden-3a.py docs/fixtures/state/4.00appendix3da3aform.xlsx docs/fixtures/state/hcbs3a-golden.json` (needs LibreOffice)
