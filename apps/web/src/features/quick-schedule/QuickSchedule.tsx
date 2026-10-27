@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { MO_2026_07 } from "@careplan/engine";
 import { usePageTitle } from "../../lib/usePageTitle";
 import { Button } from "../../ui/Button";
+import { PageLoading } from "../../ui/PageLoading";
 import { Toast, ToastProvider, ToastViewport } from "../../ui/Toast";
 import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel";
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
@@ -14,8 +15,13 @@ import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
 import type { QuickModel, QuickState } from "./types";
 import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
+import { ViewTabs, viewPanelId, viewTabId, type QuickView } from "./worksheet/ViewTabs";
+import { emptyWorksheet, worksheetReducer } from "./worksheet/worksheetState";
 
 const PACK = MO_2026_07;
+
+// Phase 3: the Worksheet view loads only when its tab is opened, so /quick's first paint stays in budget.
+const WorksheetPanel = lazy(() => import("./worksheet/WorksheetPanel").then((module) => ({ default: module.WorksheetPanel })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
 
@@ -44,6 +50,9 @@ export function QuickSchedule() {
   const importShown = state.isExample || importOpen;
   // A new plan starts its panes fresh (no half-typed values or open tables from the last one).
   const [planKey, setPlanKey] = useState(0);
+  // Phase 3: the Worksheet view's fields. Memory only (W-4), and blank again for each new care plan.
+  const [view, setView] = useState<QuickView>("schedule");
+  const [worksheet, changeWorksheet] = useReducer(worksheetReducer, state, emptyWorksheet);
   const [toast, setToast] = useState<{ seq: number; message: string } | null>(null);
   const toastSeq = useRef(0);
   useEffect(() => {
@@ -63,6 +72,7 @@ export function QuickSchedule() {
 
   const onBuilt = (next: QuickState, from: BuiltFrom) => {
     dispatch({ type: "replace", state: next });
+    changeWorksheet({ type: "reset", fields: emptyWorksheet(next) });
     setPlanKey((key) => key + 1);
     setImportOpen(false);
     focusAfter.current = from === "import" ? READ_SUMMARY_TITLE_ID : from === "manual" ? TASK_PICKER_ID : null;
@@ -174,7 +184,19 @@ export function QuickSchedule() {
         <div className="print:hidden">
           <CarePlanPane key={planKey} state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
         </div>
-        <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+        <div className="grid min-w-0 gap-4 print:block">
+          <ViewTabs view={view} onChange={setView} />
+          <div role="tabpanel" id={viewPanelId("schedule")} aria-labelledby={viewTabId("schedule")} hidden={view !== "schedule"} className="min-w-0">
+            <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+          </div>
+          {view === "worksheet" ? (
+            <div role="tabpanel" id={viewPanelId("worksheet")} aria-labelledby={viewTabId("worksheet")} className="min-w-0 print:hidden">
+              <Suspense fallback={<PageLoading />}>
+                <WorksheetPanel state={state} model={model} pack={PACK} seq={feedback?.seq ?? 0} dispatch={dispatch} fields={worksheet} change={changeWorksheet} />
+              </Suspense>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* QS-02: toasts belong to this page, so Radix Toast stays out of the other public pages. */}

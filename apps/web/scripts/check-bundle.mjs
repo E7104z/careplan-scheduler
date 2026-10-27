@@ -88,11 +88,26 @@ if (!manifest["index.html"]) fail("manifest has no entry for index.html");
 const entry = staticGraph("index.html");
 measure("entry chunk + static imports (gzip)", [...entry], ENTRY_BUDGET);
 
+/**
+ * A page's lazy chunk. It is keyed by its source file, unless the page's own lazy chunks (Quick
+ * Schedule's Worksheet view, Phase 3) share modules with it: Rollup then keeps those modules in the
+ * page's chunk, which the manifest keys by its chunk name ("_QuickSchedule-<hash>.js", name
+ * "QuickSchedule") instead. Either way it must be a dynamic entry that some chunk imports lazily.
+ */
+function pageChunk(source) {
+  if (manifest[source]) return source;
+  const name = source.split("/").pop().replace(/\.[jt]sx?$/, "");
+  const lazy = new Set(Object.values(manifest).flatMap((chunk) => chunk.dynamicImports ?? []));
+  const found = Object.keys(manifest).filter((key) => lazy.has(key) && manifest[key].name === name);
+  return found.length === 1 ? found[0] : source;
+}
+
 for (const [path, source] of Object.entries(PUBLIC_PAGES)) {
-  if (!manifest[source]?.isDynamicEntry) {
+  const key = pageChunk(source);
+  if (!manifest[key]?.isDynamicEntry) {
     fail(`${source} (${path}) is not a lazy page chunk; public pages load with React.lazy (router.tsx)`);
   }
-  const page = staticGraph(source, new Set(entry));
+  const page = staticGraph(key, new Set(entry));
   measure(`page ${path}: entry + ${source} and its static imports (gzip)`, [...page], PAGE_BUDGET);
 }
 

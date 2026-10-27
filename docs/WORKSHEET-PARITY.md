@@ -10,18 +10,18 @@ has no test named after it.
 ### Header (3c and 3a)
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
-| WS-H01 | 3c,3a | Participant name | PLANNED | memory-only (W-4) |
-| WS-H02 | 3c,3a | DCN | PLANNED | memory-only |
-| WS-H03 | 3c,3a | Provider agency name | PLANNED | |
-| WS-H04 | 3c,3a | Provider agency phone | PLANNED | memory-only |
-| WS-H05 | 3c | IHS box: participant receives or is being authorized for other HCBS besides CDS | PLANNED | |
-| WS-H06 | 3c | Program: State Plan (CDS tab) or ILW (ILW tab) | PLANNED | |
-| WS-H07 | 3c | Start date: earliest date CDS can begin | PLANNED | plan start already exists |
+| WS-H01 | 3c,3a | Participant name | DONE | memory-only (W-4); `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
+| WS-H02 | 3c,3a | DCN | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
+| WS-H03 | 3c,3a | Provider agency name | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-H04 | 3c,3a | Provider agency phone | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
+| WS-H05 | 3c | IHS box: participant receives or is being authorized for other HCBS besides CDS | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-H06 | 3c | Program: State Plan (CDS tab) or ILW (ILW tab) | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-H07 | 3c | Start date: earliest date CDS can begin | DONE | plan start, read-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-H08 | 3c,3a | Edition stamp per tab (CDS 10/26, ILW 07/26, 3a 07/26) | DONE | rule pack editions; `packages/engine/test/guidance.test.ts` |
-| WS-H09 | 3c,3a | Emergency contact name and phone | PLANNED | memory-only |
+| WS-H09 | 3c,3a | Emergency contact name and phone | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
 | WS-H10 | 3c,3a | Signature and date line (3c: the individual completing it; 3a: DSDS staff): printed blank, never filled or signed by the app | PLANNED | W-3 |
-| WS-H11 | 3a | CDS box: participant receives or is being authorized for Personal Care Assistance (Consumer-Directed) in addition to other HCBS | PLANNED | |
-| WS-H12 | 3c | Once units are calculated, the monthly units are entered after the program type (State Plan / ILW) | PLANNED | shown pre-filled from the Total, editable only through the care plan |
+| WS-H11 | 3a | CDS box: participant receives or is being authorized for Personal Care Assistance (Consumer-Directed) in addition to other HCBS | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-H12 | 3c | Once units are calculated, the monthly units are entered after the program type (State Plan / ILW) | DONE | shown pre-filled from the Total, editable only through the care plan; `apps/web/src/features/quick-schedule/worksheet/WorksheetHeader.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 
 ### 3c calculation (CDS and ILW tabs)
 | ID | Form | Item | Status | Refs |
@@ -38,11 +38,11 @@ has no test named after it.
 | WS-C10 | 3c | Essential Transportation: minutes per month ÷ 15, rounded down | DONE | F-4, AUTH-08; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-C11 | 3c | Total Units/Mo = Σ task units + transportation units | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-C12 | 3c | Cost = Total Units × the sheet's rate ($5.23) | DONE | rate PARTIAL; `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
-| WS-C13 | 3c | Total turns red above 641 (CDS tab) / 868 (ILW tab) | EXISTING | AUTH-09 ceilings; Prompt 5 shows it |
+| WS-C13 | 3c | Total turns red above 641 (CDS tab) / 868 (ILW tab) | DONE | AUTH-09 ceilings; `apps/web/src/features/quick-schedule/worksheet/Worksheet3cBody.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx`; `apps/web/e2e/public/worksheet.spec.ts` |
 | WS-C14 | 3c | A row with no Days/Wk counts as nothing | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-C15 | 3c | "Based on a 31 day month" footnote | DONE | rule pack `worksheet3c.daysBasis`; `packages/engine/test/worksheet-calc3c.test.ts` |
-| WS-C16 | 3c,3a | Description of needs for each task | PLANNED | memory-only |
-| WS-C17 | 3c,3a | Comments | PLANNED | memory-only |
+| WS-C16 | 3c,3a | Description of needs for each task | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetTable.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-C17 | 3c,3a | Comments | DONE | memory-only; `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-C18 | 3c | Units shown with the task's suggested range check (outside range → INFO) | DONE | rule WS-R01; `packages/engine/src/worksheet/validate.ts`; `packages/engine/test/worksheet-rules.test.ts` |
 
 ### 3c ILW tab only
@@ -54,7 +54,7 @@ has no test named after it.
 | WS-I04 | 3c-ilw | Specialized Medical Equipment: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-I05 | 3c-ilw | Environmental Accessibility Adaptations: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-I06 | 3c-ilw | Description of Needs required for every ILW request (manual 4.00 App 4d) | DONE | rule WS-R02; `packages/engine/test/worksheet-rules.test.ts` |
-| WS-I07 | 3c-ilw | Request goes to the Bureau of Federal Programs; BFP approval required before authorizing ILW | EXISTING | AUTH-12; Prompt 5 shows the note |
+| WS-I07 | 3c-ilw | Request goes to the Bureau of Federal Programs; BFP approval required before authorizing ILW | DONE | AUTH-12; `apps/web/src/features/quick-schedule/worksheet/Worksheet3cBody.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-I08 | 3c | A participant needing more State Plan personal care than the cost maximum should be considered for ILW | DONE | rule WS-R03; `packages/engine/test/worksheet-rules.test.ts` |
 
 ### 3a calculation and services
@@ -91,10 +91,10 @@ has no test named after it.
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
 | WS-M01 | both | Suggested times and frequencies are for an "average or typical participant" — say so next to them | DONE | `AVERAGE_PARTICIPANT_NOTE` in `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
-| WS-M02 | both | Shaded (computed) cells cannot be edited — computed cells are read-only in the view | PLANNED | |
-| WS-M03 | both | Keyboard path through the fields in order (the manual recommends the Tab key) | PLANNED | a11y test |
-| WS-M04 | both | Services are task-oriented and generally authorized on an ongoing basis | PLANNED | note only |
-| WS-M05 | 3a | Upload to the electronic case record only when used for an ILW authorization; one copy when a copy is needed | PLANNED | note on the Worksheet view and print |
+| WS-M02 | both | Shaded (computed) cells cannot be edited — computed cells are read-only in the view | DONE | computed cells are text in `apps/web/src/features/quick-schedule/worksheet/WorksheetTable.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-M03 | both | Keyboard path through the fields in order (the manual recommends the Tab key) | DONE | a11y test; `apps/web/e2e/public/worksheet.spec.ts` |
+| WS-M04 | both | Services are task-oriented and generally authorized on an ongoing basis | DONE | note only; `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-M05 | 3a | Upload to the electronic case record only when used for an ILW authorization; one copy when a copy is needed | DONE | note on the Worksheet view (print: Prompt 6); `apps/web/src/features/quick-schedule/worksheet/Worksheet3aBody.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 
 ### Beyond DSDS's worksheet (the "and more")
 | ID | Form | Item | Status | Refs |
@@ -103,8 +103,8 @@ has no test named after it.
 | WS-X02 | beyond | Reads Fusion's care plan report and builds the schedule | EXISTING | `packages/import/src/report.ts` |
 | WS-X03 | beyond | Month-by-month units for short months, partial months and suspensions | EXISTING | AUTH-05, SCH-12, SCH-14 |
 | WS-X04 | beyond | Caregiver, overlap, 49-hour and nurse-visit-cap checks | EXISTING | CON-04, CON-05, CON-09, CON-10 |
-| WS-X05 | beyond | "Show the math" for every number (formula in words) | PLANNED | |
-| WS-X06 | beyond | Worksheet total reconciled with the schedule's units and Fusion's figure | PLANNED | |
+| WS-X05 | beyond | "Show the math" for every number (formula in words) | DONE | `formulaText`, `costText`; `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
+| WS-X06 | beyond | Worksheet total reconciled with the schedule's units and Fusion's figure | DONE | `apps/web/src/features/quick-schedule/worksheet/WorksheetPanel.tsx`; `apps/web/test/quick/ui-worksheet.test.tsx` |
 | WS-X07 | beyond | Public proof page (/conformance) | PLANNED | |
 | WS-X08 | beyond | Export into DSDS's own workbook with only the input cells filled | PLANNED | Prompt 8, optional |
 | WS-X09 | beyond | Weekly watch for a changed DSDS worksheet | PLANNED | Prompt 9 |

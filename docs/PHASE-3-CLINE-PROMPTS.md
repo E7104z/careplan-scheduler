@@ -103,6 +103,34 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
 - WS-A19 and WS-A20 are DONE here because the engine rules exist; Prompt 5 shows them on the screen.
   `calculate3a` also gives each line's cost in words (`costText`), and the box labels exactly as DSDS prints them.
 
+**Review decisions (Oct 27, 2026, Prompt 5).**
+- **Columns follow the sheet:** Min/Day, Units/Day, Days/Wk, Max Days/Mo, (3a: Min/Wk), Units/Wk, Total Units.
+  The prompt's list put Days/Wk before Units/Day; "DSDS's exact columns and order" wins. DSDS's Essential
+  Transportation row holds the transportation figures (minutes a month ÷ 15, rounded down), so no extra line
+  is needed.
+- **The banner names the form's own edition:** "Follows DSDS-HCBS-3c (10/26)" on the CDS tab, "(07/26)" on the
+  ILW tab, "Follows DSDS-HCBS-3a (07/26)" on the 3a. The 3a prints its labels in capitals, and APP-SPEC 4.1
+  allows no all-caps labels, so the screen shows them in sentence case with acronyms kept ("Passive ROM").
+  `GUIDANCE` keeps DSDS's exact text.
+- **Everything the worksheet adds is memory-only, not just the people fields.** That covers boxes,
+  descriptions, comments, nurse visits, meals and the other lines. It all starts over with each new care plan
+  and on reload. Nothing typed on the worksheet is stored anywhere. The schedule's own values (Min/Day,
+  Days/Wk, service) stay in the care plan and change only through the guard.
+- **The Medically Related box follows the care plan.** An agency personal care plan's household tasks are
+  done under the Personal Care authorization (ENGINE-SPEC Amendment B). For such a plan the box shows checked
+  and can't be changed, and those Homemaker rows say "Under Personal Care". Other services can't have it.
+  A 3a section that isn't the plan's service shows DSDS's rows blank, with a note. Nurse visits, meals, adult
+  day care and chore, and respite unless it is the plan's service, are worksheet-only entries.
+- "See it on the ILW worksheet" is offered only for a plan built by hand: a Fusion plan's service is
+  Fusion's. It changes the service through the guard. The prompt's "ceiling message appears at 642 units" is
+  tested this way: 641 shows no message, 642 shows it, and on the ILW tab (868) it is gone.
+- **The component is `WorksheetPanel.tsx`.** `WorksheetView.tsx` and the prompt's `worksheetView.ts` (the pure
+  mapping) are the same name on Windows and macOS file systems, which ignore case.
+- **`check-bundle` finds `/quick` by chunk name.** The lazy Worksheet chunk shares modules with Quick Schedule,
+  so Rollup keeps them in the page's chunk, and the manifest then keys that chunk by its name
+  ("_QuickSchedule-<hash>.js"). The budget itself is unchanged: `/quick` is 162.8 KB gzip of 180.
+- The worksheet tables scroll inside their own panel on a phone. The page never scrolls sideways (phone e2e).
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:
