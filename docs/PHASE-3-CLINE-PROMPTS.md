@@ -65,6 +65,23 @@ task library, worksheet rules · 4 the 3a services · 5 Worksheet screen · 6 pr
   gap the prompts leave: they add questions 3, 3b and 4–7.
 - Still for Jason: the three-value Excel check above. LibreOffice, not Excel, recalculated both golden files.
 
+**Review decisions (Oct 27, 2026, Prompt 3).**
+- **WS-R01 reads the suggested time as one occurrence.** Below the range is always flagged. Above it is
+  flagged only for a task with a weekly frequency ("1-7 X WK"). Toileting at "5-10 MIN AS NEEDED" may
+  happen six times a day, so 40 minutes a day isn't outside DSDS's suggestion. Its status is VERIFIED
+  basis: the ranges are DSDS's, but how strictly to read them is ours. It runs on the 3a too, so its
+  source names both forms' columns.
+- **Sources name the manual page as it titles itself:** "HCBS Manual 4.00 Appendix 4" (the prompt said
+  "Appendix 4d", which is the workbook's file name). WS-R02 also cites Appendix 3, because on the 3a
+  Description of needs is mandatory only for ILW requests.
+- WS-C16 stays PLANNED until the screen, as Prompts 2 and 4 say (Prompt 3's list says both). WS-H08
+  is marked DONE in Prompt 4, when the rule pack has the 3a's edition to compare as well.
+- The rule copy for WS-R01 to WS-R03 is added now: the existing ruleCopy test requires copy for every
+  catalog rule. The Rules page lists the new "Worksheet" area.
+- The 3a's labels map through seven new aliases (ENGINE-SPEC Amendment C). Its "MED REL HC TASKS" row is a
+  box, not a task, so its `taskCode` is null. `ValidationResult.refs` gains `taskCode`, because a worksheet
+  row has a task but no Quick Schedule task id.
+
 ## What was found when this was written (Oct 26, 2026, `main` at the Merge of PR #4)
 
 Already true, do not rebuild:

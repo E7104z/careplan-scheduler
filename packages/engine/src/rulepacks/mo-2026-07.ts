@@ -53,7 +53,7 @@ function t(taskCode: string, name: string, aliases: string[], programs: ProgramC
 
 const tasks: TaskDef[] = [
   // CDS / ILW (shared names merged with agency model where identical)
-  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device"], ["CDS", "ILW", "APC"]),
+  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device", "Asst Trans Device"], ["CDS", "ILW", "APC"]),
   t("ASSISTANCE_WITH_TOILETING", "Assistance with Toileting", ["Asstance with Toileting", "Asst. with Toileting"], ["CDS", "ILW"]),
   t("BATHING", "Bathing", [], ["CDS", "ILW", "AGENCY_PC"]),
   t("BOWEL_BLADDER_ROUTINE", "Bowel/Bladder Routine", [], ["CDS", "ILW"]),
@@ -63,7 +63,7 @@ const tasks: TaskDef[] = [
   t("CLEAN_FLOORS", "Clean Floors", [], ["CDS", "ILW"]),
   t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
-  t("DRESSING_GROOMING", "Dressing/Grooming", [], ["CDS", "ILW", "AGENCY_PC"]),
+  t("DRESSING_GROOMING", "Dressing/Grooming", ["Dressing/ Grooming"], ["CDS", "ILW", "AGENCY_PC"]),
   t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
@@ -82,8 +82,8 @@ const tasks: TaskDef[] = [
 
   // Basic PC (agency model)
   t("DIETARY", "Dietary", [], ["AGENCY_PC"]),
-  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", [], ["AGENCY_PC"]),
-  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds"], ["AGENCY_PC"]),
+  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", ["Mobility/ Transfer/ Position"], ["AGENCY_PC"]),
+  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds", "Self Admin of Medications"], ["AGENCY_PC"]),
   t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
 
   // Homemaker (agency model). AGENCY_PC also has the household tasks Fusion lists under PC - Agency
@@ -92,10 +92,10 @@ const tasks: TaskDef[] = [
   t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER"]),
   t("LAUNDRY", "Laundry", ["Laundry (Home/Off Site)"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", [], ["HOMEMAKER", "AGENCY_PC"]),
+  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", ["Make Bed/ Change Linens"], ["HOMEMAKER", "AGENCY_PC"]),
   t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER"]),
-  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", [], ["HOMEMAKER"]),
+  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond", "Shopping/ Errands"], ["HOMEMAKER", "AGENCY_PC"]),
+  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", ["Wash Windows/ Blinds"], ["HOMEMAKER"]),
 
   // APC (agency model)
   t("ASEPTIC_DRESSINGS", "Aseptic Dressings", [], ["APC"]),

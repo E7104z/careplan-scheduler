@@ -26,9 +26,9 @@ has no test named after it.
 ### 3c calculation (CDS and ILW tabs)
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
-| WS-C01 | 3c | The 25 tasks with DSDS's exact names, in DSDS's order | EXISTING | rule pack tasks (`packages/engine/src/rulepacks/mo-2026-07.ts`); Prompt 3 adds order and a both-directions test |
-| WS-C02 | 3c | Suggested time shown for every task | PLANNED | |
-| WS-C03 | 3c | Suggested frequency shown for every task | PLANNED | |
+| WS-C01 | 3c | The 25 tasks with DSDS's exact names, in DSDS's order | DONE | rule pack tasks (`packages/engine/src/rulepacks/mo-2026-07.ts`); `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` (both directions, DSDS's order) |
+| WS-C02 | 3c | Suggested time shown for every task | DONE | `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
+| WS-C03 | 3c | Suggested frequency shown for every task | DONE | `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
 | WS-C04 | 3c | Min/Day entry (whole minutes) | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` (every whole minute 1–1,440) |
 | WS-C05 | 3c | Days/Wk entry (1–7) | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` (every 1–7 days) |
 | WS-C06 | 3c | Units/Day = Min/Day ÷ 15, shown as the sheet shows it | DONE | `packages/engine/src/worksheet/calc3c.ts` (exact fraction and the sheet's "0.0" text); `packages/engine/test/worksheet-golden.test.ts` |
@@ -43,7 +43,7 @@ has no test named after it.
 | WS-C15 | 3c | "Based on a 31 day month" footnote | DONE | rule pack `worksheet3c.daysBasis`; `packages/engine/test/worksheet-calc3c.test.ts` |
 | WS-C16 | 3c,3a | Description of needs for each task | PLANNED | memory-only |
 | WS-C17 | 3c,3a | Comments | PLANNED | memory-only |
-| WS-C18 | 3c | Units shown with the task's suggested range check (outside range → INFO) | PLANNED | rule WS-R01 |
+| WS-C18 | 3c | Units shown with the task's suggested range check (outside range → INFO) | DONE | rule WS-R01; `packages/engine/src/worksheet/validate.ts`; `packages/engine/test/worksheet-rules.test.ts` |
 
 ### 3c ILW tab only
 | ID | Form | Item | Status | Refs |
@@ -53,18 +53,18 @@ has no test named after it.
 | WS-I03 | 3c-ilw | Specialized Medical Supplies: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-I04 | 3c-ilw | Specialized Medical Equipment: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
 | WS-I05 | 3c-ilw | Environmental Accessibility Adaptations: units × 100 | DONE | `packages/engine/src/worksheet/calc3c.ts`; `packages/engine/test/worksheet-golden.test.ts` |
-| WS-I06 | 3c-ilw | Description of Needs required for every ILW request (manual 4.00 App 4d) | PLANNED | rule WS-R02 |
+| WS-I06 | 3c-ilw | Description of Needs required for every ILW request (manual 4.00 App 4d) | DONE | rule WS-R02; `packages/engine/test/worksheet-rules.test.ts` |
 | WS-I07 | 3c-ilw | Request goes to the Bureau of Federal Programs; BFP approval required before authorizing ILW | EXISTING | AUTH-12; Prompt 5 shows the note |
-| WS-I08 | 3c | A participant needing more State Plan personal care than the cost maximum should be considered for ILW | PLANNED | rule WS-R03 |
+| WS-I08 | 3c | A participant needing more State Plan personal care than the cost maximum should be considered for ILW | DONE | rule WS-R03; `packages/engine/test/worksheet-rules.test.ts` |
 
 ### 3a calculation and services
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
 | WS-A01 | 3a | RCF/ALF checkbox on Personal Care, Homemaker, Advanced PC, Nurse Visits | PLANNED | |
-| WS-A02 | 3a | Personal Care: Bathing, Dietary, Dressing/Grooming, Mobility/Transfer/Position, Self Admin of Medications, Toileting, with suggested ranges | EXISTING | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges Prompt 3 |
+| WS-A02 | 3a | Personal Care: Bathing, Dietary, Dressing/Grooming, Mobility/Transfer/Position, Self Admin of Medications, Toileting, with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
 | WS-A03 | 3a | "Med Rel HC Tasks" box under Personal Care; the tasks to be done are indicated in the Homemaker section | PLANNED | |
-| WS-A04 | 3a | Homemaker: 11 tasks with suggested ranges | EXISTING | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges Prompt 3 |
-| WS-A05 | 3a | Advanced Personal Care: 7 tasks with suggested ranges | EXISTING | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges Prompt 3 |
+| WS-A04 | 3a | Homemaker: 11 tasks with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
+| WS-A05 | 3a | Advanced Personal Care: 7 tasks with suggested ranges | DONE | task library (`packages/engine/src/rulepacks/mo-2026-07.ts`); ranges `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
 | WS-A06 | 3a | APC with a single task: minutes in 15-minute increments | PLANNED | rule WS-R04 |
 | WS-A07 | 3a | APC: two nurse visits in the first month; none extra when the plan already has ongoing nurse visits | PLANNED | rule WS-R05 (PARTIAL) |
 | WS-A08 | 3a | Authorized Nurse Visits: visits per month; days per month (not per week) when less than weekly; task boxes | PLANNED | |
@@ -90,7 +90,7 @@ has no test named after it.
 ### Manual (both pages)
 | ID | Form | Item | Status | Refs |
 |---|---|---|---|---|
-| WS-M01 | both | Suggested times and frequencies are for an "average or typical participant" — say so next to them | PLANNED | |
+| WS-M01 | both | Suggested times and frequencies are for an "average or typical participant" — say so next to them | DONE | `AVERAGE_PARTICIPANT_NOTE` in `packages/engine/src/worksheet/guidance.ts`; `packages/engine/test/guidance.test.ts` |
 | WS-M02 | both | Shaded (computed) cells cannot be edited — computed cells are read-only in the view | PLANNED | |
 | WS-M03 | both | Keyboard path through the fields in order (the manual recommends the Tab key) | PLANNED | a11y test |
 | WS-M04 | both | Services are task-oriented and generally authorized on an ongoing basis | PLANNED | note only |

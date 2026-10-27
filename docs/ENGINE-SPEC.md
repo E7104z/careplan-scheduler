@@ -350,3 +350,21 @@ Proof: `test/worksheet-golden.test.ts` checks that the golden file was made from
 `docs/fixtures/state/` (SHA-256). It then replays every recorded workbook, both tabs, every whole
 minute 1–1,440 × 1–7 days. Each row's Total Units, the Units/Day and Units/Wk text, the
 transportation units, the total, the cost and the ILW lines must equal what DSDS's workbook gave.
+
+### C.2 Worksheet rules (`src/worksheet/rules.ts`)
+
+`validateWorksheet3c(input, pack)` (`src/worksheet/validate.ts`) runs these on `calculate3c`'s rows and stamps
+each result with the rule-pack version, ordered BLOCK, REVIEW, WARN, INFO, like `validatePlan`. Results carry
+`refs.taskCode`. `validatePlan` and `validateSchedule` never call them (W-7). The suggested times come from
+`src/worksheet/guidance.ts`, a copy of DSDS's suggested time and frequency columns that
+`test/guidance.test.ts` compares with `docs/fixtures/state/worksheet-guidance.json` field for field.
+
+| ID | Rule | Severity | Status | Source |
+|---|---|---|---|---|
+| WS-R01 | A task's Min/Day is below the form's suggested time, or above it for a task with a weekly frequency ("1-7 X WK"; a task done as needed, per transfer or as ordered can happen several times a day) → INFO "Outside DSDS's suggested range". Rows whose suggested time isn't minutes are skipped. | INFO | VERIFIED basis | HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns |
+| WS-R02 | An ILW request (the 3c's ILW tab, or a 3a marked part of an ILW request) with a task that has units and no Description of needs → REVIEW. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests |
+| WS-R03 | The 3c's CDS tab total is above its maximum (641) → INFO "consider the Independent Living Waiver". | INFO | VERIFIED | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) |
+
+The task library (section 3) gains the HCBS-3a's spellings as aliases, so every label on both forms maps
+to exactly one task: "Asst Trans Device", "Dressing/ Grooming", "Mobility/ Transfer/ Position", "Self Admin
+of Medications", "Make Bed/ Change Linens", "Shopping/ Errands", "Wash Windows/ Blinds". No task code changed.

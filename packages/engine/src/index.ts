@@ -23,3 +23,6 @@ export * from "./validate.js";
 export * from "./worksheet/ledger.js";
 export * from "./worksheet/rowMath.js";
 export * from "./worksheet/calc3c.js";
+export * from "./worksheet/guidance.js";
+export * from "./worksheet/rules.js";
+export * from "./worksheet/validate.js";

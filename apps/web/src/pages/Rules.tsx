@@ -3,7 +3,7 @@ import { niceDate } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
 import { SeverityPill } from "../ui/SeverityPill";
 
-const AREAS: RuleArea[] = ["Authorization", "Schedule", "Conflicts and eligibility"];
+const AREAS: RuleArea[] = ["Authorization", "Schedule", "Conflicts and eligibility", "Worksheet"];
 
 const STATUS_LEGEND: { status: RuleStatus; text: string }[] = [
   { status: "VERIFIED", text: "Checked against the cited DHSS source" },

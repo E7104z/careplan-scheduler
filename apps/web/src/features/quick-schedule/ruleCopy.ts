@@ -178,11 +178,28 @@ const CON_COPY: Record<string, RuleCopy> = {
   },
 };
 
+/** The worksheet rules (ENGINE-SPEC Amendment C), in the words Phase 3's prompts give them. */
+const WORKSHEET_COPY: Record<string, RuleCopy> = {
+  "WS-R01/INFO": {
+    title: "Outside DSDS's suggested range",
+    whatToDo: "Describe the need.",
+  },
+  "WS-R02/REVIEW": {
+    title: "Description of needs is missing",
+    whatToDo: "Describe why this task is needed and why this time is right.",
+  },
+  "WS-R03/INFO": {
+    title: "Needs more than the State Plan maximum",
+    whatToDo: "The manual says to consider the Independent Living Waiver.",
+  },
+};
+
 /**
- * APP-SPEC 5.5 copy table, verbatim. Keys are `ID/SEVERITY`; `SCH-08/task` is the task-level
- * variant of SCH-08. AUTH-13, SCH-15 and SCH-17 emit nothing and are intentionally absent.
+ * APP-SPEC 5.5 copy table, verbatim, and the worksheet rules' copy. Keys are `ID/SEVERITY`;
+ * `SCH-08/task` is the task-level variant of SCH-08. AUTH-13, SCH-15 and SCH-17 emit nothing and
+ * are intentionally absent.
  */
-export const RULE_COPY: Record<string, RuleCopy> = { ...AUTH_SCH_COPY, ...CON_COPY };
+export const RULE_COPY: Record<string, RuleCopy> = { ...AUTH_SCH_COPY, ...CON_COPY, ...WORKSHEET_COPY };
 
 /** The copy for a result, or null when the rule/severity has no plain-language entry. */
 export function copyFor(

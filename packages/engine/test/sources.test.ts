@@ -33,15 +33,21 @@ const SOURCES: Record<string, string> = {
   "CON-13": "13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2",
   "CON-16": "Policy 3.05 (04/25)",
   "CON-17": "Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration)",
+  // Amendment C: worksheet rules (src/worksheet/rules.ts).
+  "WS-R01": "HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns",
+  "WS-R02": "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests",
+  "WS-R03": "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026)",
 };
 
 const SRC = fileURLToPath(new URL("../src/", import.meta.url));
 
-// Every rule file, plus the files that implement AUTH-13 (validate.ts) and SCH-15 (time.ts).
+// Every rule file, plus the files that implement AUTH-13 (validate.ts) and SCH-15 (time.ts), and
+// the worksheet rules (Amendment C).
 const FILES = [
   ...readdirSync(`${SRC}rules`).map((name) => `rules/${name}`),
   "validate.ts",
   "calendar/time.ts",
+  "worksheet/rules.ts",
 ];
 
 const BLOCKS = FILES.flatMap((file) => readFileSync(`${SRC}${file}`, "utf8").match(/\/\*\*[\s\S]*?\*\//g) ?? []);
