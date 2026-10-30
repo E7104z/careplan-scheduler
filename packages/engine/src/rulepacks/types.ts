@@ -24,6 +24,47 @@ export interface TaskDef {
 
 export type OverlapRule = "allowed" | "prohibited" | "unknown";
 
+export interface StateParity3cTab {
+  edition: string;
+  ceiling: number;
+}
+
+/** What DSDS's HCBS-3c workbook prints and calculates with (ENGINE-SPEC Amendment C). */
+export interface StateParity3cPack {
+  tabs: { CDS: StateParity3cTab; ILW: StateParity3cTab };
+  unitRateCents: number;
+  unitRateStatus: "PARTIAL";
+  unitRateSource: string;
+  ilwExtras: { fmsRateCents: number; caseManagementCents: number; smsCents: number; smeCents: number; eaaCents: number };
+  ilwExtrasSource: string;
+  ceilingSource: string;
+  daysBasis: 31;
+}
+
+/** Unit rates on the HCBS-3a's rate sheet (Sheet2), in cents per unit (per visit for the nurse). */
+export interface StateParity3aRates {
+  personalCare: number; personalCareRcfAlf: number;
+  apc: number; apcRcfAlf: number;
+  nurseVisit: number; nurseVisitRcfAlf: number;
+  respiteBasic: number; respiteAdvanced: number;
+  adultDayCare: number; homemakerChore: number; homeDeliveredMeals: number;
+}
+
+/** What DSDS's HCBS-3a workbook and its manual page set (ENGINE-SPEC Amendment C). */
+export interface StateParity3aPack {
+  edition: string;
+  rates: StateParity3aRates;
+  ratesStatus: "PARTIAL";
+  ratesSource: string;
+  /** "Max 2/day", printed beside the meals rate on the rate sheet (WS-R09, PARTIAL). */
+  hdmMaxUnitsPerDayNote: number;
+  hdmSource: string;
+  /** Advanced Personal Care with one task: its minutes in steps of this many (WS-R04). */
+  apcSingleTaskStep: number;
+  adultDayCare: { minuteStep: number; maxMinutesPerDay: number; maxDaysPerWeek: number };
+  limitsSource: string;
+}
+
 export interface RulePack {
   id: string;
   effectiveDate: string;
@@ -32,4 +73,6 @@ export interface RulePack {
   tasks: TaskDef[];
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule;
   sources: string[];
+  stateParity3c?: StateParity3cPack;
+  stateParity3a?: StateParity3aPack;
 }

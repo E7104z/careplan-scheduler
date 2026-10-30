@@ -1,6 +1,6 @@
 import type { Severity } from "../types.js";
 
-export type RuleArea = "Authorization" | "Schedule" | "Conflicts and eligibility";
+export type RuleArea = "Authorization" | "Schedule" | "Conflicts and eligibility" | "Worksheet";
 export type RuleStatus = "VERIFIED" | "VERIFIED (CDS)" | "VERIFIED basis" | "PARTIAL" | "APPROVED" | "OPEN";
 
 export interface RuleCatalogEntry {
@@ -9,8 +9,9 @@ export interface RuleCatalogEntry {
 }
 
 /**
- * Every rule of ENGINE-SPEC section 5, in table order. Rule text, status and source are copied
- * character for character; test/catalog.test.ts compares them with the spec.
+ * Every rule of ENGINE-SPEC section 5 and Amendment C (worksheet rules), in table order. Rule
+ * text, status and source are copied character for character; test/catalog.test.ts compares them
+ * with the spec.
  */
 export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   // Authorization (auth.ts)
@@ -162,6 +163,53 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     id: "CON-17", area: "Conflicts and eligibility", severities: ["REVIEW"], status: "PARTIAL",
     rule: "Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW.",
     source: "Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration)",
+  },
+
+  // State parity (src/stateparity/rules.ts; Amendment C).
+  {
+    id: "WS-R01", area: "Worksheet", severities: ["INFO"], status: "VERIFIED basis",
+    rule: "A task's Min/Day is below the form's suggested time, or above it for a task with a weekly frequency (\"1-7 X WK\"; a task done as needed, per transfer or as ordered can happen several times a day) → INFO \"Outside DSDS's suggested range\". Rows whose suggested time isn't minutes are skipped.",
+    source: "HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns",
+  },
+  {
+    id: "WS-R02", area: "Worksheet", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "An ILW request (the 3c's ILW tab, or a 3a marked part of an ILW request) with a task that has units and no Description of needs → REVIEW.",
+    source: "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests",
+  },
+  {
+    id: "WS-R03", area: "Worksheet", severities: ["INFO"], status: "VERIFIED",
+    rule: "The 3c's CDS tab total is above its maximum (641) → INFO \"consider the Independent Living Waiver\".",
+    source: "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026)",
+  },
+  {
+    id: "WS-R04", area: "Worksheet", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "Advanced Personal Care with exactly one task that has units, whose minutes aren't a multiple of 15 → BLOCK.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  },
+  {
+    id: "WS-R05", area: "Worksheet", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "Advanced Personal Care with units, no ongoing nurse visits and fewer than 2 nurse visits in its first month → REVIEW.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care",
+  },
+  {
+    id: "WS-R06", area: "Worksheet", severities: ["WARN"], status: "VERIFIED",
+    rule: "General Health Evaluation checked and the Comments name no month → WARN \"only for semi-annual visits; name the months\".",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits and Comments",
+  },
+  {
+    id: "WS-R07", area: "Worksheet", severities: ["INFO"], status: "VERIFIED",
+    rule: "The nurse task \"Other\" checked → INFO \"needs prior approval and authorization from DSDS or its designee\".",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits",
+  },
+  {
+    id: "WS-R08", area: "Worksheet", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "Adult Day Care or Adult Day Care Waiver minutes not a multiple of 15, above 600 a day, or days above 5 a week → BLOCK.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Adult Day Care",
+  },
+  {
+    id: "WS-R09", area: "Worksheet", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "Home Delivered Meals above 2 a day → REVIEW.",
+    source: "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
   },
 ];
 
