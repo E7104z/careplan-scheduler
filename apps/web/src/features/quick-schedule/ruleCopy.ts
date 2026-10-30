@@ -9,11 +9,11 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
   "AUTH-03/REVIEW": {
     title: "Two state formulas give different units",
     whatToDo:
-      "DHSS's worksheet and the HCBS-3c form round this task differently. Compare with the Fusion care plan.",
+      "DHSS's published formula and the HCBS-3c form round this task differently. Compare with the Fusion care plan.",
   },
   "AUTH-03/INFO": {
     title: "Task units calculated",
-    whatToDo: "Units for this task use the DHSS worksheet formula.",
+    whatToDo: "Units for this task use the DHSS published formula.",
   },
   "AUTH-05/INFO": {
     title: "How monthly units are figured",
@@ -178,11 +178,55 @@ const CON_COPY: Record<string, RuleCopy> = {
   },
 };
 
+const STATE_FORMULA_COPY: Record<string, RuleCopy> = {
+  "WS-R01/INFO": {
+    title: "Outside DSDS's suggested range",
+    whatToDo: "Describe the need.",
+  },
+  "WS-R02/REVIEW": {
+    title: "Description of needs is missing",
+    whatToDo: "Describe why this task is needed and why this time is right.",
+  },
+  "WS-R03/INFO": {
+    title: "Needs more than the State Plan maximum",
+    whatToDo: "The manual says to consider the Independent Living Waiver.",
+  },
+  "WS-R04/BLOCK": {
+    title: "One Advanced Personal Care task needs 15-minute steps",
+    whatToDo: "With one Advanced Personal Care task, enter its minutes in 15-minute steps.",
+  },
+  "WS-R05/REVIEW": {
+    title: "Two nurse visits in Advanced Personal Care's first month",
+    whatToDo: "Plan two nurse visits in the first month, unless the plan has ongoing nurse visits.",
+  },
+  "WS-R06/WARN": {
+    title: "General Health Evaluation needs its months",
+    whatToDo: "Check this only for semi-annual visits and name the months in Comments.",
+  },
+  "WS-R07/INFO": {
+    title: "This nurse task needs prior approval",
+    whatToDo: "Needs prior approval and authorization from DSDS or its designee.",
+  },
+  "WS-R08/BLOCK": {
+    title: "Adult day care is outside its limits",
+    whatToDo: "Enter adult day care in 15-minute steps, at most 10 hours a day and 5 days a week.",
+  },
+  "WS-R09/REVIEW": {
+    title: "More than 2 meals a day",
+    whatToDo: "State guidance sets a maximum of 2 meals a day. Check the number.",
+  },
+};
+
 /**
- * APP-SPEC 5.5 copy table, verbatim. Keys are `ID/SEVERITY`; `SCH-08/task` is the task-level
- * variant of SCH-08. AUTH-13, SCH-15 and SCH-17 emit nothing and are intentionally absent.
+ * APP-SPEC 5.5 copy table, verbatim, and the State formula checks. Keys are `ID/SEVERITY`;
+ * `SCH-08/task` is the task-level variant of SCH-08. AUTH-13, SCH-15 and SCH-17 emit nothing
+ * and are intentionally absent.
  */
-export const RULE_COPY: Record<string, RuleCopy> = { ...AUTH_SCH_COPY, ...CON_COPY };
+export const RULE_COPY: Record<string, RuleCopy> = {
+  ...AUTH_SCH_COPY,
+  ...CON_COPY,
+  ...STATE_FORMULA_COPY,
+};
 
 /** The copy for a result, or null when the rule/severity has no plain-language entry. */
 export function copyFor(

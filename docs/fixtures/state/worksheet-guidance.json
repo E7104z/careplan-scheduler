@@ -1,0 +1,1125 @@
+{
+ "meta": {
+  "generated": "2026-10-27",
+  "3c": {
+   "sourceFile": "4.00appendix4da-3cform.xlsx",
+   "sourceSha256": "701aaa1287cbf8a0612e7ac99c3ddc78ff348167fac637616adc46700cb5d36e"
+  },
+  "3a": {
+   "sourceFile": "4.00appendix3da3aform.xlsx",
+   "sourceSha256": "b32c35e555b1ec493c1745b1ca8f5fd90237a3cd6c50ddf149b11b24629de0b8"
+  }
+ },
+ "3c": {
+  "CDS": {
+   "edition": "DSDS-HCBS-3c (10/26)",
+   "editionCell": "Q101",
+   "tasks": [
+    {
+     "row": 11,
+     "raw": "Asst. Transfer Device",
+     "label": "Asst. Transfer Device",
+     "time": "15 MIN",
+     "freq": "PER TRANSFER",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 14,
+     "raw": "Asst. with Toileting",
+     "label": "Asst. with Toileting",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 17,
+     "raw": "Bathing",
+     "label": "Bathing",
+     "time": "30-45 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 20,
+     "raw": "Bowel/Bladder Routine",
+     "label": "Bowel/Bladder Routine",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 23,
+     "raw": "Catheter Hygiene",
+     "label": "Catheter Hygiene",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 26,
+     "raw": "Change Linens",
+     "label": "Change Linens",
+     "time": "10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 10,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 29,
+     "raw": "Clean Bath",
+     "label": "Clean Bath",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 32,
+     "raw": "Clean Floors",
+     "label": "Clean Floors",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 35,
+     "raw": "Clean Kitchen",
+     "label": "Clean Kitchen",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 38,
+     "raw": "Clean/Maintain Equipment",
+     "label": "Clean/Maintain Equipment",
+     "time": "AS NECESSARY",
+     "freq": "AS NECESSARY",
+     "minLow": null,
+     "minHigh": null,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 41,
+     "raw": "Dressing/Grooming",
+     "label": "Dressing/Grooming",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 44,
+     "raw": "Essential Correspondence",
+     "label": "Essential Correspondence",
+     "time": "30 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 30,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 47,
+     "raw": "Laundry (Home)",
+     "label": "Laundry (Home)",
+     "time": "30-60 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 60,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 50,
+     "raw": "Laundry (Off Site)",
+     "label": "Laundry (Off Site)",
+     "time": "150 MIN",
+     "freq": "1 X WK",
+     "minLow": 150,
+     "minHigh": 150,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 53,
+     "raw": "Make Bed",
+     "label": "Make Bed",
+     "time": "5 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 5,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 56,
+     "raw": "Meal Prep/Eating",
+     "label": "Meal Prep/Eating",
+     "time": "10-60 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 10,
+     "minHigh": 60,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 59,
+     "raw": "Medications",
+     "label": "Medications",
+     "time": "3-5 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 3,
+     "minHigh": 5,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 62,
+     "raw": "Mobility/Transfer",
+     "label": "Mobility/Transfer",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 65,
+     "raw": "Ostomy Hygiene",
+     "label": "Ostomy Hygiene",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 68,
+     "raw": "Passive ROM",
+     "label": "Passive ROM",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 71,
+     "raw": "Tidy and Dust",
+     "label": "Tidy and Dust",
+     "time": "10-15 MIN",
+     "freq": "1 X WK",
+     "minLow": 10,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 74,
+     "raw": "Trash",
+     "label": "Trash",
+     "time": "5 MIN",
+     "freq": "1 X WK",
+     "minLow": 5,
+     "minHigh": 5,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 77,
+     "raw": "Treatments",
+     "label": "Treatments",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 80,
+     "raw": "Turning/Positioning",
+     "label": "Turning/Positioning",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 83,
+     "raw": "Wash Dishes",
+     "label": "Wash Dishes",
+     "time": "10-30 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 10,
+     "minHigh": 30,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 86,
+     "raw": "ESSENTIAL TRANSPORTATION",
+     "label": "ESSENTIAL TRANSPORTATION",
+     "time": "60-120 MIN",
+     "freq": "1 - 2 X WK",
+     "minLow": 60,
+     "minHigh": 120,
+     "perWeekLow": 1,
+     "perWeekHigh": 2
+    }
+   ]
+  },
+  "ILW": {
+   "edition": "DSDS-HCBS-3c (07/26)",
+   "editionCell": "Q107",
+   "tasks": [
+    {
+     "row": 11,
+     "raw": "Asst. Transfer Device",
+     "label": "Asst. Transfer Device",
+     "time": "15 MIN",
+     "freq": "PER TRANSFER",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 14,
+     "raw": "Asst. with Toileting",
+     "label": "Asst. with Toileting",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 17,
+     "raw": "Bathing",
+     "label": "Bathing",
+     "time": "30-45 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 20,
+     "raw": "Bowel/Bladder Routine",
+     "label": "Bowel/Bladder Routine",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 23,
+     "raw": "Catheter Hygiene",
+     "label": "Catheter Hygiene",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 26,
+     "raw": "Change Linens",
+     "label": "Change Linens",
+     "time": "10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 10,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 29,
+     "raw": "Clean Bath",
+     "label": "Clean Bath",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 32,
+     "raw": "Clean Floors",
+     "label": "Clean Floors",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 35,
+     "raw": "Clean Kitchen",
+     "label": "Clean Kitchen",
+     "time": "30-45 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 45,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 38,
+     "raw": "Clean/Maintain Equipment",
+     "label": "Clean/Maintain Equipment",
+     "time": "AS NECESSARY",
+     "freq": "AS NECESSARY",
+     "minLow": null,
+     "minHigh": null,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 41,
+     "raw": "Dressing/Grooming",
+     "label": "Dressing/Grooming",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 44,
+     "raw": "Essential Correspondence",
+     "label": "Essential Correspondence",
+     "time": "30 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 30,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 47,
+     "raw": "Laundry (Home)",
+     "label": "Laundry (Home)",
+     "time": "30-60 MIN",
+     "freq": "1 X WK",
+     "minLow": 30,
+     "minHigh": 60,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 50,
+     "raw": "Laundry (Off Site)",
+     "label": "Laundry (Off Site)",
+     "time": "150 MIN",
+     "freq": "1 X WK",
+     "minLow": 150,
+     "minHigh": 150,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 53,
+     "raw": "Make Bed",
+     "label": "Make Bed",
+     "time": "5 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 5,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 56,
+     "raw": "Meal Prep/Eating",
+     "label": "Meal Prep/Eating",
+     "time": "10-60 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 10,
+     "minHigh": 60,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 59,
+     "raw": "Medications",
+     "label": "Medications",
+     "time": "3-5 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 3,
+     "minHigh": 5,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 62,
+     "raw": "Mobility/Transfer",
+     "label": "Mobility/Transfer",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 65,
+     "raw": "Ostomy Hygiene",
+     "label": "Ostomy Hygiene",
+     "time": "15 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 68,
+     "raw": "Passive ROM",
+     "label": "Passive ROM",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 71,
+     "raw": "Tidy and Dust",
+     "label": "Tidy and Dust",
+     "time": "10-15 MIN",
+     "freq": "1 X WK",
+     "minLow": 10,
+     "minHigh": 15,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 74,
+     "raw": "Trash",
+     "label": "Trash",
+     "time": "5 MIN",
+     "freq": "1 X WK",
+     "minLow": 5,
+     "minHigh": 5,
+     "perWeekLow": 1,
+     "perWeekHigh": 1
+    },
+    {
+     "row": 77,
+     "raw": "Treatments",
+     "label": "Treatments",
+     "time": "15 MIN",
+     "freq": "AS ORDERED",
+     "minLow": 15,
+     "minHigh": 15,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 80,
+     "raw": "Turning/Positioning",
+     "label": "Turning/Positioning",
+     "time": "5-10 MIN",
+     "freq": "AS NEEDED",
+     "minLow": 5,
+     "minHigh": 10,
+     "perWeekLow": null,
+     "perWeekHigh": null
+    },
+    {
+     "row": 83,
+     "raw": "Wash Dishes",
+     "label": "Wash Dishes",
+     "time": "10-30 MIN",
+     "freq": "1-7 X WK",
+     "minLow": 10,
+     "minHigh": 30,
+     "perWeekLow": 1,
+     "perWeekHigh": 7
+    },
+    {
+     "row": 86,
+     "raw": "ESSENTIAL TRANSPORTATION",
+     "label": "ESSENTIAL TRANSPORTATION",
+     "time": "60-120 MIN",
+     "freq": "1 - 2 X WK",
+     "minLow": 60,
+     "minHigh": 120,
+     "perWeekLow": 1,
+     "perWeekHigh": 2
+    }
+   ]
+  }
+ },
+ "3a": {
+  "edition": "DSDS-HCBS-3a (07/26)",
+  "editionCell": "O129",
+  "footnote": "*These calculations are based on a 31 day month.",
+  "sections": [
+   {
+    "name": "PERSONAL CARE",
+    "rows": [
+     {
+      "row": 11,
+      "raw": "BATHING",
+      "label": "BATHING",
+      "time": "30-45 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 30,
+      "minHigh": 45,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 14,
+      "raw": "DIETARY",
+      "label": "DIETARY",
+      "time": "10-60 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 10,
+      "minHigh": 60,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 17,
+      "raw": "DRESSING/ GROOMING",
+      "label": "DRESSING/ GROOMING",
+      "time": "15 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 20,
+      "raw": "MOBILITY/ TRANSFER/\nPOSITION",
+      "label": "MOBILITY/ TRANSFER/ POSITION",
+      "time": "5-10 MIN",
+      "freq": "AS NEEDED",
+      "minLow": 5,
+      "minHigh": 10,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 23,
+      "raw": "SELF ADMIN OF MEDICATIONS",
+      "label": "SELF ADMIN OF MEDICATIONS",
+      "time": "3-5 MIN",
+      "freq": "AS NEEDED",
+      "minLow": 3,
+      "minHigh": 5,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 26,
+      "raw": "TOILETING",
+      "label": "TOILETING",
+      "time": "5-10 MIN",
+      "freq": "AS NEEDED",
+      "minLow": 5,
+      "minHigh": 10,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 29,
+      "raw": "MED REL HC TASKS",
+      "label": "MED REL HC TASKS",
+      "time": "USE HC SECTION FOR TASKS/TIMES",
+      "freq": null,
+      "minLow": null,
+      "minHigh": null,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     }
+    ]
+   },
+   {
+    "name": "HOMEMAKER",
+    "rows": [
+     {
+      "row": 33,
+      "raw": "CLEAN BATH",
+      "label": "CLEAN BATH",
+      "time": "30-45 MIN",
+      "freq": "1 X WK",
+      "minLow": 30,
+      "minHigh": 45,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 36,
+      "raw": "CLEAN KITCHEN",
+      "label": "CLEAN KITCHEN",
+      "time": "30-45 MIN",
+      "freq": "1 X WK",
+      "minLow": 30,
+      "minHigh": 45,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 39,
+      "raw": "CLEAN LIVING AREA",
+      "label": "CLEAN LIVING AREA",
+      "time": "10-45 MIN",
+      "freq": "1 X WK",
+      "minLow": 10,
+      "minHigh": 45,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 42,
+      "raw": "ESSENTIAL CORRESPOND",
+      "label": "ESSENTIAL CORRESPOND",
+      "time": "30 MIN",
+      "freq": "1 X WK",
+      "minLow": 30,
+      "minHigh": 30,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 45,
+      "raw": "IRON/MEND",
+      "label": "IRON/MEND",
+      "time": "10-15 MIN",
+      "freq": "1 X WK",
+      "minLow": 10,
+      "minHigh": 15,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 48,
+      "raw": "LAUNDRY \n(HOME/OFF SITE)",
+      "label": "LAUNDRY (HOME/OFF SITE)",
+      "time": "30-150 MIN",
+      "freq": "1 X WK",
+      "minLow": 30,
+      "minHigh": 150,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 51,
+      "raw": "MAKE BED/\nCHANGE LINENS",
+      "label": "MAKE BED/ CHANGE LINENS",
+      "time": "10 MIN",
+      "freq": "AS NEEDED",
+      "minLow": 10,
+      "minHigh": 10,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 54,
+      "raw": "MEALS/DISHES",
+      "label": "MEALS/DISHES",
+      "time": "10-60 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 10,
+      "minHigh": 60,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 57,
+      "raw": "SHOPPING/ ERRANDS",
+      "label": "SHOPPING/ ERRANDS",
+      "time": "60-120 min",
+      "freq": "1-2 X WK",
+      "minLow": 60,
+      "minHigh": 120,
+      "perWeekLow": 1,
+      "perWeekHigh": 2
+     },
+     {
+      "row": 60,
+      "raw": "TRASH",
+      "label": "TRASH",
+      "time": "5 MIN",
+      "freq": "1 X WK",
+      "minLow": 5,
+      "minHigh": 5,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     },
+     {
+      "row": 63,
+      "raw": "WASH WINDOWS/\nBLINDS",
+      "label": "WASH WINDOWS/ BLINDS",
+      "time": "10-15 MIN",
+      "freq": "1 X WK",
+      "minLow": 10,
+      "minHigh": 15,
+      "perWeekLow": 1,
+      "perWeekHigh": 1
+     }
+    ]
+   },
+   {
+    "name": "ADVANCED PERSONAL CARE",
+    "rows": [
+     {
+      "row": 69,
+      "raw": "ASEPTIC DRESSINGS",
+      "label": "ASEPTIC DRESSINGS",
+      "time": "15 MIN",
+      "freq": "AS ORDERED",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 72,
+      "raw": "ASST TRANS DEVICE",
+      "label": "ASST TRANS DEVICE",
+      "time": "15 MIN",
+      "freq": "PER TRANSFER",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 75,
+      "raw": "BOWEL PROGRAM",
+      "label": "BOWEL PROGRAM",
+      "time": "15 MIN",
+      "freq": "AS ORDERED",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 78,
+      "raw": "CATHETER HYGIENE",
+      "label": "CATHETER HYGIENE",
+      "time": "15 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 81,
+      "raw": "NON-INJECTABLE MEDS",
+      "label": "NON-INJECTABLE MEDS",
+      "time": "15 MIN",
+      "freq": "AS ORDERED",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     },
+     {
+      "row": 84,
+      "raw": "OSTOMY HYGIENE",
+      "label": "OSTOMY HYGIENE",
+      "time": "15 MIN",
+      "freq": "1-7 X WK",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": 1,
+      "perWeekHigh": 7
+     },
+     {
+      "row": 87,
+      "raw": "PASSIVE ROM",
+      "label": "PASSIVE ROM",
+      "time": "15 MIN",
+      "freq": "AS ORDERED",
+      "minLow": 15,
+      "minHigh": 15,
+      "perWeekLow": null,
+      "perWeekHigh": null
+     }
+    ]
+   }
+  ],
+  "services": [
+   {
+    "row": 96,
+    "label": "AUTHORIZED NURSE VISITS"
+   },
+   {
+    "row": 100,
+    "label": "BASIC"
+   },
+   {
+    "row": 103,
+    "label": "ADVANCED"
+   },
+   {
+    "row": 106,
+    "label": "HOME DELIVERED MEALS"
+   },
+   {
+    "row": 109,
+    "label": "ADULT DAY CARE (AGES 63 AND OLDER)"
+   },
+   {
+    "row": 112,
+    "label": "ADULT DAY CARE WAIVER (AGES 18-62)"
+   },
+   {
+    "row": 119,
+    "label": "CHORE SERVICES"
+   }
+  ],
+  "checkboxes": [
+   {
+    "cell": "K5",
+    "linkedCell": null,
+    "label": null
+   },
+   {
+    "cell": "D9",
+    "linkedCell": "Sheet2!H9",
+    "label": null
+   },
+   {
+    "cell": "D31",
+    "linkedCell": "Sheet2!L2",
+    "label": null
+   },
+   {
+    "cell": "D67",
+    "linkedCell": "Sheet2!H10",
+    "label": null
+   },
+   {
+    "cell": "D91",
+    "linkedCell": "Sheet2!H11",
+    "label": null
+   },
+   {
+    "cell": "A92",
+    "linkedCell": null,
+    "label": "FILL INSULIN SYRINGES"
+   },
+   {
+    "cell": "C92",
+    "linkedCell": null,
+    "label": "MONITOR SKIN COND"
+   },
+   {
+    "cell": "F92",
+    "linkedCell": null,
+    "label": "MED SETUP"
+   },
+   {
+    "cell": "A93",
+    "linkedCell": null,
+    "label": "EVAL APC PLAN"
+   },
+   {
+    "cell": "C93",
+    "linkedCell": null,
+    "label": "TRAIN APC"
+   },
+   {
+    "cell": "F93",
+    "linkedCell": null,
+    "label": "NAIL CARE"
+   },
+   {
+    "cell": "A94",
+    "linkedCell": null,
+    "label": "OTHER (SEE BELOW)"
+   },
+   {
+    "cell": "C94",
+    "linkedCell": null,
+    "label": "GENERAL HEALTH EVALUATION"
+   },
+   {
+    "cell": "A115",
+    "linkedCell": null,
+    "label": "CLEAN CLOSETS/BASEMENT & ATTICS"
+   },
+   {
+    "cell": "E115",
+    "linkedCell": null,
+    "label": "AIR MATTRESSES/BEDDING"
+   },
+   {
+    "cell": "A116",
+    "linkedCell": null,
+    "label": "PROVIDE RODENT CONTROL WITHIN HOME USING OTC"
+   },
+   {
+    "cell": "E116",
+    "linkedCell": null,
+    "label": "WASH WALLS AND WOODWORK"
+   },
+   {
+    "cell": "A117",
+    "linkedCell": null,
+    "label": "SPRAY FOR INSECTS WITHIN HOME USING OTC"
+   },
+   {
+    "cell": "E117",
+    "linkedCell": null,
+    "label": "SHAMPOO RUGS"
+   }
+  ],
+  "rateSheet": {
+   "rows": [
+    {
+     "row": 3,
+     "service": "Basic Respite",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 4,
+     "service": "Basic",
+     "note": "Block (9-12)",
+     "rate": 81.07,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 5,
+     "service": "Advanced",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 6,
+     "service": "Advanced (block)",
+     "note": "6-8",
+     "rate": 106.66,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 7,
+     "service": "Advanced (daily)",
+     "note": "17-24",
+     "rate": 267.79,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 8,
+     "service": "Nurse respite",
+     "note": "4hr",
+     "rate": 5.97,
+     "fill": "theme 3 tint 0.4"
+    },
+    {
+     "row": 9,
+     "service": "Personal Care",
+     "note": "RCF/ALF",
+     "rate": "=IF(H9=TRUE,7.66,IF(H9=FALSE,8.14))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 10,
+     "service": "APC",
+     "note": "RCF/ALF",
+     "rate": "=IF(H10=TRUE,7.68,IF(H10=FALSE,8.17))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 11,
+     "service": "RN",
+     "note": "RCF/ALF",
+     "rate": "=IF(H11=TRUE,57.18,IF(H11=FALSE,60.99))",
+     "fill": "FFC000"
+    },
+    {
+     "row": 12,
+     "service": "ADC",
+     "note": null,
+     "rate": 3.32,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 13,
+     "service": "HC/Chore",
+     "note": null,
+     "rate": 8.14,
+     "fill": "FFFF00"
+    },
+    {
+     "row": 14,
+     "service": "DM",
+     "note": "Max 2/day",
+     "rate": 10.99,
+     "fill": "FFFF00"
+    }
+   ],
+   "legend": [
+    {
+     "fill": "FFFF00",
+     "meaning": "Change these rates for increases"
+    },
+    {
+     "fill": "FFC000",
+     "meaning": "Orange=formula (change rates)"
+    },
+    {
+     "fill": "theme 3 tint 0.4",
+     "meaning": "retired"
+    }
+   ]
+  }
+ }
+}

@@ -3,7 +3,14 @@ import { niceDate } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
 import { SeverityPill } from "../ui/SeverityPill";
 
-const AREAS: RuleArea[] = ["Authorization", "Schedule", "Conflicts and eligibility"];
+const AREAS: RuleArea[] = ["Authorization", "Schedule", "Conflicts and eligibility", "Worksheet"];
+
+const AREA_LABELS: Record<RuleArea, string> = {
+  Authorization: "Authorization",
+  Schedule: "Schedule",
+  "Conflicts and eligibility": "Conflicts and eligibility",
+  Worksheet: "State formula checks",
+};
 
 const STATUS_LEGEND: { status: RuleStatus; text: string }[] = [
   { status: "VERIFIED", text: "Checked against the cited DHSS source" },
@@ -55,7 +62,7 @@ export function Rules() {
       {AREAS.map((area, index) => (
         <section key={area} className="mt-10">
           <h2 id={`rules-area-${index}`} className="text-[17px] font-bold text-ink">
-            {area}
+            {AREA_LABELS[area]}
           </h2>
           {/* On a phone the table scrolls sideways; with no links inside, the panel takes focus. */}
           <div

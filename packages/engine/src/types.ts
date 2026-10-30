@@ -77,5 +77,7 @@ export interface ValidationResult {
   refs: {
     taskId?: string; visitId?: string; date?: string; month?: string; serviceAuthId?: string;
     participantId?: string;
+    taskCode?: string;            // worksheet rules (Amendment C): the row's task
+    line?: string;                // worksheet rules: a 3a line with no task (adult day care, meals…)
   };
 }

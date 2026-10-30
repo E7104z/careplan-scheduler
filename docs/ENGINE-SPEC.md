@@ -306,3 +306,29 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-40 | "Essential Correspond" | `findTaskByName` → ESSENTIAL_CORRESPONDENCE |
 
 TC-19 (app-level), TC-23 (amendment), TC-34 (GHE) and TC-36 (exports) belong to later phases.
+
+## Amendment C (Oct 27, 2026, Phase 3): Worksheet rules
+
+### C.2 Worksheet rules (`src/stateparity/rules.ts`)
+
+`validateStateParity3c(input, pack)` (`src/stateparity/validate.ts`) runs these on `calculate3c`'s rows and stamps
+each result with the rule-pack version, ordered BLOCK, REVIEW, WARN, INFO, like `validatePlan`. Results carry
+`refs.taskCode`. `validatePlan` and `validateSchedule` never call them (W-7). The suggested times come from
+`src/stateparity/guidance.ts`, a copy of DSDS's suggested time and frequency columns that
+`test/guidance.test.ts` compares with `docs/fixtures/state/worksheet-guidance.json` field for field.
+
+| ID | Rule | Severity | Status | Source |
+|---|---|---|---|---|
+| WS-R01 | A task's Min/Day is below the form's suggested time, or above it for a task with a weekly frequency ("1-7 X WK"; a task done as needed, per transfer or as ordered can happen several times a day) → INFO "Outside DSDS's suggested range". Rows whose suggested time isn't minutes are skipped. | INFO | VERIFIED basis | HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns |
+| WS-R02 | An ILW request (the 3c's ILW tab, or a 3a marked part of an ILW request) with a task that has units and no Description of needs → REVIEW. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests |
+| WS-R03 | The 3c's CDS tab total is above its maximum (641) → INFO "consider the Independent Living Waiver". | INFO | VERIFIED | HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) |
+| WS-R04 | Advanced Personal Care with exactly one task that has units, whose minutes aren't a multiple of 15 → BLOCK. | BLOCK | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care |
+| WS-R05 | Advanced Personal Care with units, no ongoing nurse visits and fewer than 2 nurse visits in its first month → REVIEW. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care |
+| WS-R06 | General Health Evaluation checked and the Comments name no month → WARN "only for semi-annual visits; name the months". | WARN | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits and Comments |
+| WS-R07 | The nurse task "Other" checked → INFO "needs prior approval and authorization from DSDS or its designee". | INFO | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Authorized Nurse Visits |
+| WS-R08 | Adult Day Care or Adult Day Care Waiver minutes not a multiple of 15, above 600 a day, or days above 5 a week → BLOCK. | BLOCK | VERIFIED | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Adult Day Care |
+| WS-R09 | Home Delivered Meals above 2 a day → REVIEW. | REVIEW | PARTIAL | HCBS-3a (07/26) rate sheet cell G14: "Max 2/day" |
+
+`validateStateParity3a(input, pack)` runs WS-R01, WS-R02 (only when the 3a is part of an ILW request), WS-R04
+to WS-R09, and AUTH-09's combined respite limit. It calls `ruleAUTH09Ceiling` on the two respite lines for
+"a 31-day month" rather than copying the rule. Results on a 3a line with no task carry `refs.line`.

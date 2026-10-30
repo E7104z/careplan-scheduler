@@ -5,11 +5,13 @@ import { RULE_CATALOG, ruleById, type RuleArea, type Severity } from "../src/ind
 
 const SPEC = readFileSync(fileURLToPath(new URL("../../../docs/ENGINE-SPEC.md", import.meta.url)), "utf8");
 const RULES_DIR = fileURLToPath(new URL("../src/rules/", import.meta.url));
+const STATEPARITY_RULES = fileURLToPath(new URL("../src/stateparity/rules.ts", import.meta.url));
 
 const AREAS: Record<string, RuleArea> = {
   Authorization: "Authorization",
   Schedule: "Schedule",
   "Conflicts and eligibility": "Conflicts and eligibility",
+  "C.2 Worksheet rules": "Worksheet",
 };
 
 const SEVERITIES: readonly Severity[] = ["BLOCK", "WARN", "INFO", "REVIEW"];
@@ -23,19 +25,29 @@ interface SpecRow {
   source: string;
 }
 
-/** Rows of the three tables under "## 5. Rules", each tagged with its "###" area heading. */
+/** The spec's text from `heading` up to the next heading at its level or above. */
+function sectionOf(heading: string): string {
+  const start = SPEC.indexOf(`\n${heading}`);
+  if (start < 0) throw new Error(`ENGINE-SPEC has no "${heading}"`);
+  const level = heading.indexOf(" ");
+  const ends = [...SPEC.slice(start + 1).matchAll(/\n(#{2,6}) /g)].filter((match) => match[1]!.length <= level);
+  return ends.length === 0 ? SPEC.slice(start) : SPEC.slice(start, start + 1 + ends[0]!.index);
+}
+
+/**
+ * Rows of the three tables under "## 5. Rules" and of Amendment C's worksheet rules, each tagged
+ * with its "###" area heading.
+ */
 function specRows(): SpecRow[] {
-  const start = SPEC.indexOf("## 5. Rules");
-  const end = SPEC.indexOf("\n## ", start + 1);
   const rows: SpecRow[] = [];
   let area: RuleArea | undefined;
-  for (const line of SPEC.slice(start, end).split(/\r?\n/)) {
+  for (const line of `${sectionOf("## 5. Rules")}\n${sectionOf("### C.2 Worksheet rules")}`.split(/\r?\n/)) {
     const heading = /^### (.+?) \(/.exec(line);
     if (heading) {
       area = AREAS[heading[1]!];
       continue;
     }
-    if (!/^\| [A-Z]+-\d+ \|/.test(line)) continue;
+    if (!/^\| [A-Z]+-[A-Z]?\d+ \|/.test(line)) continue;
     const [id, rule, severity, status, source] = line.split("|").slice(1, -1).map((cell) => cell.trim());
     if (!area) throw new Error(`Rule row before an area heading: ${line}`);
     rows.push({ id: id!, area, rule: rule!, severity: severity!, status: status!, source: source! });
@@ -59,9 +71,9 @@ function severitiesFrom(cell: string): Severity[] {
 const ROWS = specRows();
 
 describe("RULE_CATALOG matches ENGINE-SPEC section 5", () => {
-  it("reads all three rule tables from the spec", () => {
+  it("reads all four rule tables from the spec", () => {
     expect(new Set(ROWS.map((row) => row.area))).toEqual(
-      new Set<RuleArea>(["Authorization", "Schedule", "Conflicts and eligibility"]),
+      new Set<RuleArea>(["Authorization", "Schedule", "Conflicts and eligibility", "Worksheet"]),
     );
     expect(ROWS.length).toBeGreaterThan(0);
   });
@@ -95,10 +107,11 @@ describe("RULE_CATALOG matches ENGINE-SPEC section 5", () => {
     expect(ruleById("SCH-99")).toBeUndefined();
   });
 
-  it("lists every ruleId literal used in src/rules", () => {
+  it("lists every ruleId literal used in src/rules and src/stateparity/rules.ts", () => {
     const ids = new Set(RULE_CATALOG.map((entry) => entry.id));
-    const used = readdirSync(RULES_DIR).flatMap((file) =>
-      [...readFileSync(`${RULES_DIR}${file}`, "utf8").matchAll(/ruleId: "([^"]+)"/g)].map((match) => match[1]!),
+    const files = [...readdirSync(RULES_DIR).map((file) => `${RULES_DIR}${file}`), STATEPARITY_RULES];
+    const used = files.flatMap((file) =>
+      [...readFileSync(file, "utf8").matchAll(/ruleId: "([^"]+)"/g)].map((match) => match[1]!),
     );
     expect(used.length).toBeGreaterThan(0);
     expect(used.filter((id) => !ids.has(id))).toEqual([]);

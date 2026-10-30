@@ -20,6 +20,12 @@ describe("Quick Schedule rule copy", () => {
     expect(RULE_COPY["SCH-17/BLOCK"]).toBeUndefined();
   });
 
+  it("never says \"worksheet\" or mentions cost or rates in user-facing copy", () => {
+    for (const [key, copy] of Object.entries(RULE_COPY)) {
+      expect(`${copy.title} ${copy.whatToDo}`, key).not.toMatch(/worksheet|\bcosts?\b|\brates?\b|\$/i);
+    }
+  });
+
   it("uses the task-level copy for SCH-08 with a taskId", () => {
     expect(copyFor("SCH-08", "BLOCK", { taskId: "t1" })).toBe(RULE_COPY["SCH-08/task"]);
     expect(copyFor("SCH-08", "BLOCK")).toBe(RULE_COPY["SCH-08/BLOCK"]);

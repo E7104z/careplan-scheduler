@@ -53,7 +53,7 @@ function t(taskCode: string, name: string, aliases: string[], programs: ProgramC
 
 const tasks: TaskDef[] = [
   // CDS / ILW (shared names merged with agency model where identical)
-  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device"], ["CDS", "ILW", "APC"]),
+  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device", "Asst Trans Device"], ["CDS", "ILW", "APC"]),
   t("ASSISTANCE_WITH_TOILETING", "Assistance with Toileting", ["Asstance with Toileting", "Asst. with Toileting"], ["CDS", "ILW"]),
   t("BATHING", "Bathing", [], ["CDS", "ILW", "AGENCY_PC"]),
   t("BOWEL_BLADDER_ROUTINE", "Bowel/Bladder Routine", [], ["CDS", "ILW"]),
@@ -63,7 +63,7 @@ const tasks: TaskDef[] = [
   t("CLEAN_FLOORS", "Clean Floors", [], ["CDS", "ILW"]),
   t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
-  t("DRESSING_GROOMING", "Dressing/Grooming", [], ["CDS", "ILW", "AGENCY_PC"]),
+  t("DRESSING_GROOMING", "Dressing/Grooming", ["Dressing/ Grooming"], ["CDS", "ILW", "AGENCY_PC"]),
   t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
@@ -82,8 +82,8 @@ const tasks: TaskDef[] = [
 
   // Basic PC (agency model)
   t("DIETARY", "Dietary", [], ["AGENCY_PC"]),
-  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", [], ["AGENCY_PC"]),
-  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds"], ["AGENCY_PC"]),
+  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", ["Mobility/ Transfer/ Position"], ["AGENCY_PC"]),
+  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds", "Self Admin of Medications"], ["AGENCY_PC"]),
   t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
 
   // Homemaker (agency model). AGENCY_PC also has the household tasks Fusion lists under PC - Agency
@@ -92,10 +92,10 @@ const tasks: TaskDef[] = [
   t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER"]),
   t("LAUNDRY", "Laundry", ["Laundry (Home/Off Site)"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", [], ["HOMEMAKER", "AGENCY_PC"]),
+  t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", ["Make Bed/ Change Linens"], ["HOMEMAKER", "AGENCY_PC"]),
   t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER"]),
-  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", [], ["HOMEMAKER"]),
+  t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond", "Shopping/ Errands"], ["HOMEMAKER", "AGENCY_PC"]),
+  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", ["Wash Windows/ Blinds"], ["HOMEMAKER"]),
 
   // APC (agency model)
   t("ASEPTIC_DRESSINGS", "Aseptic Dressings", [], ["APC"]),
@@ -114,6 +114,36 @@ export const MO_2026_07: RulePack = {
   services,
   tasks,
   sources: [SRC_APPENDIX, SRC_POLICY, SRC_HCBS],
+  stateParity3c: {
+    tabs: {
+      CDS: { edition: "DSDS-HCBS-3c (10/26)", ceiling: 641 },
+      ILW: { edition: "DSDS-HCBS-3c (07/26)", ceiling: 868 },
+    },
+    unitRateCents: 523,
+    unitRateStatus: "PARTIAL",
+    unitRateSource: "HCBS-3c (10/26) cell O93 (=L93*5.23, both tabs); not yet checked against 3.00 Appendix 1",
+    ilwExtras: { fmsRateCents: 15789, caseManagementCents: 45809, smsCents: 10000, smeCents: 10000, eaaCents: 10000 },
+    ilwExtrasSource: "HCBS-3c ILW tab (07/26) cells Q96-Q100",
+    ceilingSource: "HCBS-3c conditional format on cell L93: red above 641 (CDS tab), above 868 (ILW tab)",
+    daysBasis: 31,
+  },
+  stateParity3a: {
+    edition: "DSDS-HCBS-3a (07/26)",
+    rates: {
+      personalCare: 814, personalCareRcfAlf: 766,
+      apc: 817, apcRcfAlf: 768,
+      nurseVisit: 6099, nurseVisitRcfAlf: 5718,
+      respiteBasic: 814, respiteAdvanced: 814,
+      adultDayCare: 332, homemakerChore: 814, homeDeliveredMeals: 1099,
+    },
+    ratesStatus: "PARTIAL",
+    ratesSource: "Sheet2 of DSDS-HCBS-3a (07/26); not yet checked against 3.00 Appendix 1",
+    hdmMaxUnitsPerDayNote: 2,
+    hdmSource: "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
+    apcSingleTaskStep: 15,
+    adultDayCare: { minuteStep: 15, maxMinutesPerDay: 600, maxDaysPerWeek: 5 },
+    limitsSource: "HCBS Manual 4.00 Appendix 3 (rev. May 2025): Advanced Personal Care; Adult Day Care",
+  },
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule {
     if (a === b) return "prohibited";
     if ((a === "CDS" && b === "NURSE") || (a === "NURSE" && b === "CDS")) return "allowed";
