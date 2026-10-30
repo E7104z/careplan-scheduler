@@ -166,6 +166,9 @@ function IssueView({
   }
 }
 
+/** The region's id, so the panel can scroll a message into view (it can sit below the fold on a phone). */
+export const IMPORT_ISSUES_ID = "qs-import-issues";
+
 export interface ImportIssuesProps {
   outcome: NeedsOutcome | null;
   notice: ImportNotice | null;
@@ -178,7 +181,7 @@ export interface ImportIssuesProps {
 export function ImportIssues({ outcome, notice, reading, from, onChoose }: ImportIssuesProps) {
   const services = outcome?.parsed.services ?? [];
   return (
-    <div aria-live="polite" className="grid gap-2.5 px-5 pb-5 empty:p-0 max-sm:px-4 max-sm:pb-4">
+    <div id={IMPORT_ISSUES_ID} aria-live="polite" className="grid gap-2.5 px-5 pb-5 empty:p-0 max-sm:px-4 max-sm:pb-4">
       {reading ? (
         <p className="flex items-center gap-2.5 text-sm text-ink-2">
           <Spinner className="h-4 w-4 text-brand" />

@@ -172,6 +172,38 @@ describe("Quick Schedule: import panel and read summary", () => {
     ).toBeInTheDocument();
   });
 
+  const TWO_SERVICES_TEXT = [
+    "PC - CDS | TEST PROVIDER | 5555550100 | 01/01/2026 - 12/31/2026 | 300 units | PA: 20250000000009",
+    "300 units\tBathing\t15\t7",
+    "PC - Agency | TEST PROVIDER | 5555550100 | 01/01/2026 - 12/31/2026 | 200 units | PA: 20250000000010",
+    "200 units\tTrash\t5\t7",
+  ].join("\n");
+
+  it("a PDF with several services asks which one, brings the question into view, and still expects page 1", async () => {
+    const scrolled = vi.spyOn(window.HTMLElement.prototype, "scrollIntoView");
+    vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: TWO_SERVICES_TEXT });
+    const { user } = renderQuick();
+    await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
+
+    expect(await screen.findByText("This care plan has 2 services")).toBeInTheDocument();
+    // Nothing is missing from the plan: the box isn't waiting for a second page.
+    expect(pasteBox()).toHaveAccessibleName("Care plan text");
+    // The question can sit below the fold on a phone, so the panel scrolls to it.
+    expect(scrolled.mock.contexts.some((element) => (element as HTMLElement).id === "qs-import-issues")).toBe(true);
+    scrolled.mockRestore();
+  });
+
+  it("a message about a PDF is brought into view too", async () => {
+    const scrolled = vi.spyOn(window.HTMLElement.prototype, "scrollIntoView");
+    vi.mocked(readPdf).mockResolvedValue({ kind: "error", title: "That isn't a PDF", detail: "Choose the care plan PDF you saved from Fusion." });
+    const { user } = renderQuick();
+    await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["x"], "x.pdf", { type: "application/pdf" }));
+
+    expect(await screen.findByText("That isn't a PDF")).toBeInTheDocument();
+    expect(scrolled.mock.contexts.some((element) => (element as HTMLElement).id === "qs-import-issues")).toBe(true);
+    scrolled.mockRestore();
+  });
+
   it("Fusion's care plan report builds, with a note that its nurse visits aren't scheduled", async () => {
     vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: fixtureE });
     const { user } = renderQuick();

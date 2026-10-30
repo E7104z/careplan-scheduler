@@ -5,8 +5,8 @@ import { FileDrop } from "../../ui/FileDrop";
 import { Textarea } from "../../ui/Textarea";
 import { exampleStateA, exampleStateB, manualState } from "../quick-schedule/state";
 import type { QuickState } from "../quick-schedule/types";
-import { ImportIssues, type ImportNotice, type ImportSource, type NeedsOutcome } from "./ImportIssues";
-import { addPage, emptyImportFlow, next, setChoice, type ImportChoice, type ImportFlow } from "./importFlow";
+import { IMPORT_ISSUES_ID, ImportIssues, type ImportNotice, type ImportSource, type NeedsOutcome } from "./ImportIssues";
+import { addPage, emptyImportFlow, next, setChoice, type ImportChoice, type ImportFlow, type ImportOutcome } from "./importFlow";
 import type { PdfReadResult } from "./readPdf";
 
 /** The paste box's id, so the page can put focus there after "New care plan". */
@@ -28,6 +28,12 @@ const PASTE_FIRST: ImportNotice = {
 const READER_UNAVAILABLE: ImportNotice = {
   title: "We couldn't open the PDF reader",
   detail: "Check your internet connection and try again. You can also paste the care plan instead.",
+};
+
+// Anything next() can't turn into an issue still gets a message, so the panel never does nothing.
+const IMPORT_FAILED: ImportNotice = {
+  title: "We couldn't read that care plan",
+  detail: "Something went wrong reading it. Try again, or copy the care plan from Fusion and paste it instead.",
 };
 
 const linkButton =
@@ -66,7 +72,15 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
   };
 
   const run = (value: ImportFlow) => {
-    const result = next(value, MO_2026_07, new Date());
+    let result: ImportOutcome;
+    try {
+      result = next(value, MO_2026_07, new Date());
+    } catch {
+      setFlow(emptyImportFlow());
+      setOutcome(null);
+      setNotice(IMPORT_FAILED);
+      return;
+    }
     if (result.kind === "ready") {
       reset();
       onBuilt(result.state, "import");
@@ -119,7 +133,19 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
     onBuilt(state, from);
   };
 
-  const page = flow.pages.length + 1;
+  // Whatever the panel says about a read (a question, a message, the Reading spinner) is brought into
+  // view: below the examples, and on a phone below the fold, it would otherwise look like nothing happened.
+  const showing = outcome !== null || notice !== null || reading;
+  useEffect(() => {
+    if (showing) document.getElementById(IMPORT_ISSUES_ID)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [showing, outcome, notice]);
+
+  // The box asks for the next page only when the plan is missing rows. A choice of service or the plan
+  // dates don't need another page.
+  const wantsNextPage =
+    flow.pages.length > 0 &&
+    (outcome?.issues.some((issue) => issue.code === "incomplete" || issue.code === "different-participant") ?? false);
+  const page = wantsNextPage ? flow.pages.length + 1 : 1;
 
   return (
     <section aria-labelledby="qs-import-title" className="rounded-md border border-line bg-surface">
