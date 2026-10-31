@@ -82,6 +82,11 @@ export interface SheetCheck {
  * model and copy as the screen. `schedulePdf.ts` only lays it out.
  */
 export interface ScheduleSheet {
+  /**
+   * "plan": the whole care plan's week (APP-SPEC 5.8). A day there can hold several services, each
+   * its own visit for EVV, so the grid's last rows are the day's total, not a visit's length.
+   */
+  kind?: "service" | "plan";
   /** The participant's name from Fusion, "Example care plan", or null: lines to write name and DCN on. */
   name: string | null;
   facts: SheetFact[];
@@ -191,10 +196,14 @@ export function buildScheduleSheet(state: QuickState, model: QuickModel, pack: R
   const weekMinutes = visits.reduce((sum, visit) => sum + visit.taskMinutes + visit.transportMinutes, 0);
 
   const careDays = WEEKDAYS.filter((weekday) => model.entries.some((entry) => entry.weekday === weekday));
-  const summary: SheetFigure[] = [
-    { label: "Task minutes a week", value: grouped.format(status.weekMinutes), note: formatUnits(status.weekMinutes) },
-    { label: "Care days", value: `${status.careDays} a week`, note: daysList(careDays) },
-  ];
+  // A service with only transportation (CDS, APP-SPEC 5.8) has no task minutes or care days to show.
+  const summary: SheetFigure[] =
+    model.tasks.length > 0
+      ? [
+          { label: "Task minutes a week", value: grouped.format(status.weekMinutes), note: formatUnits(status.weekMinutes) },
+          { label: "Care days", value: `${status.careDays} a week`, note: daysList(careDays) },
+        ]
+      : [];
   if (model.allowance) {
     summary.push({
       label: "Essential transportation",

@@ -7,7 +7,7 @@ import { Field } from "../../ui/Field";
 import { NumberField } from "../../ui/NumberField";
 import { Panel } from "../../ui/Panel";
 import { MonthBalance } from "./MonthBalance";
-import { addMonths, monthFigures } from "./model";
+import { addMonths, hasSchedule, monthFigures } from "./model";
 import { MonthTable } from "./MonthTable";
 import type { QuickAction } from "./state";
 import type { QuickModel, QuickState } from "./types";
@@ -176,7 +176,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
         </div>
       }
     >
-      {model.tasks.length === 0 ? (
+      {!hasSchedule(model) ? (
         <p className="text-ink-2">Add tasks to see this month's units.</p>
       ) : (
         <>

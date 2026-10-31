@@ -15,7 +15,7 @@ const GHE_NOTE = {
   level: "warn",
   code: "not-scheduled",
   label: "GHE",
-  message: "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule.",
+  message: "GHE (General Health Evaluation) is a nurse visit, so it's listed by month, not in the week.",
 };
 
 describe("IMP-T20 fixture E: Fusion's care plan report", () => {

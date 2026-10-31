@@ -172,14 +172,14 @@ describe("Quick Schedule: import panel and read summary", () => {
     ).toBeInTheDocument();
   });
 
-  it("Fusion's care plan report builds, with a note that its nurse visits aren't scheduled", async () => {
+  it("Fusion's care plan report builds, with its nurse visits listed by month", async () => {
     vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: fixtureE });
     const { user } = renderQuick();
     await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
     const summary = await screen.findByRole("region", { name: "SAMPLE PARTICIPANT E" });
     expect(within(summary).getByText("Read from Fusion · DCN 10000005")).toBeInTheDocument();
     expect(
-      within(summary).getByText("GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule."),
+      within(summary).getByText("GHE (General Health Evaluation) is a nurse visit, so it's listed by month, not in the week."),
     ).toBeInTheDocument();
     expect(within(summary).getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeInTheDocument();
     expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
@@ -218,7 +218,7 @@ describe("Quick Schedule: import panel and read summary", () => {
     await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
 
     // The save is debounced; wait until the pasted plan (not the example) is stored.
-    await waitFor(() => expect(sessionStorage.getItem("cps.quick.v2")).toContain("Laundry (Off Site)"));
+    await waitFor(() => expect(sessionStorage.getItem("cps.quick.v3")).toContain("Laundry (Off Site)"));
     const stored = [sessionStorage, localStorage].flatMap((storage) =>
       Object.keys(storage).map((key) => `${key}=${storage.getItem(key)}`),
     );

@@ -1,8 +1,8 @@
-import type { RulePack } from "@careplan/engine";
+import type { RulePack, ServiceCode } from "@careplan/engine";
 import { MDY, ymd } from "./dates.js";
 import { buildService, type ResultParts } from "./result.js";
 import { readRow, type ReadRow } from "./rows.js";
-import type { ImportIssue } from "./types.js";
+import type { ImportedVisit, ImportIssue } from "./types.js";
 
 // Fusion's care plan report ("Home & Community Based Services Care Plan"), IMPORT-SPEC 1.3.
 // Cells are separated by tabs (its PDF) or single spaces (copied from a PDF viewer).
@@ -21,8 +21,12 @@ const TASK_HEAD_RE = /^\s*Task\s+#Min\/Day\b/;
 const MONTH_ROW_RE = new RegExp(`^\\s*${MDY}\\s+${MDY}\\s+([A-Z]\\d{4}[A-Z0-9]*)\\s+(\\d{1,5})\\s*$`);
 // The service row's middle line: "PC - Agency⇥N/A⇥N/A⇥20260000000005" (dates and provider wrap above and below).
 const LABEL_RE = /^\s*([A-Z]{2,6}(?:\s*-\s*[A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)*)?)(?=\t|\s+N\/A\b|\s+\d{6,}|\s*$)/;
-// The service row's top line: "04/01⇥01/31⇥PROVIDER NAME , (555) 555-".
-const PROVIDER_RE = /^\s*\d{1,2}\/\d{1,2}\s+\d{1,2}\/\d{1,2}\s+(.+?)\s*,\s*\(/;
+// The service row's top line: "04/01⇥01/31⇥PROVIDER NAME , (555) 555-", or "PROVIDER NAME," when
+// the phone number is on the bottom line.
+const PROVIDER_RE = /^\s*\d{1,2}\/\d{1,2}\s+\d{1,2}\/\d{1,2}\s+(.+?)\s*,\s*(?:\(|$)/;
+
+// Procedure codes Fusion's report shows for more than one service (T1019: agency and CDS).
+const AMBIGUOUS_CODES: ReadonlySet<string> = new Set(["T1019"]);
 
 /** True for the text of Fusion's care plan report rather than the care plan screen. */
 export function isReport(text: string): boolean {
@@ -57,7 +61,7 @@ function serviceRow(above: string[]): Pick<Block, "label" | "pa" | "provider"> {
   const labelLine = nearest.find((line) => LABEL_RE.test(line)) ?? null;
   const label = labelLine ? LABEL_RE.exec(labelLine)![1]!.replace(/\s*-\s*/, " - ") : null;
   const pa = labelLine ? ([...labelLine.matchAll(/\b(\d{10,})\b/g)].at(-1)?.[1] ?? null) : null;
-  // The provider only when its line also starts the phone number: then the name isn't cut short.
+  // The provider only when its line ends at the comma before the phone number: then the name isn't cut short.
   const providerLine = nearest.find((line) => PROVIDER_RE.test(line));
   const provider = providerLine ? PROVIDER_RE.exec(providerLine)![1]!.trim() : null;
   return { label, pa, provider };
@@ -92,18 +96,41 @@ function readBlocks(text: string): Block[] {
   return blocks;
 }
 
-/** IMP-17: one task row. The Comments cell ("N/A") is dropped; an unread row keeps its full text. */
+/**
+ * IMP-17: one task row. The Comments cell ("N/A") is dropped; an unread row keeps its full text.
+ * Essential transportation has one number, its units a month ("Essential Transportation⇥40⇥N/A").
+ */
 function readReportRow(line: string, pack: RulePack): ReadRow | null {
-  const row = readRow(line.replace(/\s+N\/A\s*$/i, ""), pack);
+  const cells = line.replace(/\s+N\/A\s*$/i, "");
+  const row = readRow(cells, pack);
+  if (row?.kind === "unread" && row.reason === "transport-numbers") {
+    const units = /^\D*?\s(\d{1,4})\s*$/.exec(cells)?.[1];
+    if (units !== undefined) {
+      return { kind: "transport", raw: line, unitsPerMonth: Number(units), minutesPerMonth: Number(units) * 15 };
+    }
+  }
   return row?.kind === "unread" ? { ...row, raw: line } : row;
+}
+
+/**
+ * IMP-11: a label we haven't seen is named by the code in its month table, when the rule pack has
+ * that code as a 15-minute service and no other label in the report uses it. Fusion shows T1019
+ * under both "PC - Agency" and "PC - CDS", so T1019, or any code shared by labels, says nothing.
+ */
+function codeFallback(block: Block, blocks: Block[], pack: RulePack): ServiceCode | null {
+  const code = block.months[0]?.code;
+  if (!code || AMBIGUOUS_CODES.has(code)) return null;
+  const service = pack.services.find((s) => s.code === code && s.unit === "15min");
+  const shared = blocks.some((other) => other.label !== block.label && other.months[0]?.code === code);
+  return service && !shared ? service.code : null;
 }
 
 /**
  * IMP-17/18: read Fusion's care plan report. Participant from "Participant Information" and the
  * first DCN (else the page header), plan dates from "Care Plan Information", and for each
  * service its label, authorization, provider, each month's authorized units and its tasks.
- * A service whose procedure code is a visit in the rule pack (a nurse visit, such as GHE) is
- * left out with a note. The address, date of birth and phone numbers are never read.
+ * A service whose procedure code is a visit in the rule pack (a nurse visit, such as GHE) goes in
+ * `visits`, by month, with one note per label. The address, date of birth and phone numbers are never read.
  */
 export function readReport(text: string, pack: RulePack): ResultParts {
   const plan = PLAN_RE.exec(text);
@@ -116,15 +143,24 @@ export function readReport(text: string, pack: RulePack): ResultParts {
   const duplicates: ImportIssue[] = [];
   const skipped: ImportIssue[] = [];
   const services: ResultParts["services"] = [];
-  for (const block of readBlocks(text)) {
+  const visits: ImportedVisit[] = [];
+  const blocks = readBlocks(text);
+  for (const block of blocks) {
     const code = block.months[0]?.code ?? null;
     const label = block.label ?? code;
-    if (code && pack.services.find((service) => service.code === code)?.unit === "visit") {
+    const visitService = code ? pack.services.find((service) => service.code === code && service.unit === "visit") : undefined;
+    if (visitService) {
+      const what = block.rows[0] ? rowName(block.rows[0]) : "";
+      for (const month of block.months) {
+        visits.push({
+          label, serviceCode: visitService.code, name: what || null, provider: block.provider,
+          start: month.start, end: month.end, units: month.units, pa: block.pa,
+        });
+      }
       if (!skipped.some((note) => note.label === label)) {
-        const what = block.rows[0] ? rowName(block.rows[0]) : "";
         skipped.push({
           level: "warn", code: "not-scheduled", label: label ?? undefined,
-          message: `${label}${what ? ` (${what})` : ""} is a nurse visit, so it isn't part of this schedule.`,
+          message: `${label}${what ? ` (${what})` : ""} is a nurse visit, so it's listed by month, not in the week.`,
         });
       }
       continue;
@@ -134,7 +170,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
       const row = readReportRow(line, pack);
       return row ? [row] : [];
     });
-    services.push(buildService({
+    const service = buildService({
       label,
       provider: block.provider,
       phone: null,
@@ -144,7 +180,9 @@ export function readReport(text: string, pack: RulePack): ResultParts {
       cost: null,
       pa: block.pa,
       monthly,
-    }, rows, duplicates));
+    }, rows, duplicates);
+    service.serviceCode ??= codeFallback(block, blocks, pack);
+    services.push(service);
   }
 
   return {
@@ -153,6 +191,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
     totalCost: null,
     paging: [],
     services,
+    visits,
     duplicates,
     skipped,
   };

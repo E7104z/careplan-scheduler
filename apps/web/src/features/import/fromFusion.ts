@@ -13,26 +13,51 @@ function reportFigures(monthly: ImportedService["monthly"], months: string[]): R
   return figures;
 }
 
+const WEEKDAYS_MON_FRI: Weekday[] = [1, 2, 3, 4, 5];
+
+/** The n days with the fewest minutes already scheduled, ties in Monday-first order, in week order. */
+function quietestDays(load: number[], n: number, from: Weekday[] = MONDAY_FIRST): Weekday[] {
+  return [...from]
+    .sort((a, b) => (load[a] ?? 0) - (load[b] ?? 0) || from.indexOf(a) - from.indexOf(b))
+    .slice(0, n)
+    .sort((a, b) => MONDAY_FIRST.indexOf(a) - MONDAY_FIRST.indexOf(b));
+}
+
+/**
+ * The service's own dates on Fusion's care plan report, which lists each authorization's months;
+ * else the plan's dates (the care plan screen has one plan for its services).
+ */
+export function serviceDates(parsed: ImportResult, service: ImportedService): { start: string; end: string } | null {
+  if (service.monthly && service.start && service.end) return { start: service.start, end: service.end };
+  return parsed.plan ?? (service.start && service.end ? { start: service.start, end: service.end } : null);
+}
+
 /**
  * IMPORT-SPEC section 4: turn one parsed Fusion service into Quick Schedule state with locked
  * plan values. Unmatched tasks keep taskCode `FUSION:<name>` (IMP-09).
+ *
+ * `load` is the minutes a day the participant's other services already have (APP-SPEC 5.8): a
+ * service built after them takes its care days from the quietest days, so the week is spread
+ * out rather than stacked. Without it, the care days are the first days from Monday.
  */
-export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Date): QuickState {
+export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Date, load?: number[]): QuickState {
   const service = parsed.services[serviceIndex];
   if (!service) throw new Error(`No service at index ${serviceIndex}`);
   if (!service.serviceCode) {
     throw new Error("The service code must be resolved before building a schedule.");
   }
-  const plan = parsed.plan ?? (service.start && service.end
-    ? { start: service.start, end: service.end }
-    : null);
+  const plan = serviceDates(parsed, service);
   if (!plan) throw new Error("Plan dates are required to build a schedule.");
 
-  // Care days: the first d days of Monday..Sunday, where d is the largest days-per-week.
+  // Care days: d days, where d is the largest days-per-week. Transportation alone takes one weekday.
   const maxDaysPerWeek = service.tasks.reduce((max, task) => Math.max(max, task.daysPerWeek), 1);
+  const transportOnly = service.tasks.length === 0 && service.transport !== null;
+  const careDays = load
+    ? quietestDays(load, maxDaysPerWeek, transportOnly ? WEEKDAYS_MON_FRI : MONDAY_FIRST)
+    : MONDAY_FIRST.slice(0, maxDaysPerWeek);
   const activeDays: boolean[] = [false, false, false, false, false, false, false];
-  for (const day of MONDAY_FIRST.slice(0, maxDaysPerWeek)) activeDays[day] = true;
-  const lastActive: Weekday = MONDAY_FIRST.slice(0, maxDaysPerWeek).slice(-1)[0]!;
+  for (const day of careDays) activeDays[day] = true;
+  const lastActive: Weekday = careDays.slice(-1)[0]!;
 
   const currentMonth = localMonth(today);
   const months = monthsBetween(plan.start, plan.end);

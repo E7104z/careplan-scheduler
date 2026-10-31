@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { addPage, emptyImportFlow, next, setChoice } from "../../src/features/import/importFlow";
-import type { QuickState } from "../../src/features/quick-schedule/types";
+import type { CarePlan, QuickState } from "../../src/features/quick-schedule/types";
 import fixtureB1 from "@fixtures/fusion/B-page1-of-2.txt?raw";
 import fixtureB2 from "@fixtures/fusion/B-page2-of-2.txt?raw";
 import fixtureD from "@fixtures/fusion/D-page1-only-incomplete.txt?raw";
@@ -11,10 +11,17 @@ const TODAY = new Date("2026-10-21T12:00:00-05:00");
 /** Inside fixture D's plan (Sep 1, 2025 to Jun 30, 2026); on TODAY it has ended. */
 const DURING_D = new Date("2026-01-15T12:00:00-06:00");
 
-function readyState(flow: ReturnType<typeof emptyImportFlow>): QuickState {
+function readyPlan(flow: ReturnType<typeof emptyImportFlow>): CarePlan {
   const outcome = next(flow, MO_2026_07, TODAY);
   if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
-  return outcome.state;
+  return outcome.plan;
+}
+
+/** The one service a single-service plan has. */
+function readyState(flow: ReturnType<typeof emptyImportFlow>): QuickState {
+  const plan = readyPlan(flow);
+  expect(plan.services).toHaveLength(1);
+  return plan.services[0]!;
 }
 
 describe("import flow", () => {
@@ -29,7 +36,7 @@ describe("import flow", () => {
     const accepted = next(setChoice(flow, { kind: "acceptPartial" }), MO_2026_07, DURING_D);
     expect(accepted.kind).toBe("ready");
     if (accepted.kind === "ready") {
-      expect(accepted.state.notes.some((n) => n.code === "incomplete")).toBe(true);
+      expect(accepted.plan.notes.some((n) => n.code === "incomplete")).toBe(true);
     }
   });
 
@@ -106,7 +113,7 @@ describe("import flow", () => {
       expect(needs.issues.map((i) => i.code)).toContain("unknown-service");
     }
 
-    const chosen = setChoice(flow, { kind: "serviceCode", code: "T1019U2" });
+    const chosen = setChoice(flow, { kind: "serviceCode", label: "XX - ABC", code: "T1019U2" });
     const state = readyState(chosen);
     expect(state.serviceCode).toBe("T1019U2");
     expect(state.tasks).toHaveLength(1);
@@ -144,37 +151,27 @@ describe("import flow: recovering from a wrong page or a choice", () => {
     expect(state.identity?.dcn).toBe("10000002");
   });
 
-  it("with several services, waits for one to be chosen before asking which service a label is", () => {
+  it("APP-SPEC 5.8: builds every service, without asking which one", () => {
+    const plan = readyPlan(addPage(emptyImportFlow(), TWO_KNOWN));
+    expect(plan.services.map((state) => [state.serviceCode, state.headerUnits, state.pa])).toEqual([
+      ["T1019U2", 300, "20250000000009"],
+      ["T1019U2", 200, "20250000000010"],
+    ]);
+    expect(plan.view).toBe("plan");
+  });
+
+  it("an unknown service asks which service it is, and only its own rows become its notes", () => {
     const flow = addPage(emptyImportFlow(), TWO_SERVICES);
-    const outcome = next(flow, MO_2026_07, TODAY);
-    expect(outcome.kind).toBe("needs");
-    if (outcome.kind === "needs") {
-      expect(outcome.serviceIndex).toBeNull();
-      expect(outcome.issues.map((i) => i.code)).not.toContain("unknown-service");
-    }
-  });
-
-  it("a known service builds without a service choice, and a stray choice doesn't change it", () => {
-    const flow = setChoice(addPage(emptyImportFlow(), TWO_SERVICES), { kind: "serviceIndex", index: 0 });
-    expect(readyState(flow).serviceCode).toBe("T1019U2");
-    const stray = setChoice(flow, { kind: "serviceCode", code: "S5130" });
-    expect(readyState(stray).serviceCode).toBe("T1019U2");
-  });
-
-  it("an unknown service asks which service it is, and only its own rows become notes", () => {
-    const flow = setChoice(addPage(emptyImportFlow(), TWO_SERVICES), { kind: "serviceIndex", index: 1 });
     expect(codesOf(next(flow, MO_2026_07, TODAY))).toEqual(["unknown-service"]);
-    const state = readyState(setChoice(flow, { kind: "serviceCode", code: "S5130" }));
-    expect(state.serviceCode).toBe("S5130");
-    expect(state.tasks.map((t) => t.name)).toEqual(["Trash", "Pet Care"]);
-    expect(state.notes.map((n) => [n.code, n.name])).toEqual([["unknown-task", "Pet Care"]]);
-  });
-
-  it("a service choice out of range waits for a real choice", () => {
-    const flow = setChoice(addPage(emptyImportFlow(), TWO_KNOWN), { kind: "serviceIndex", index: 5 });
-    const outcome = next(flow, MO_2026_07, TODAY);
-    expect(outcome.kind).toBe("needs");
-    if (outcome.kind === "needs") expect(outcome.serviceIndex).toBeNull();
+    // A choice for another label leaves the question open.
+    expect(codesOf(next(setChoice(flow, { kind: "serviceCode", label: "XX - OTHER", code: "S5130" }), MO_2026_07, TODAY)))
+      .toEqual(["unknown-service"]);
+    const [first, second] = readyPlan(setChoice(flow, { kind: "serviceCode", label: "XX - ABC", code: "S5130" })).services;
+    expect(first!.serviceCode).toBe("T1019U2");
+    expect(first!.notes.map((n) => [n.code, n.name])).toEqual([["odd-minutes", "Bathing"]]);
+    expect(second!.serviceCode).toBe("S5130");
+    expect(second!.tasks.map((t) => t.name)).toEqual(["Trash", "Pet Care"]);
+    expect(second!.notes.map((n) => [n.code, n.name])).toEqual([["unknown-task", "Pet Care"]]);
   });
 
   it("dates the person enters must be real dates, ending after they start", () => {

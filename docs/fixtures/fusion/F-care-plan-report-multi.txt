@@ -1,0 +1,108 @@
+Participant Information: SAMPLE PARTICIPANT F
+Physical Address:	DCN: 10000006
+100 Sample Street	DOB: 01/01/1950
+Apt 1	COOP Priority: 2 - Medium
+Sampletown, MO 650000000
+Primary Phone: N/A
+Secondary Phone: (555) 555-0101
+Home & Community Based Services Care Plan
+The information below lists the services you have been authorized to receive. These services are intended to help you remain in
+your home. The services will be paid for by MO HealthNet as long as you have active MO HealthNet benefits.
+Each service and its unit description are listed on a separate line. The dates you are eligible to receive the service, the total
+monthly units, and the provider who is to deliver your service are also on the line. Under each service, the specific task(s) and/or
+days of the week for service delivery is shown.
+Care Plan Information 02/01/2026 - 10/31/2026
+Date Generated: 10/23/2026 | Page 1 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+02/01	10/31	TEST HOME CARE LLC , (555) 555-
+PC - Agency	N/A	N/A	20260000000011
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+02/01/2026	02/28/2026	T1019	226
+03/01/2026	03/31/2026	T1019	226
+04/01/2026	04/30/2026	T1019	226
+05/01/2026	05/31/2026	T1019	226
+06/01/2026	06/30/2026	T1019	226
+07/01/2026	07/31/2026	T1019	226
+08/01/2026	08/31/2026	T1019	226
+09/01/2026	09/30/2026	T1019	226
+10/01/2026	10/31/2026	T1019	226
+Date Generated: 10/23/2026 | Page 2 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Dietary	75	5	N/A
+Med Rel HC Tasks: Clean Bath	15	2	N/A
+Med Rel HC Tasks: Clean Kitchen	15	2	N/A
+Med Rel HC Tasks: Clean Living Area	10	3	N/A
+Med Rel HC Tasks: Make Bed/Change Linens	10	5	N/A
+Med Rel HC Tasks: Trash	5	1	N/A
+Med Rel HC Tasks: Laundry (Home/Off Site)	60	2	N/A
+Dressing/Grooming	15	5	N/A
+Date Generated: 10/23/2026 | Page 3 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Service	GHE	GHE	Prior
+Start Date	End Date	Provider
+Type	1	2	Authorization
+02/01	10/31	TEST HOME CARE LLC,
+PC - CDS	N/A	N/A	20260000000012
+/2026	/2026	5555550100
+Start Date	End Date	Procedure Code	Authorized Units
+02/01/2026	02/28/2026	T1019	40
+03/01/2026	03/31/2026	T1019	40
+04/01/2026	04/30/2026	T1019	40
+05/01/2026	05/31/2026	T1019	40
+06/01/2026	06/30/2026	T1019	40
+07/01/2026	07/31/2026	T1019	40
+08/01/2026	08/31/2026	T1019	40
+09/01/2026	09/30/2026	T1019	40
+10/01/2026	10/31/2026	T1019	40
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Essential Transportation	40	N/A
+Date Generated: 10/23/2026 | Page 4 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+05/01	05/31	TEST HOME CARE LLC , (555) 555-
+GHE	N/A	N/A	20260000000013
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+05/01/2026	05/31/2026	T1001	1
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+General Health Evaluation	1	N/A
+Date Generated: 10/23/2026 | Page 5 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+02/01	10/31	TEST HOME CARE LLC , (555) 555-
+HC	N/A	N/A	20260000000014
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+02/01/2026	02/28/2026	S5130	5
+03/01/2026	03/31/2026	S5130	5
+04/01/2026	04/30/2026	S5130	5
+05/01/2026	05/31/2026	S5130	5
+06/01/2026	06/30/2026	S5130	5
+07/01/2026	07/31/2026	S5130	5
+08/01/2026	08/31/2026	S5130	5
+09/01/2026	09/30/2026	S5130	5
+10/01/2026	10/31/2026	S5130	5
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Wash Windows/Blinds	15	1	N/A
+Date Generated: 10/23/2026 | Page 6 of 7
+SAMPLE PARTICIPANT F - DCN:10000006
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+08/01	08/31	TEST HOME CARE LLC , (555) 555-
+GHE	N/A	N/A	20260000000015
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+08/01/2026	08/31/2026	T1001	1
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+General Health Evaluation	1	N/A
+Date Generated: 10/23/2026 | Page 7 of 7

@@ -7,6 +7,7 @@ import { Panel } from "../../ui/Panel";
 import { UnitTiles } from "../../ui/UnitTiles";
 import { cellRefusal, type CellRefusal } from "./guard";
 import type { QuickAction } from "./state";
+import { hasSchedule } from "./model";
 import type { QuickModel, QuickState } from "./types";
 
 const WEEKDAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
@@ -184,11 +185,16 @@ export function WeeklyPanel({ state, model, pack, dispatch, seq, highlight, onHi
         ) : null
       }
     >
-      {model.tasks.length === 0 ? (
+      {!hasSchedule(model) ? (
         <p className="text-ink-2">Add tasks to see the week.</p>
       ) : (
         <>
-          <div className="relative overflow-x-auto">
+          {/* With only transportation (a CDS service, APP-SPEC 5.8) the grid has nothing to focus, so on a
+              phone the scrolling panel takes focus itself. */}
+          <div
+            className="relative overflow-x-auto"
+            {...(model.tasks.length === 0 ? { role: "region", "aria-label": "Weekly schedule, scrolls sideways", tabIndex: 0 } : {})}
+          >
             <div className="min-w-[560px]">
               <table aria-label="Weekly schedule" className="w-full border-collapse text-sm">
               <thead>

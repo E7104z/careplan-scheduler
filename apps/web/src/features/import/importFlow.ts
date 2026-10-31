@@ -5,12 +5,14 @@ import {
   type ImportIssueCode,
   type ImportResult,
   type ImportedService,
+  type ImportedVisit,
 } from "@careplan/import";
 import { daysInMonth, type RulePack, type ServiceCode } from "@careplan/engine";
 import { niceDate } from "../../lib/format";
+import { dayLoad } from "../quick-schedule/carePlan.js";
 import { localMonth } from "../quick-schedule/model.js";
-import { fromFusion } from "./fromFusion.js";
-import type { Plan, QuickState } from "../quick-schedule/types.js";
+import { fromFusion, serviceDates } from "./fromFusion.js";
+import type { CarePlan, Plan, PlanVisit, QuickState } from "../quick-schedule/types.js";
 
 /** IMPORT-SPEC 3.1: issues that stop a plan from building until the person resolves them. */
 const HARD_STOPS: readonly ImportIssueCode[] = [
@@ -31,8 +33,8 @@ const BAD_DATES: ImportIssue = {
 
 export interface ImportChoices {
   acceptPartial: boolean;
-  serviceCode: ServiceCode | null;
-  serviceIndex: number | null;
+  /** IMP-11: the service the person chose for a Fusion label we haven't seen, by label. */
+  serviceCodes: Record<string, ServiceCode>;
   plan: Plan | null;
 }
 
@@ -44,14 +46,14 @@ export interface ImportFlow {
 export function emptyImportFlow(): ImportFlow {
   return {
     pages: [],
-    choices: { acceptPartial: false, serviceCode: null, serviceIndex: null, plan: null },
+    choices: { acceptPartial: false, serviceCodes: {}, plan: null },
   };
 }
 
 export type ImportChoice =
   | { kind: "acceptPartial" }
-  | { kind: "serviceCode"; code: ServiceCode }
-  | { kind: "serviceIndex"; index: number }
+  /** The service a label stands for. */
+  | { kind: "serviceCode"; label: string; code: ServiceCode }
   | { kind: "plan"; plan: Plan };
 
 export function addPage(flow: ImportFlow, text: string): ImportFlow {
@@ -59,17 +61,16 @@ export function addPage(flow: ImportFlow, text: string): ImportFlow {
 }
 
 export function setChoice(flow: ImportFlow, choice: ImportChoice): ImportFlow {
-  const choices = { ...flow.choices };
+  const choices = { ...flow.choices, serviceCodes: { ...flow.choices.serviceCodes } };
   if (choice.kind === "acceptPartial") choices.acceptPartial = true;
-  else if (choice.kind === "serviceCode") choices.serviceCode = choice.code;
-  else if (choice.kind === "serviceIndex") choices.serviceIndex = choice.index;
+  else if (choice.kind === "serviceCode") choices.serviceCodes[choice.label] = choice.code;
   else choices.plan = choice.plan;
   return { ...flow, choices };
 }
 
 export type ImportOutcome =
-  | { kind: "needs"; parsed: ImportResult; serviceIndex: number | null; issues: ImportIssue[] }
-  | { kind: "ready"; state: QuickState };
+  | { kind: "needs"; parsed: ImportResult; issues: ImportIssue[] }
+  | { kind: "ready"; plan: CarePlan };
 
 function isRealDate(iso: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
@@ -83,23 +84,40 @@ function isValidPlan(plan: Plan): boolean {
   return isRealDate(plan.start) && isRealDate(plan.end) && plan.start <= plan.end;
 }
 
-/** Whether an issue is about the chosen service (issues carry the row or task, not the service). */
+/** Notes that belong to one service (a row, a task); the others are about the plan as a whole. */
+const SERVICE_NOTES: readonly ImportIssueCode[] = ["unread-row", "unknown-task", "odd-minutes"];
+
+/** Whether a note is about this service (notes carry the row or task, not the service). */
 function concerns(issue: ImportIssue, service: ImportedService): boolean {
   if (issue.code === "unread-row") return service.unread.some((row) => row.raw === issue.raw);
   if (issue.code === "unknown-task" || issue.code === "odd-minutes") {
     return service.tasks.some((task) => task.name === issue.name);
   }
-  if (issue.code === "unknown-service") return issue.label === service.label;
-  return true;
+  return false;
 }
 
-/** Parse the pasted pages, then either report the hard stops still open or build the state. */
+/** IMP-18: a visit as the schedule lists it. */
+function planVisit(visit: ImportedVisit, pack: RulePack): PlanVisit {
+  const name = visit.name ?? pack.services.find((service) => service.code === visit.serviceCode)?.name ?? visit.serviceCode;
+  return {
+    label: visit.label, serviceCode: visit.serviceCode, name, provider: visit.provider,
+    start: visit.start, end: visit.end, units: visit.units, pa: visit.pa,
+  };
+}
+
+/**
+ * Parse the pasted pages, then either report the hard stops still open or build the participant's
+ * whole care plan (APP-SPEC 5.8): one schedule state per authorization, in Fusion's order, each
+ * with its own dates, units and checks, and the visits by month. A service whose authorization
+ * ended before this month is left out with a note; when all have ended, the plan has ended.
+ */
 export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutcome {
   const { parsed, refusedPage } = readPages(flow, pack);
-  const index = resolveServiceIndex(parsed, flow.choices);
-  const chosen = index === null ? undefined : parsed.services[index];
   const entered = flow.choices.plan;
   const enteredOk = entered !== null && isValidPlan(entered);
+  const thisMonth = `${localMonth(today)}-01`;
+  const codeFor = (service: ImportedService): ServiceCode | null =>
+    service.serviceCode ?? (service.label !== null ? (flow.choices.serviceCodes[service.label] ?? null) : null);
 
   const issues: ImportIssue[] = [...parsed.issues];
   if (refusedPage !== null) {
@@ -110,40 +128,64 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     });
   }
   if (entered !== null && !enteredOk) issues.push(BAD_DATES);
-  // A schedule is for care still to come: a plan that ended before this month has nothing left.
-  const plan = enteredOk ? entered : (parsed.plan ?? (chosen?.start && chosen.end ? { start: chosen.start, end: chosen.end } : null));
-  const ended = plan !== null && chosen !== undefined && plan.end < `${localMonth(today)}-01`;
-  if (ended) {
-    issues.push({ level: "error", code: "plan-ended", message: `This care plan ended on ${niceDate(plan.end)}.` });
+
+  // A schedule is for care still to come: an authorization that ended before this month has nothing left.
+  const datesOf = (service: ImportedService) => (enteredOk ? entered : serviceDates(parsed, service));
+  const ended = (service: ImportedService) => {
+    const dates = datesOf(service);
+    return dates !== null && dates.end < thisMonth;
+  };
+  const current = parsed.services.filter((service) => !ended(service));
+  const allEnded = parsed.services.length > 0 && current.length === 0;
+  if (allEnded) {
+    const last = parsed.services.map((service) => datesOf(service)!.end).sort().at(-1)!;
+    issues.push({ level: "error", code: "plan-ended", message: `This care plan ended on ${niceDate(last)}.` });
   }
 
   const pending = issues.filter((issue) => {
     if (!HARD_STOPS.includes(issue.code)) return false;
     if (issue.code === "incomplete") return !flow.choices.acceptPartial;
-    // Which service a label is only matters once that service is the one being built.
+    // Which service a label is matters only for a service still to come, until the person says.
     if (issue.code === "unknown-service") {
-      return chosen !== undefined && chosen.serviceCode === null && flow.choices.serviceCode === null
-        && concerns(issue, chosen);
+      return current.some((service) => service.label === issue.label && codeFor(service) === null);
     }
     // Dates the person entered that have already ended can be entered again.
-    if (issue.code === "no-plan-dates" || issue.code === "bad-dates") return !enteredOk || (ended && entered !== null);
+    if (issue.code === "no-plan-dates" || issue.code === "bad-dates") return !enteredOk || (allEnded && entered !== null);
     return true;
   });
-  if (pending.length > 0 || index === null || chosen === undefined) {
-    return { kind: "needs", parsed, serviceIndex: index, issues: pending };
+  if (pending.length > 0 || current.length === 0) {
+    return { kind: "needs", parsed, issues: pending };
   }
 
   const resolved = structuredClone(parsed);
-  const service = resolved.services[index]!;
-  if (service.serviceCode === null) service.serviceCode = flow.choices.serviceCode;
   if (enteredOk) resolved.plan = entered;
-
-  const state = fromFusion(resolved, index, today);
-  state.notes = parsed.issues.filter(
-    (issue) =>
-      (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete") && concerns(issue, chosen),
+  const services: QuickState[] = [];
+  const notes: ImportIssue[] = parsed.issues.filter(
+    (issue) => !SERVICE_NOTES.includes(issue.code) && (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete"),
   );
-  return { kind: "ready", state };
+  parsed.services.forEach((service, index) => {
+    if (ended(service)) {
+      notes.push({
+        level: "warn", code: "plan-ended", label: service.label ?? undefined,
+        message: `${service.label ?? "A service"} ended on ${niceDate(datesOf(service)!.end)}, so it isn't scheduled.`,
+      });
+      return;
+    }
+    resolved.services[index]!.serviceCode = codeFor(service);
+    const state = fromFusion(resolved, index, today, services.length > 0 ? dayLoad(services, pack) : undefined);
+    state.notes = parsed.issues.filter((issue) => SERVICE_NOTES.includes(issue.code) && concerns(issue, service));
+    services.push(state);
+  });
+
+  return {
+    kind: "ready",
+    plan: {
+      services,
+      visits: parsed.visits.map((visit) => planVisit(visit, pack)),
+      notes,
+      view: services.length > 1 ? "plan" : 0,
+    },
+  };
 }
 
 /**
@@ -183,12 +225,4 @@ function readPages(flow: ImportFlow, pack: RulePack): { parsed: ImportResult; re
     parsed: { ...parsed, services, issues: parsed.issues.filter((issue) => issue.code !== "duplicate-task") },
     refusedPage,
   };
-}
-
-function resolveServiceIndex(parsed: ImportResult, choices: ImportChoices): number | null {
-  if (parsed.services.length === 1) return 0;
-  const index = choices.serviceIndex;
-  return index !== null && Number.isInteger(index) && index >= 0 && index < parsed.services.length
-    ? index
-    : null;
 }

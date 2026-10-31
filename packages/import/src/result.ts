@@ -2,7 +2,7 @@ import { isRealDate } from "./dates.js";
 import { pagingTotal } from "./paging.js";
 import type { ReadRow } from "./rows.js";
 import { ROWS_ONLY_SERVICE_CODE, serviceCodeForLabel } from "./services.js";
-import type { ImportedService, ImportedTask, ImportIssue, ImportResult, PagingEntry } from "./types.js";
+import type { ImportedService, ImportedTask, ImportedVisit, ImportIssue, ImportResult, PagingEntry } from "./types.js";
 
 /** What reading one or more pastes produced, before the issues are worked out. */
 export interface ResultParts {
@@ -12,6 +12,8 @@ export interface ResultParts {
   totalCost: string | null;
   paging: PagingEntry[];
   services: ImportedService[];
+  /** Visits authorized in the report (IMP-18), in the report's order. */
+  visits: ImportedVisit[];
   /** `duplicate-task` warnings for repeated tasks dropped while reading. */
   duplicates: ImportIssue[];
   /** `not-scheduled` notes for services left out, one per label (IMP-18). */
@@ -134,6 +136,7 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
     totalCost: parts.totalCost,
     paging: parts.paging,
     services,
+    visits: parts.visits,
     issues,
   };
 }

@@ -22,6 +22,17 @@ export interface ImportedService {
   monthly: { start: string; end: string; units: number }[] | null;
 }
 
+/** A visit authorization from the care plan report (IMP-18), such as a General Health Evaluation. */
+export interface ImportedVisit {
+  label: string | null;          // "GHE"
+  serviceCode: ServiceCode;      // a visit in the rule pack, such as T1001
+  name: string | null;           // the task row: "General Health Evaluation"
+  provider: string | null;
+  start: string; end: string;    // YYYY-MM-DD: the period it is authorized for
+  units: number;                 // visits authorized in that period
+  pa: string | null;
+}
+
 export type ImportIssueCode =
   | "no-rows" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
   | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
@@ -43,6 +54,8 @@ export interface ImportResult {
   totalCost: string | null;
   paging: PagingEntry[];
   services: ImportedService[];
+  /** Visits authorized in the report (IMP-18); the care plan screen has none. */
+  visits: ImportedVisit[];
   issues: ImportIssue[];
 }
 

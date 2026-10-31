@@ -73,6 +73,37 @@ export interface QuickState {
   rowsRead: number;
 }
 
+/** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */
+export interface PlanVisit {
+  /** Fusion's label: "GHE". */
+  label: string | null;
+  serviceCode: ServiceCode;
+  /** "General Health Evaluation". */
+  name: string;
+  provider: string | null;
+  /** YYYY-MM-DD: the period the visit is authorized for (one month, on Fusion's report). */
+  start: string;
+  end: string;
+  units: number;
+  pa: string | null;
+}
+
+/**
+ * APP-SPEC 5.8: the participant's whole care plan. Each authorization keeps its own QuickState,
+ * so its units, rules and checks stay its own; the week is shown as one. `identity` lives in the
+ * services' states (memory only, never persisted).
+ */
+export interface CarePlan {
+  /** One per time-based authorization, in Fusion's order. Never empty. */
+  services: QuickState[];
+  /** Visits authorized by month (not part of the week). */
+  visits: PlanVisit[];
+  /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
+  notes: ImportIssue[];
+  /** "plan": the whole care plan; a number: that service, to see in detail and change. */
+  view: "plan" | number;
+}
+
 export interface QuickAllowance {
   minutesPerMonth: number;
   units: number;

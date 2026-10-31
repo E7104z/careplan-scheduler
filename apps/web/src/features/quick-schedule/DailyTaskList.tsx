@@ -2,6 +2,7 @@ import { Fragment, useId } from "react";
 import type { Weekday } from "@careplan/engine";
 import { formatDuration, formatUnits, weekdayName } from "../../lib/format";
 import { Panel } from "../../ui/Panel";
+import { hasSchedule } from "./model";
 import type { QuickModel, QuickState } from "./types";
 
 const WEEKDAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
@@ -97,7 +98,7 @@ function DayCard({ visit }: { visit: DayVisit }) {
  * Printed with the schedule.
  */
 export function DailyTaskList({ state, model }: { state: QuickState; model: QuickModel }) {
-  if (model.tasks.length === 0) return null;
+  if (!hasSchedule(model)) return null;
   const visits = dailyVisits(state, model);
   return (
     <Panel title="Daily task list" meta="For the caregiver and EVV" className="min-w-0 print:break-before-page">

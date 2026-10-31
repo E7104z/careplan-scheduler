@@ -43,6 +43,7 @@ export function readPaste(text: string, pack: RulePack): ResultParts {
     totalCost: banner ? banner.totalCost : null,
     paging: readPaging(t),
     services,
+    visits: [],
     duplicates,
     skipped: [],
   };

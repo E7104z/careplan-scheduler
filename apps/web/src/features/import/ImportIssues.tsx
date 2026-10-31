@@ -63,7 +63,7 @@ function PlanDates({ onChoose }: { onChoose: (choice: ImportChoice) => void }) {
 }
 
 /** IMP-11: a Fusion service label we haven't seen; the person says which service it is. */
-function ServiceChoice({ onChoose }: { onChoose: (choice: ImportChoice) => void }) {
+function ServiceChoice({ label, onChoose }: { label: string; onChoose: (choice: ImportChoice) => void }) {
   const [code, setCode] = useState<ServiceCode>("T1019U2");
   return (
     <div className="flex flex-wrap items-end gap-2.5">
@@ -72,7 +72,7 @@ function ServiceChoice({ onChoose }: { onChoose: (choice: ImportChoice) => void 
           <ServiceOptions pack={MO_2026_07} />
         </Select>
       </Field>
-      <Button size="sm" onClick={() => onChoose({ kind: "serviceCode", code })}>
+      <Button size="sm" onClick={() => onChoose({ kind: "serviceCode", label, code })}>
         Use this service
       </Button>
     </div>
@@ -132,7 +132,7 @@ function IssueView({
       return (
         <IssueBox level="input" title={`Which service is "${issue.label ?? ""}"?`}>
           <Body>We haven't seen this Fusion service name before. Choose the service it stands for.</Body>
-          <ServiceChoice onChoose={onChoose} />
+          <ServiceChoice label={issue.label ?? ""} onChoose={onChoose} />
         </IssueBox>
       );
     case "no-plan-dates":
@@ -176,7 +176,6 @@ export interface ImportIssuesProps {
 
 /** IMPORT-SPEC 3.1: what still stops the plan from building, with the control that resolves it. */
 export function ImportIssues({ outcome, notice, reading, from, onChoose }: ImportIssuesProps) {
-  const services = outcome?.parsed.services ?? [];
   return (
     <div aria-live="polite" className="grid gap-2.5 px-5 pb-5 empty:p-0 max-sm:px-4 max-sm:pb-4">
       {reading ? (
@@ -193,23 +192,6 @@ export function ImportIssues({ outcome, notice, reading, from, onChoose }: Impor
       {outcome?.issues.map((issue, index) => (
         <IssueView key={`${issue.code}-${index}`} issue={issue} from={from} onChoose={onChoose} />
       ))}
-      {outcome && services.length > 1 && outcome.serviceIndex === null ? (
-        <IssueBox level="input" title={`This care plan has ${services.length} services`}>
-          <Body>Choose the one to schedule. You can come back for the other.</Body>
-          <div className="flex flex-wrap gap-2">
-            {services.map((service, index) => (
-              <Button
-                key={index}
-                variant="secondary"
-                size="sm"
-                onClick={() => onChoose({ kind: "serviceIndex", index })}
-              >
-                {service.label ?? `Service ${index + 1}`} · {service.units} units
-              </Button>
-            ))}
-          </div>
-        </IssueBox>
-      ) : null}
     </div>
   );
 }

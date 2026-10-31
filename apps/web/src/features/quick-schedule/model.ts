@@ -171,7 +171,9 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   if (transportMinutesPerMonth > 0) auth.transportMinutesPerMonth = transportMinutesPerMonth;
 
   // IMP-15 checksum against Fusion's monthly figure, over the full months of Fusion's plan.
-  const checksum = state.source === "fusion" && tasks.length > 0 ? checksumFor(state, auth) : null;
+  // A service with only transportation (CDS) is checked too: its units are the transportation.
+  const scheduled = tasks.length > 0 || transportMinutesPerMonth > 0;
+  const checksum = state.source === "fusion" && scheduled ? checksumFor(state, auth) : null;
 
   // Step 7: monthly figures. Each month's own figure (QS-11 by hand, or Fusion's care plan
   // report, IMP-17); else the care plan screen's one figure, prorated to each full month (IMP-10).
@@ -200,13 +202,13 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   };
   const template: ScheduleTemplate = { ...pattern, entries };
   const trims: CalendarException[] =
-    tasks.length > 0 ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
+    scheduled ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
   // Step 9: validate. Quick Schedule has no visits, so the plan rules run, with CON-09 on the
   // expanded template (ENGINE-SPEC Amendment B): CON-13 would otherwise ask for a referral date
   // it has no first visit to check.
   const results: ScheduleValidationResult[] =
-    tasks.length > 0
+    scheduled
       ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })
       : [];
 
@@ -268,6 +270,11 @@ function validTask(task: QuickTask): task is QuickTask & { minPerDay: number } {
     task.minPerDay > 0 &&
     task.minPerDay <= 1440
   );
+}
+
+/** Whether there is anything in the week: tasks, or transportation (a CDS service may have only that). */
+export function hasSchedule(model: QuickModel): boolean {
+  return model.tasks.length > 0 || model.allowance !== null;
 }
 
 /**

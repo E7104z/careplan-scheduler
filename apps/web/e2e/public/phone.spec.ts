@@ -95,3 +95,13 @@ test("AC-19: on a phone, Skip to the schedule goes past a long care plan to the 
   expect((await status.boundingBox())!.y).toBeGreaterThanOrEqual(headerBottom.y + headerBottom.height);
   await expectPhoneLayout(page);
 });
+
+test("AC-19: /quick with a care plan of several services at phone size", async ({ page }) => {
+  await page.goto("/quick");
+  await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+  await expect(page.getByRole("heading", { name: "The participant's week" })).toBeVisible();
+  await expectPhoneLayout(page);
+  await page.getByRole("button", { name: "Open PC - Agency" }).click();
+  await expect(page.getByRole("button", { name: /PC - Agency/, pressed: true })).toBeVisible();
+  await expectPhoneLayout(page);
+});

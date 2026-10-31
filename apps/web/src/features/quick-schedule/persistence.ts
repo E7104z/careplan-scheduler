@@ -1,7 +1,11 @@
 import { MO_2026_07 } from "@careplan/engine";
-import type { QuickState } from "../quick-schedule/types.js";
+import { singlePlan } from "./carePlan.js";
+import type { CarePlan, QuickState } from "./types.js";
 
-const KEY = "cps.quick.v2";
+/** APP-SPEC 5.8: the participant's whole care plan. */
+export const PLAN_KEY = "cps.quick.v3";
+/** A single service's state, as saved before APP-SPEC 5.8; still read, so a reload keeps it. */
+export const STATE_KEY = "cps.quick.v2";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_MONTH = /^\d{4}-\d{2}$/;
@@ -89,28 +93,77 @@ function isQuickState(value: unknown): value is QuickState {
   );
 }
 
-/** Persist everything except `identity` (APP-SPEC 5.6). Never throws. */
-export function saveQuickState(state: QuickState): void {
+function isVisit(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isStringOrNull(value.label) &&
+    typeof value.serviceCode === "string" &&
+    SERVICE_CODES.has(value.serviceCode) &&
+    typeof value.name === "string" &&
+    isStringOrNull(value.provider) &&
+    typeof value.start === "string" &&
+    ISO_DATE.test(value.start) &&
+    typeof value.end === "string" &&
+    ISO_DATE.test(value.end) &&
+    isInt(value.units, 0) &&
+    isStringOrNull(value.pa)
+  );
+}
+
+function isCarePlan(value: unknown): value is CarePlan {
+  if (!isRecord(value) || !Array.isArray(value.services) || value.services.length === 0) return false;
+  const count = value.services.length;
+  return (
+    value.services.every(isQuickState) &&
+    Array.isArray(value.visits) &&
+    value.visits.every(isVisit) &&
+    Array.isArray(value.notes) &&
+    value.notes.every(isNote) &&
+    ((value.view === "plan" && count > 1) || isInt(value.view, 0, count - 1))
+  );
+}
+
+function withoutIdentity(state: QuickState): Omit<QuickState, "identity"> {
+  const { identity: _identity, ...rest } = state;
+  return rest;
+}
+
+/** Persist the whole care plan, every service without `identity` (APP-SPEC 5.6, 5.8). Never throws. */
+export function savePlan(plan: CarePlan): void {
   try {
-    const { identity: _identity, ...rest } = state;
-    sessionStorage.setItem(KEY, JSON.stringify(rest));
+    sessionStorage.setItem(PLAN_KEY, JSON.stringify({ ...plan, services: plan.services.map(withoutIdentity) }));
   } catch {
     // Storage can be unavailable (private mode, quota). Quick Schedule keeps working.
   }
 }
 
 /**
- * Restore if the shape validates, else null (the page then shows the example). The identity is
- * never in storage, so a reloaded plan is "Care plan from Fusion"; an example stays an example.
+ * Restore the care plan if its shape validates, else a single service saved by an earlier version,
+ * else null (the page then shows the example). The identity is never in storage.
  */
-export function loadQuickState(): QuickState | null {
+export function loadPlan(): CarePlan | null {
   try {
-    const raw = sessionStorage.getItem(KEY);
-    if (raw === null) return null;
-    const parsed: unknown = JSON.parse(raw);
-    if (!isQuickState(parsed)) return null;
-    return { ...parsed, identity: null };
+    const raw = sessionStorage.getItem(PLAN_KEY);
+    if (raw !== null) {
+      const parsed: unknown = JSON.parse(raw);
+      if (!isCarePlan(parsed)) return null;
+      return { ...parsed, services: parsed.services.map((state) => ({ ...state, identity: null })) };
+    }
+    const old = sessionStorage.getItem(STATE_KEY);
+    if (old === null) return null;
+    const state: unknown = JSON.parse(old);
+    return isQuickState(state) ? singlePlan({ ...state, identity: null }) : null;
   } catch {
     return null;
   }
+}
+
+/** A plan of this one service, saved as the tab's plan. Never throws. */
+export function saveQuickState(state: QuickState): void {
+  savePlan(singlePlan(state));
+}
+
+/** The saved plan's first service, or null. */
+export function loadQuickState(): QuickState | null {
+  return loadPlan()?.services[0] ?? null;
 }

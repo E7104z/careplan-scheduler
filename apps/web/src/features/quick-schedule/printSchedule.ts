@@ -1,7 +1,7 @@
 import type { RulePack } from "@careplan/engine";
 import { todayIso } from "../../lib/format";
-import { buildScheduleSheet } from "./scheduleSheet";
-import type { QuickModel, QuickState } from "./types";
+import { planSheets } from "./planSheet";
+import type { CarePlan, QuickModel } from "./types";
 
 /**
  * The Windows app's File > Print sends this event to the page (apps/desktop). The page cancels it
@@ -13,8 +13,9 @@ export const SHELL_PRINT_EVENT = "careplan:print";
 const REVOKE_AFTER_MS = 60_000;
 
 export interface ScheduleSource {
-  state: QuickState;
-  model: QuickModel;
+  plan: CarePlan;
+  /** One per service, in the plan's order. */
+  models: QuickModel[];
   pack: RulePack;
 }
 
@@ -26,7 +27,7 @@ export function scheduleFileName(today: string): string {
 async function makePdf(source: ScheduleSource, today: string): Promise<Blob> {
   // pdf-lib, fontkit and the fonts load only when someone prints (APP-SPEC 10).
   const { schedulePdfBlob } = await import("./schedulePdf");
-  return schedulePdfBlob(buildScheduleSheet(source.state, source.model, source.pack, today), new Date());
+  return schedulePdfBlob(planSheets(source.plan, source.models, source.pack, today), new Date());
 }
 
 function download(blob: Blob, fileName: string): void {

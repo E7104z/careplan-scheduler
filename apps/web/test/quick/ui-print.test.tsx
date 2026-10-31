@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { schedulePdfBlob } from "../../src/features/quick-schedule/schedulePdf";
+import type { ScheduleSheet } from "../../src/features/quick-schedule/scheduleSheet";
 import { BEFORE_B, pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 
@@ -61,7 +62,10 @@ describe("Quick Schedule: the one-page printout (APP-SPEC 5.4 Print)", () => {
     expect(window.print).not.toHaveBeenCalled();
     expect(downloads).toEqual([]);
     // The schedule on the screen is the one printed.
-    const [sheet] = vi.mocked(schedulePdfBlob).mock.calls[0]!;
+    const [sheets] = vi.mocked(schedulePdfBlob).mock.calls[0]!;
+    // A plan of one service prints its one page.
+    expect(Array.isArray(sheets)).toBe(false);
+    const sheet = sheets as ScheduleSheet;
     expect(sheet.name).toBe("SAMPLE PARTICIPANT B");
     expect(sheet.footer).toBe("Checked with CarePlan Scheduler under rule pack mo-2026-07 on Nov 20, 2025");
   });
