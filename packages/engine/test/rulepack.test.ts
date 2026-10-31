@@ -36,16 +36,18 @@ describe("MO 2026-07 rule pack", () => {
     expect(MO_2026_07.overlap("CDS", "CDS")).toBe("prohibited");
   });
 
-  it("offers agency personal care the household tasks Fusion lists under PC - Agency", () => {
-    // Fusion's care plan report lists these as "Med Rel HC Tasks: <task>" (IMPORT-SPEC 1.3).
-    const household = ["Clean Bath", "Clean Kitchen", "Clean Living Area", "Laundry", "Make Bed/Change Linens", "Shopping/Errands", "Trash"];
+  it("offers agency personal care all 11 household rows (the 3a MED REL HC TASKS set)", () => {
+    // The 3a's household rows B33–B63, governed by the MED REL HC TASKS control row (N29). Fusion's
+    // report lists some of them as "Med Rel HC Tasks: <task>" (IMPORT-SPEC 1.3).
+    const household = [
+      "Clean Bath", "Clean Kitchen", "Clean Living Area", "Essential Correspondence", "Iron/Mend",
+      "Laundry", "Make Bed/Change Linens", "Meals/Dishes", "Shopping/Errands", "Trash", "Wash Windows/Blinds",
+    ];
+    expect(household).toHaveLength(11);
     for (const name of household) {
       const def = findTaskByName(MO_2026_07, name);
       expect(def?.programs, name).toContain("AGENCY_PC");
       expect(def?.programs, name).toContain("HOMEMAKER");
-    }
-    for (const name of ["Iron/Mend", "Meals/Dishes", "Wash Windows/Blinds", "Essential Correspondence"]) {
-      expect(findTaskByName(MO_2026_07, name)?.programs, name).not.toContain("AGENCY_PC");
     }
   });
 });

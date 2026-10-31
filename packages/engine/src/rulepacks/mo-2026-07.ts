@@ -64,7 +64,7 @@ const tasks: TaskDef[] = [
   t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
   t("DRESSING_GROOMING", "Dressing/Grooming", ["Dressing/ Grooming"], ["CDS", "ILW", "AGENCY_PC"]),
-  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER"]),
+  t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
   t("MAKE_BED", "Make Bed", [], ["CDS", "ILW"]),
@@ -86,16 +86,16 @@ const tasks: TaskDef[] = [
   t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds", "Self Admin of Medications"], ["AGENCY_PC"]),
   t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
 
-  // Homemaker (agency model). AGENCY_PC also has the household tasks Fusion lists under PC - Agency
-  // as "Med Rel HC Tasks": Clean Bath, Clean Kitchen, Clean Living Area, Laundry, Make Bed/Change
-  // Linens, Shopping/Errands and Trash (Amendment B).
+  // Homemaker (agency model): the 3a's 11 household rows (B33–B63), shared with AGENCY_PC to match
+  // the MED REL HC TASKS control row (B29) and the N29/N66 switch — a household task counts under
+  // Personal Care when medically related, else under Homemaker, never both (audit correction 5).
   t("CLEAN_LIVING_AREA", "Clean Living Area", [], ["HOMEMAKER", "AGENCY_PC"]),
-  t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER"]),
+  t("IRON_MEND", "Iron/Mend", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("LAUNDRY", "Laundry", ["Laundry (Home/Off Site)"], ["HOMEMAKER", "AGENCY_PC"]),
   t("MAKE_BED_CHANGE_LINENS", "Make Bed/Change Linens", ["Make Bed/ Change Linens"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER"]),
+  t("MEALS_DISHES", "Meals/Dishes", [], ["HOMEMAKER", "AGENCY_PC"]),
   t("SHOPPING_ERRANDS", "Shopping/Errands", ["Shop/Errands/Correspond", "Shopping/ Errands"], ["HOMEMAKER", "AGENCY_PC"]),
-  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", ["Wash Windows/ Blinds"], ["HOMEMAKER"]),
+  t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", ["Wash Windows/ Blinds"], ["HOMEMAKER", "AGENCY_PC"]),
 
   // APC (agency model)
   t("ASEPTIC_DRESSINGS", "Aseptic Dressings", [], ["APC"]),
