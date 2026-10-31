@@ -89,6 +89,25 @@ export interface PlanVisit {
 }
 
 /**
+ * IMP-19: an authorization kept with the plan but not scheduled: an Appendix 1 service Quick
+ * Schedule doesn't place yet, a code outside Appendix 1, or a service the person chose to keep.
+ */
+export interface PlanOther {
+  label: string | null;
+  /** The procedure code as Fusion printed it; null when the person kept a service with none. */
+  code: string | null;
+  /** The Appendix 1 service, or null when it isn't one of the 21. */
+  registryId: string | null;
+  provider: string | null;
+  pa: string | null;
+  start: string | null;
+  end: string | null;
+  monthly: { start: string; end: string; units: number }[];
+  /** Its rows, exactly as read. */
+  rows: string[];
+}
+
+/**
  * APP-SPEC 5.8: the participant's whole care plan. Each authorization keeps its own QuickState,
  * so its units, rules and checks stay its own; the week is shown as one. `identity` lives in the
  * services' states (memory only, never persisted).
@@ -98,6 +117,11 @@ export interface CarePlan {
   services: QuickState[];
   /** Visits authorized by month (not part of the week). */
   visits: PlanVisit[];
+  /**
+   * Authorizations kept but not scheduled (IMP-19). Absent in plans saved before Nov 2026 and in
+   * plans by hand, which have none.
+   */
+  others?: PlanOther[];
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

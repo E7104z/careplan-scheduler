@@ -1,0 +1,173 @@
+{
+  "fixture_id": "DEIDENTIFIED_FUSION_MULTISERVICE_001",
+  "classification": "anonymized from user-supplied real Fusion care-plan task/authorization figures; no identity fields stored",
+  "period_start": "2026-02-01",
+  "period_end": "2026-10-31",
+  "expected_authorizations": [
+    {
+      "id": "AUTH_AGENCY_PC",
+      "source_service_header": "PC - Agency",
+      "raw_display_code": "T1019",
+      "registry_service_id": "MO_PC_AGENCY",
+      "monthly_units": {
+        "2026-02": 226,
+        "2026-03": 226,
+        "2026-04": 226,
+        "2026-05": 226,
+        "2026-06": 226,
+        "2026-07": 226,
+        "2026-08": 226,
+        "2026-09": 226,
+        "2026-10": 226
+      },
+      "tasks": [
+        {
+          "id": "PC_TASK_1",
+          "name": "Dietary",
+          "minutes_per_occurrence": 75,
+          "days_per_week": 5,
+          "derived_31d_month_units": 115
+        },
+        {
+          "id": "PC_TASK_2",
+          "name": "Med Rel HC Tasks: Clean Bath",
+          "minutes_per_occurrence": 15,
+          "days_per_week": 2,
+          "derived_31d_month_units": 10
+        },
+        {
+          "id": "PC_TASK_3",
+          "name": "Med Rel HC Tasks: Clean Kitchen",
+          "minutes_per_occurrence": 15,
+          "days_per_week": 2,
+          "derived_31d_month_units": 10
+        },
+        {
+          "id": "PC_TASK_4",
+          "name": "Med Rel HC Tasks: Clean Living Area",
+          "minutes_per_occurrence": 10,
+          "days_per_week": 3,
+          "derived_31d_month_units": 10
+        },
+        {
+          "id": "PC_TASK_5",
+          "name": "Med Rel HC Tasks: Make Bed/Change Linens",
+          "minutes_per_occurrence": 10,
+          "days_per_week": 5,
+          "derived_31d_month_units": 16
+        },
+        {
+          "id": "PC_TASK_6",
+          "name": "Med Rel HC Tasks: Trash",
+          "minutes_per_occurrence": 5,
+          "days_per_week": 1,
+          "derived_31d_month_units": 2
+        },
+        {
+          "id": "PC_TASK_7",
+          "name": "Med Rel HC Tasks: Laundry (Home/Off Site)",
+          "minutes_per_occurrence": 60,
+          "days_per_week": 2,
+          "derived_31d_month_units": 40
+        },
+        {
+          "id": "PC_TASK_8",
+          "name": "Dressing/Grooming",
+          "minutes_per_occurrence": 15,
+          "days_per_week": 5,
+          "derived_31d_month_units": 23
+        }
+      ]
+    },
+    {
+      "id": "AUTH_CDS_TRANSPORT",
+      "source_service_header": "PC - CDS",
+      "raw_display_code": "T1019",
+      "normalized_expected_service_id": "MO_CDS",
+      "monthly_units": {
+        "2026-02": 40,
+        "2026-03": 40,
+        "2026-04": 40,
+        "2026-05": 40,
+        "2026-06": 40,
+        "2026-07": 40,
+        "2026-08": 40,
+        "2026-09": 40,
+        "2026-10": 40
+      },
+      "tasks": [
+        {
+          "name": "Essential Transportation",
+          "monthly_units": 40,
+          "frequency_unknown": true
+        }
+      ]
+    },
+    {
+      "id": "AUTH_ADW_HOMEMAKER",
+      "source_service_header": "HC",
+      "raw_display_code": "S5130",
+      "registry_service_id": "MO_ADW_HC",
+      "monthly_units": {
+        "2026-02": 5,
+        "2026-03": 5,
+        "2026-04": 5,
+        "2026-05": 5,
+        "2026-06": 5,
+        "2026-07": 5,
+        "2026-08": 5,
+        "2026-09": 5,
+        "2026-10": 5
+      },
+      "tasks": [
+        {
+          "name": "Wash Windows/Blinds",
+          "minutes_per_occurrence": 15,
+          "days_per_week": 1
+        }
+      ]
+    },
+    {
+      "id": "AUTH_GHE_MAY",
+      "source_service_header": "GHE",
+      "raw_display_code": "T1001",
+      "registry_service_id": "MO_RN_AGENCY",
+      "monthly_units": {
+        "2026-05": 1
+      },
+      "tasks": [
+        {
+          "name": "General Health Evaluation",
+          "visit_count": 1
+        }
+      ]
+    },
+    {
+      "id": "AUTH_GHE_AUG",
+      "source_service_header": "GHE",
+      "raw_display_code": "T1001",
+      "registry_service_id": "MO_RN_AGENCY",
+      "monthly_units": {
+        "2026-08": 1
+      },
+      "tasks": [
+        {
+          "name": "General Health Evaluation",
+          "visit_count": 1
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "authorization_records": 5,
+    "pc_units_per_month": 226,
+    "cds_transport_units_per_month": 40,
+    "homemaker_units_per_month": 5,
+    "ghe_visits_in_may": 1,
+    "ghe_visits_in_august": 1,
+    "unified_participant_schedules": 1,
+    "must_not_merge_by_t1019_code": true,
+    "transport_appointment_cannot_be_auto_assigned_without_frequency": true,
+    "no_schedule_after": "2026-10-31"
+  }
+}

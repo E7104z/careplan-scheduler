@@ -44,6 +44,7 @@ export function readPaste(text: string, pack: RulePack): ResultParts {
     paging: readPaging(t),
     services,
     visits: [],
+    others: [],
     duplicates,
     skipped: [],
   };

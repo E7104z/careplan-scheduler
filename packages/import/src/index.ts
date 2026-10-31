@@ -5,6 +5,7 @@ export type {
   ImportedTask,
   ImportedService,
   ImportedVisit,
+  ImportedOther,
   ImportIssueCode,
   ImportIssue,
   ImportResult,

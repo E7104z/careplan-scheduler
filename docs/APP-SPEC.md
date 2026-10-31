@@ -542,11 +542,13 @@ what a schedule is for, and the authorization is a layer under it. Missouri auth
 service on its own, but the participant lives one week. So:
 - **Import reads every block** of a care plan (IMPORT-SPEC IMP-17/18) and builds every
   time-based authorization at once, in Fusion's order; nothing asks which service to schedule.
-  An unknown label asks which service it is, per label (IMP-11). A service whose authorization
+  An unknown label asks which service it is, or keeps it without a schedule, per label (IMP-11).
+  Authorizations the week doesn't hold are kept, never dropped (IMP-19). A service whose authorization
   ended before this month is left out with a note; when all have ended, the plan has ended.
 - **State** (`CarePlan`, `types.ts`): `services` (one `QuickState` per authorization, each with
   its own dates, Fusion figures, care days, tasks, checks and review), `visits` (authorized by
-  month, IMP-18), `notes` (about the plan as a whole) and `view` ("plan" or a service's index).
+  month, IMP-18), `others` (kept without a schedule, IMP-19; absent in plans saved before it),
+  `notes` (about the plan as a whole) and `view` ("plan" or a service's index).
   A plan of one service (the examples, by hand, a one-service care plan) shows that service as
   before, with its visits listed under it.
 - **Each authorization keeps its own identity and units.** Service type, authorization (PA),
@@ -564,12 +566,17 @@ service on its own, but the participant lives one week. So:
   (each service's PA, its units in the month, scheduled, left, its checks' status, "Open");
   the participant's week, Sunday to Saturday, every task under the service that authorizes it
   with that service's minutes and the day's total; Nurse visits by month (Past, This month,
-  Coming up). A service opens in detail on the same page (5.2-5.5) and the whole plan is one
+  Coming up); Other authorizations (IMP-19: each kept one's label, its Appendix 1 service and
+  code, its units in its own unit and never as hours, its PA and provider, why it isn't in the
+  week, and its rows as read; a code Appendix 1 doesn't list is marked "Not recognized: kept for
+  review"). The plan's read summary says what was read and what became of it, counted from the
+  plan: "5 authorizations read: 3 scheduled in the week, 2 nurse visits by month." A service opens in detail on the same page (5.2-5.5) and the whole plan is one
   click back.
 - **Print**: one service prints its one page (5.4). Several print the whole week first (every
   service's rows, each naming its service; "Day total", since a day there holds several visits;
   each service's units and PA; the visits' months), then each service with anything scheduled
-  on its own page, with its months, checks and visit lengths for EVV.
+  on its own page, with its months, checks and visit lengths for EVV. Every printout, one
+  service or several, names the nurse visits by month and each kept authorization (IMP-19).
 - **Storage**: the whole plan under `cps.quick.v3` without any `identity` (5.6); a single
   service saved under `cps.quick.v2` by the version before still opens.
 
@@ -978,6 +985,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-27 | The printout (5.4 Print): B's PDF is one US Letter landscape page titled "Weekly care schedule", with "SAMPLE PARTICIPANT B", Sunday to Saturday, "5 h 15 min" and "3 h 55 min", every month's units and the footer, each day's minutes centered under its name, and every piece of text inside the margins with none overlapping, also with every CDS task and transportation. "Save as PDF" downloads "Care schedule 2025-11-20.pdf"; "Print schedule" opens it in a new tab, or downloads it where the browser shows no PDFs; Ctrl+P and `careplan:print` make the same printout once; only same-origin requests. | unit (read back with pdf.js) + component + Playwright |
 | AC-28 | Whole care plan (5.8): fixture F (agency PC 226, CDS essential transportation 40, homemaker 5, two GHEs) builds with nothing to choose and opens on the whole care plan: each authorization matches Fusion on its own (226, 40, 5); agency Monday to Friday (715 minutes), CDS transportation 120 minutes on the quietest weekday (Friday), homemaker on Saturday; both GHEs listed by month; no month after Oct 31, 2026; zero Must fix. "Open HC" changes homemaker's days under its own rules and the week shows it; a reload keeps every service and the view without the name or DCN; axe passes in both themes; no sideways page scroll on a phone. | unit + component + Playwright |
 | AC-29 | Whole care plan printout (5.8): F prints four US Letter landscape pages, the whole week first ("Services PC - Agency, PC - CDS, HC", every row naming its service, "Day total", "226 units in Oct · PA …", "Nurse visits May 2026 and Aug 2026", no "Units by month"), then each service's own page; every piece of text inside the margins with none overlapping. | unit (read back with pdf.js) + component |
+| AC-30 | Nothing read is dropped (IMP-19): fixture G builds PC - CDS with nothing to choose and lists HDM, ADC, FMS, RN (RCF/ALF) and XYZ under Other authorizations, each in its own unit ("62 meals a month"), XYZ marked not recognized; its printout names all five; a label we have not seen can be kept instead of named; a reload keeps them; a plan saved before keeps loading; axe passes in both themes at desktop and phone width. | unit + component + Playwright |
 
 ---
 

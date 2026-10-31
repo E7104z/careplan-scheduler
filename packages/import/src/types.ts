@@ -33,8 +33,27 @@ export interface ImportedVisit {
   pa: string | null;
 }
 
+/**
+ * IMP-19: an authorization the schedule doesn't place, kept with the plan so nothing in it is
+ * lost: one of DHSS's Appendix 1 services Quick Schedule doesn't schedule yet (meals, adult day
+ * care, an RCF/ALF service, an ILW support...), or a code outside Appendix 1.
+ */
+export interface ImportedOther {
+  label: string | null;
+  /** The procedure code exactly as Fusion printed it. */
+  code: string | null;
+  /** The Appendix 1 service, or null for a code outside its 21 services. */
+  registryId: string | null;
+  provider: string | null;
+  pa: string | null;
+  start: string | null; end: string | null;   // YYYY-MM-DD
+  monthly: { start: string; end: string; units: number }[];
+  /** Its task rows, exactly as read. */
+  rows: string[];
+}
+
 export type ImportIssueCode =
-  | "no-rows" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
+  | "no-rows" | "nothing-to-schedule" | "kept" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
   | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
   | "not-scheduled"
   // Set by the app, which knows today's date (the reader has no clock): the plan ended before this month.
@@ -56,6 +75,8 @@ export interface ImportResult {
   services: ImportedService[];
   /** Visits authorized in the report (IMP-18); the care plan screen has none. */
   visits: ImportedVisit[];
+  /** Authorizations kept but not scheduled (IMP-19). */
+  others: ImportedOther[];
   issues: ImportIssue[];
 }
 

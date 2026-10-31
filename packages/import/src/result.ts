@@ -1,8 +1,11 @@
+import { findAppendix1 } from "@careplan/engine";
 import { isRealDate } from "./dates.js";
 import { pagingTotal } from "./paging.js";
 import type { ReadRow } from "./rows.js";
 import { ROWS_ONLY_SERVICE_CODE, serviceCodeForLabel } from "./services.js";
-import type { ImportedService, ImportedTask, ImportedVisit, ImportIssue, ImportResult, PagingEntry } from "./types.js";
+import type {
+  ImportedOther, ImportedService, ImportedTask, ImportedVisit, ImportIssue, ImportResult, PagingEntry,
+} from "./types.js";
 
 /** What reading one or more pastes produced, before the issues are worked out. */
 export interface ResultParts {
@@ -14,6 +17,8 @@ export interface ResultParts {
   services: ImportedService[];
   /** Visits authorized in the report (IMP-18), in the report's order. */
   visits: ImportedVisit[];
+  /** Authorizations kept but not scheduled (IMP-19), in the report's order. */
+  others: ImportedOther[];
   /** `duplicate-task` warnings for repeated tasks dropped while reading. */
   duplicates: ImportIssue[];
   /** `not-scheduled` notes for services left out, one per label (IMP-18). */
@@ -66,6 +71,33 @@ function rowCount(services: ImportedService[]): number {
   return services.reduce((n, s) => n + s.tasks.length + (s.transport ? 1 : 0) + s.unread.length, 0);
 }
 
+const KEPT_REASON = {
+  AUTO: "Quick Schedule doesn't schedule this service yet",
+  APPOINTMENT: "it's arranged by date, not placed in the week",
+  CONTEXT: "it has no caregiver time to schedule",
+} as const;
+
+/** IMP-19: one note for each kept authorization's label and code, saying what it is and why it isn't in the week. */
+function keptNotes(others: ImportedOther[]): ImportIssue[] {
+  const notes: ImportIssue[] = [];
+  const seen = new Set<string>();
+  for (const other of others) {
+    const key = `${other.label ?? ""}|${other.code ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const service = other.registryId && other.code ? findAppendix1(other.code) : undefined;
+    const label = other.label ?? other.code ?? "A service";
+    const code = other.code ? `, ${other.code}` : "";
+    notes.push({
+      level: "warn", code: "kept", label: other.label ?? undefined,
+      message: service
+        ? `${label} (${service.name}${code}) isn't scheduled: ${KEPT_REASON[service.scheduleClass]}. It's kept with the plan.`
+        : `${label}${other.code ? ` (${other.code})` : ""} isn't one of DHSS's Appendix 1 services, so it isn't scheduled. It's kept with the plan for review.`,
+    });
+  }
+  return notes;
+}
+
 /** IMP-13: the banner's dates, else the first group row that has dates. */
 function planFor(parts: ResultParts): ImportResult["plan"] {
   if (parts.bannerPlan) return parts.bannerPlan;
@@ -85,8 +117,15 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
   const plan = planFor(parts);
   const issues: ImportIssue[] = [...leading];
 
-  if (rows === 0) {
+  if (rows === 0 && parts.others.length === 0 && parts.visits.length === 0) {
     issues.push({ level: "error", code: "no-rows", message: "We couldn't find care plan tasks in this text." });
+  } else if (rows === 0) {
+    // IMP-19: the plan was read, but none of it goes in the week.
+    const labels = [...new Set([...parts.visits.map((v) => v.label ?? v.serviceCode), ...parts.others.map((o) => o.label ?? o.code ?? "")])];
+    issues.push({
+      level: "error", code: "nothing-to-schedule",
+      message: `None of this care plan's authorizations has tasks to place in the week: ${labels.filter(Boolean).join(", ")}.`,
+    });
   }
   if (total !== null && rows < total) {
     issues.push({
@@ -122,7 +161,7 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
       }
     }
   }
-  issues.push(...parts.duplicates, ...parts.skipped);
+  issues.push(...parts.duplicates, ...parts.skipped, ...keptNotes(parts.others));
   if (!plan && rows > 0) {
     issues.push({ level: "input", code: "no-plan-dates", message: "The plan dates weren't included. Enter them from Fusion." });
   }
@@ -137,6 +176,7 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
     paging: parts.paging,
     services,
     visits: parts.visits,
+    others: parts.others,
     issues,
   };
 }

@@ -9,7 +9,7 @@ import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
 import { buildQuickModel, hasSchedule } from "./model";
-import { AuthorizationsPanel, PlanSummary, PlanWeekPanel, ServiceTabs, VisitsPanel } from "./PlanOverview";
+import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs, VisitsPanel } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
@@ -189,6 +189,7 @@ export function QuickSchedule() {
           <AuthorizationsPanel plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
           <PlanWeekPanel plan={plan} models={models} />
           <VisitsPanel visits={plan.visits} today={new Date()} />
+          <OthersPanel plan={plan} />
         </div>
       ) : (
         <>
@@ -208,6 +209,7 @@ export function QuickSchedule() {
             <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
           {several ? null : <VisitsPanel visits={plan.visits} today={new Date()} />}
+          {several ? null : <OthersPanel plan={plan} />}
         </>
       )}
 
