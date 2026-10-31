@@ -51,6 +51,13 @@ export interface ScheduleTemplate {
   entries: TemplateEntry[];
   rulePackVersion: string;
 }
+/** A dated one-time/intermittent occurrence (e.g. ADW Chore S5120), never a weekly template. */
+export interface DatedOccurrence {
+  id: string;
+  serviceAuthId: string;
+  date: string;   // YYYY-MM-DD
+  minutes: number;
+}
 export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date
