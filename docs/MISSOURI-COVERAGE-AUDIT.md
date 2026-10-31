@@ -246,6 +246,9 @@ cover most of it today).
   authorized month; enforce 1 a day and 26 in six months (CON-10) on the schedule; never
   create a visit Fusion didn't authorize; a GHE done at a regular visit is one visit.
 - Place ADC attendance days, meal deliveries and SFC covered days on the same calendar.
+- Optional nonbillable dated events or reminders for CONTEXT_APPOINTMENT (ILW case
+  management, appointment only if specified) and the three CONTEXT_EVENT authorizations
+  (ILW equipment, supplies, adaptations) — never a caregiver shift.
 - GHE missed-visit follow-up (WARN), and upload due by the 15th of the next month
   (HCBS 08-26-01) as a reminder, never a visit.
 - Date-specific exceptions as recorded events over the weekly pattern (SCH-11 exists).
@@ -257,6 +260,8 @@ cover most of it today).
   stored, never inferred from a name.
 - Engine rules already written, wired to the schedule: CON-01..07, CON-16, CON-17, respite
   overlap BLOCK (CON-03), SFC exclusivity, waiver overlap.
+- CDS and ILW share one task pool with separate ledgers; project the State Plan-to-ILW switch
+  on the schedule only when both imported authorizations exist (AUTH-11, INFO 05-25-01).
 - Worker double-booking BLOCK and over 40 hours WARN across participants (CON-04, CON-05).
 - 49 hours a week (ILW, respite): change CON-09 so a REVIEW is shown even when the fixed-week
   and rolling diagnostics pass, as the blueprint says (E-02).
