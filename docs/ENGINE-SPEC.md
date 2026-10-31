@@ -146,16 +146,16 @@ Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (t
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
-Medications (alias "Self Admin of Meds"); Toileting; and the medically related household tasks
-Fusion lists under PC - Agency as "Med Rel HC Tasks" (Amendment B): Clean Bath; Clean Kitchen;
-Clean Living Area; Laundry; Make Bed/Change Linens; Shopping/Errands; Trash. These stay
-Homemaker tasks too. Homemaker — Clean Bath; Clean Kitchen;
-Clean Living Area; Essential Correspondence; Iron/Mend; Laundry (alias "Laundry (Home/Off
+Medications (alias "Self Admin of Meds"); Toileting; and, under the MED REL HC TASKS control
+row, the 11 household rows (3a B33–B63): Clean Bath; Clean Kitchen; Clean Living Area; Essential
+Correspondence (alias "Essential Correspond"); Iron/Mend; Laundry (alias "Laundry (Home/Off
 Site)"); Make Bed/Change Linens; Meals/Dishes; Shopping/Errands (alias
-"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. The three aliases are the names in
-Fusion's care plan report for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device; Bowel
-Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite — Basic
-Respite; Advanced Respite.
+"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. Each is also a Homemaker task, and each
+counts under agency PC when medically related, else under Homemaker — never both (3a N29/N66).
+Homemaker — the same 11 household rows. The aliases are the names in Fusion's care plan report
+for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device;
+Bowel Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite —
+Basic Respite; Advanced Respite.
 
 Service-pair overlap matrix (CON-02): `CDS+NURSE: allowed`; `RESPITE+any other: prohibited`;
 same code twice: prohibited (CON-01); every other pair: `unknown` (→ REVIEW).
