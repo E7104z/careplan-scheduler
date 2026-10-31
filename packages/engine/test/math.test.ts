@@ -64,6 +64,13 @@ describe("F-2b workbookTaskUnits", () => {
   });
 });
 
+describe("CALC-01 (docs/MISSOURI-COVERAGE-AUDIT.md): 10 minutes a day, 7 days a week", () => {
+  it("is 21 units a month on both worksheet formulas (31-day basis), not 31", () => {
+    expect(hcbs3cTaskUnitsFromWeekly(70, 7).units).toBe(21);
+    expect(workbookTaskUnits(70, 7).units).toBe(21);
+  });
+});
+
 describe("F-3 monthTaskUnits", () => {
   it("TC-02: 30 min daily over 28/29/30/31-day months", () => {
     expect([28, 29, 30, 31].map((d) => monthTaskUnits(210, 7, d).units)).toEqual([56, 58, 60, 62]);
