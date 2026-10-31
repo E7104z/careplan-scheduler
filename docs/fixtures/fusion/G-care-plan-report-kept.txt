@@ -1,0 +1,107 @@
+Participant Information: SAMPLE PARTICIPANT G
+Physical Address:	DCN: 10000007
+100 Sample Street	DOB: 01/01/1950
+Sampletown, MO 650000000
+Primary Phone: N/A
+Home & Community Based Services Care Plan
+Care Plan Information 11/01/2026 - 04/30/2027
+Date Generated: 10/31/2026 | Page 1 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+11/01	04/30	TEST HOME CARE LLC , (555) 555-
+PC - CDS	N/A	N/A	20260000000021
+/2026	/2027	0100
+Start Date	End Date	Procedure Code	Authorized Units
+11/01/2026	11/30/2026	T1019	144
+12/01/2026	12/31/2026	T1019	144
+01/01/2027	01/31/2027	T1019	144
+02/01/2027	02/28/2027	T1019	144
+03/01/2027	03/31/2027	T1019	144
+04/01/2027	04/30/2027	T1019	144
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Bathing	30	7	N/A
+Meal Prep/Eating	30	7	N/A
+Essential Transportation	20	N/A
+Date Generated: 10/31/2026 | Page 2 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+11/01	04/30	TEST HOME CARE LLC , (555) 555-
+HDM	N/A	N/A	20260000000022
+/2026	/2027	0100
+Start Date	End Date	Procedure Code	Authorized Units
+11/01/2026	11/30/2026	S5170	62
+12/01/2026	12/31/2026	S5170	62
+01/01/2027	01/31/2027	S5170	62
+02/01/2027	02/28/2027	S5170	62
+03/01/2027	03/31/2027	S5170	62
+04/01/2027	04/30/2027	S5170	62
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Home Delivered Meals	2	N/A
+Date Generated: 10/31/2026 | Page 3 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+11/01	04/30	TEST HOME CARE LLC , (555) 555-
+ADC	N/A	N/A	20260000000023
+/2026	/2027	0100
+Start Date	End Date	Procedure Code	Authorized Units
+11/01/2026	11/30/2026	S5100HC	400
+12/01/2026	12/31/2026	S5100HC	400
+01/01/2027	01/31/2027	S5100HC	400
+02/01/2027	02/28/2027	S5100HC	400
+03/01/2027	03/31/2027	S5100HC	400
+04/01/2027	04/30/2027	S5100HC	400
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Adult Day Care	600	5	N/A
+Date Generated: 10/31/2026 | Page 4 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+11/01	04/30	TEST HOME CARE LLC , (555) 555-
+FMS	N/A	N/A	20260000000024
+/2026	/2027	0100
+Start Date	End Date	Procedure Code	Authorized Units
+11/01/2026	11/30/2026	T2040U6	1
+12/01/2026	12/31/2026	T2040U6	1
+01/01/2027	01/31/2027	T2040U6	1
+02/01/2027	02/28/2027	T2040U6	1
+03/01/2027	03/31/2027	T2040U6	1
+04/01/2027	04/30/2027	T2040U6	1
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Financial Management Service	1	N/A
+Date Generated: 10/31/2026 | Page 5 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+12/01	12/31	TEST HOME CARE LLC , (555) 555-
+RN	N/A	N/A	20260000000025
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+12/01/2026	12/31/2026	T1001U3	1
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Nurse Visit	1	N/A
+Date Generated: 10/31/2026 | Page 6 of 6
+SAMPLE PARTICIPANT G - DCN:10000007
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+11/01	04/30	TEST HOME CARE LLC , (555) 555-
+XYZ	N/A	N/A	20260000000026
+/2026	/2027	0100
+Start Date	End Date	Procedure Code	Authorized Units
+11/01/2026	11/30/2026	H2015	10
+12/01/2026	12/31/2026	H2015	10
+01/01/2027	01/31/2027	H2015	10
+02/01/2027	02/28/2027	H2015	10
+03/01/2027	03/31/2027	H2015	10
+04/01/2027	04/30/2027	H2015	10
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Community Support	10	N/A
+Date Generated: 10/31/2026 | Page 6 of 6

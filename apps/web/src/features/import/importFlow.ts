@@ -12,11 +12,12 @@ import { niceDate } from "../../lib/format";
 import { dayLoad } from "../quick-schedule/carePlan.js";
 import { localMonth } from "../quick-schedule/model.js";
 import { fromFusion, serviceDates } from "./fromFusion.js";
-import type { CarePlan, Plan, PlanVisit, QuickState } from "../quick-schedule/types.js";
+import type { CarePlan, Plan, PlanOther, PlanVisit, QuickState } from "../quick-schedule/types.js";
 
 /** IMPORT-SPEC 3.1: issues that stop a plan from building until the person resolves them. */
 const HARD_STOPS: readonly ImportIssueCode[] = [
   "no-rows",
+  "nothing-to-schedule",
   "incomplete",
   "unknown-service",
   "no-plan-dates",
@@ -35,6 +36,8 @@ export interface ImportChoices {
   acceptPartial: boolean;
   /** IMP-11: the service the person chose for a Fusion label we haven't seen, by label. */
   serviceCodes: Record<string, ServiceCode>;
+  /** IMP-19: labels the person chose to keep with the plan without a schedule. */
+  kept: string[];
   plan: Plan | null;
 }
 
@@ -46,7 +49,7 @@ export interface ImportFlow {
 export function emptyImportFlow(): ImportFlow {
   return {
     pages: [],
-    choices: { acceptPartial: false, serviceCodes: {}, plan: null },
+    choices: { acceptPartial: false, serviceCodes: {}, kept: [], plan: null },
   };
 }
 
@@ -54,6 +57,8 @@ export type ImportChoice =
   | { kind: "acceptPartial" }
   /** The service a label stands for. */
   | { kind: "serviceCode"; label: string; code: ServiceCode }
+  /** Keep the service with the plan, not scheduled (IMP-19). */
+  | { kind: "keep"; label: string }
   | { kind: "plan"; plan: Plan };
 
 export function addPage(flow: ImportFlow, text: string): ImportFlow {
@@ -61,9 +66,10 @@ export function addPage(flow: ImportFlow, text: string): ImportFlow {
 }
 
 export function setChoice(flow: ImportFlow, choice: ImportChoice): ImportFlow {
-  const choices = { ...flow.choices, serviceCodes: { ...flow.choices.serviceCodes } };
+  const choices = { ...flow.choices, serviceCodes: { ...flow.choices.serviceCodes }, kept: [...flow.choices.kept] };
   if (choice.kind === "acceptPartial") choices.acceptPartial = true;
   else if (choice.kind === "serviceCode") choices.serviceCodes[choice.label] = choice.code;
+  else if (choice.kind === "keep") choices.kept.push(choice.label);
   else choices.plan = choice.plan;
   return { ...flow, choices };
 }
@@ -105,11 +111,22 @@ function planVisit(visit: ImportedVisit, pack: RulePack): PlanVisit {
   };
 }
 
+/** "Bathing, 30 min a day, 7 days a week": a task of a service the person kept, as its row. */
+function keptRows(service: ImportedService): string[] {
+  return [
+    ...service.tasks.map((task) => `${task.fusionName}, ${task.minPerDay} min a day, ${task.daysPerWeek} days a week`),
+    ...(service.transport ? [`Essential Transportation, ${service.transport.unitsPerMonth} units a month`] : []),
+    ...service.unread.map((row) => row.raw),
+  ];
+}
+
 /**
  * Parse the pasted pages, then either report the hard stops still open or build the participant's
  * whole care plan (APP-SPEC 5.8): one schedule state per authorization, in Fusion's order, each
  * with its own dates, units and checks, and the visits by month. A service whose authorization
  * ended before this month is left out with a note; when all have ended, the plan has ended.
+ * Authorizations the schedule doesn't place, and services the person chose to keep, go in
+ * `others` with their rows (IMP-19): nothing read is dropped.
  */
 export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutcome {
   const { parsed, refusedPage } = readPages(flow, pack);
@@ -118,6 +135,8 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
   const thisMonth = `${localMonth(today)}-01`;
   const codeFor = (service: ImportedService): ServiceCode | null =>
     service.serviceCode ?? (service.label !== null ? (flow.choices.serviceCodes[service.label] ?? null) : null);
+  const keptByChoice = (service: ImportedService): boolean =>
+    service.serviceCode === null && service.label !== null && flow.choices.kept.includes(service.label);
 
   const issues: ImportIssue[] = [...parsed.issues];
   if (refusedPage !== null) {
@@ -147,7 +166,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     if (issue.code === "incomplete") return !flow.choices.acceptPartial;
     // Which service a label is matters only for a service still to come, until the person says.
     if (issue.code === "unknown-service") {
-      return current.some((service) => service.label === issue.label && codeFor(service) === null);
+      return current.some((service) => service.label === issue.label && codeFor(service) === null && !keptByChoice(service));
     }
     // Dates the person entered that have already ended can be entered again.
     if (issue.code === "no-plan-dates" || issue.code === "bad-dates") return !enteredOk || (allEnded && entered !== null);
@@ -156,10 +175,23 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
   if (pending.length > 0 || current.length === 0) {
     return { kind: "needs", parsed, issues: pending };
   }
+  // Every service still to come was kept: there's nothing to place in the week.
+  if (current.every(keptByChoice)) {
+    const labels = current.map((service) => service.label).join(", ");
+    return {
+      kind: "needs",
+      parsed,
+      issues: [{
+        level: "error", code: "nothing-to-schedule",
+        message: `None of this care plan's authorizations has tasks to place in the week: ${labels}.`,
+      }],
+    };
+  }
 
   const resolved = structuredClone(parsed);
   if (enteredOk) resolved.plan = entered;
   const services: QuickState[] = [];
+  const others: PlanOther[] = parsed.others.map((other) => ({ ...other, monthly: [...other.monthly], rows: [...other.rows] }));
   const notes: ImportIssue[] = parsed.issues.filter(
     (issue) => !SERVICE_NOTES.includes(issue.code) && (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete"),
   );
@@ -168,6 +200,18 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
       notes.push({
         level: "warn", code: "plan-ended", label: service.label ?? undefined,
         message: `${service.label ?? "A service"} ended on ${niceDate(datesOf(service)!.end)}, so it isn't scheduled.`,
+      });
+      return;
+    }
+    if (keptByChoice(service)) {
+      const dates = datesOf(service);
+      others.push({
+        label: service.label, code: null, registryId: null, provider: service.provider, pa: service.pa,
+        start: dates?.start ?? null, end: dates?.end ?? null, monthly: service.monthly ?? [], rows: keptRows(service),
+      });
+      notes.push({
+        level: "warn", code: "kept", label: service.label ?? undefined,
+        message: `${service.label} isn't scheduled: you chose to keep it with the plan without a schedule.`,
       });
       return;
     }
@@ -182,6 +226,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     plan: {
       services,
       visits: parsed.visits.map((visit) => planVisit(visit, pack)),
+      others,
       notes,
       view: services.length > 1 ? "plan" : 0,
     },

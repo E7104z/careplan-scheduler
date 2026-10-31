@@ -9,9 +9,10 @@ import { READ_SUMMARY_TITLE_ID } from "../import/ReadSummary";
 import { isUpcoming, planWeek, serviceName, type PlanDay } from "./carePlan";
 import { checksumLines } from "./checksumText";
 import { monthBalance, monthFigures } from "./model";
+import { otherAmount, otherDetail, otherName, otherReason, otherService, planOthers } from "./others";
 import { figureMonth } from "./planSheet";
 import { scheduleStatus } from "./status";
-import type { CarePlan, PlanVisit, QuickModel } from "./types";
+import type { CarePlan, PlanOther, PlanVisit, QuickModel } from "./types";
 
 interface PlanProps {
   plan: CarePlan;
@@ -90,6 +91,24 @@ function noteText(note: ImportIssue): string {
 }
 
 /**
+ * IMP-19: what was read and what became of it: "6 authorizations read: 1 scheduled in the week,
+ * 1 nurse visit by month, 4 kept without a schedule (1 not recognized)". Counted from the plan,
+ * never fixed numbers.
+ */
+export function coverageLine(plan: CarePlan): string {
+  const others = planOthers(plan);
+  const visits = new Set(plan.visits.map((visit, index) => visit.pa ?? `#${index}`)).size;
+  const unknown = others.filter((other) => !otherService(other) && other.code !== null).length;
+  const total = plan.services.length + visits + others.length;
+  const parts = [
+    `${plan.services.length} scheduled in the week`,
+    visits > 0 ? `${visits} nurse ${visits === 1 ? "visit" : "visits"} by month` : null,
+    others.length > 0 ? `${others.length} kept without a schedule${unknown > 0 ? ` (${unknown} not recognized)` : ""}` : null,
+  ].filter(Boolean);
+  return `${total} ${total === 1 ? "authorization" : "authorizations"} read: ${parts.join(", ")}.`;
+}
+
+/**
  * APP-SPEC 5.8 read summary for a care plan with several authorizations: who, the plan's dates,
  * each authorization and whether our total matches Fusion's, the visits, and the reader's notes.
  */
@@ -133,12 +152,13 @@ export function PlanSummary({ plan, models, onNewPlan }: PlanProps & { onNewPlan
         <Fact term="Services">{String(plan.services.length)}</Fact>
         <Fact term="Tasks">{String(tasks)}</Fact>
         {plan.visits.length > 0 ? <Fact term="Nurse visits">{String(plan.visits.length)}</Fact> : null}
+        {planOthers(plan).length > 0 ? <Fact term="Kept, not scheduled">{String(planOthers(plan).length)}</Fact> : null}
         {providers.length === 1 ? <Fact term="Provider">{providers[0]}</Fact> : null}
       </dl>
 
       <p className="text-sm text-ink">
         <strong>One schedule for the whole care plan.</strong> Each service keeps its own authorization, units and
-        checks; the week shows them together.
+        checks; the week shows them together. {coverageLine(plan)}
       </p>
 
       <ul className="grid gap-1.5 text-sm">
@@ -345,6 +365,59 @@ export function VisitsPanel({ visits, today }: { visits: PlanVisit[]; today: Dat
             </li>
           );
         })}
+      </ul>
+    </Panel>
+  );
+}
+
+function OtherItem({ other }: { other: PlanOther }) {
+  const recognized = otherService(other) !== undefined || other.code === null;
+  return (
+    <li className={cn("grid gap-1 rounded-sm border border-l-4 border-line px-3 py-2 text-sm", recognized ? "border-l-info" : "border-l-review")}>
+      <span className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <span className="min-w-0">
+          <strong className="text-ink">{otherName(other)}</strong>
+          <span className="text-ink-2">{` · ${otherDetail(other)}`}</span>
+        </span>
+        <span className={cn("text-[13px] font-semibold", recognized ? "text-ink-2" : "text-review")}>{otherReason(other)}</span>
+      </span>
+      <span className="text-ink">{otherAmount(other)}</span>
+      <span className="text-[13px] text-ink-3">
+        {[other.pa ? `PA ${other.pa}` : null, other.provider].filter(Boolean).join(" · ") || "No authorization number read"}
+      </span>
+      {other.rows.length > 0 ? (
+        <details className="text-[13px] text-ink-2">
+          <summary className="cursor-pointer text-brand">As read from Fusion</summary>
+          <ul className="mt-1 grid gap-0.5">
+            {other.rows.map((row, index) => (
+              <li key={index} className="whitespace-pre-wrap break-words font-mono">
+                {row.replace(/\t/g, "  ")}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * IMP-19: authorizations in the care plan that aren't in the week, kept so nothing read is lost:
+ * services arranged by date or with no caregiver time, and any service we don't recognize.
+ */
+export function OthersPanel({ plan }: { plan: CarePlan }) {
+  const others = planOthers(plan);
+  if (others.length === 0) return null;
+  return (
+    <Panel title="Other authorizations" meta="Kept with the plan, not in the week" className="min-w-0">
+      <p className="mb-3 text-sm text-ink-2">
+        These are in the care plan but Quick Schedule doesn't place them in the week. Each keeps its own
+        authorization. Arrange the ones by date with the provider; check any marked not recognized against Fusion.
+      </p>
+      <ul className="grid gap-2">
+        {others.map((other, index) => (
+          <OtherItem key={index} other={other} />
+        ))}
       </ul>
     </Panel>
   );

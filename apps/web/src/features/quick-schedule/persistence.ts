@@ -110,6 +110,31 @@ function isVisit(value: unknown): boolean {
   );
 }
 
+const isDateOrNull = (value: unknown): boolean => value === null || (typeof value === "string" && ISO_DATE.test(value));
+
+function isOther(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isStringOrNull(value.label) &&
+    isStringOrNull(value.code) &&
+    isStringOrNull(value.registryId) &&
+    isStringOrNull(value.provider) &&
+    isStringOrNull(value.pa) &&
+    isDateOrNull(value.start) &&
+    isDateOrNull(value.end) &&
+    Array.isArray(value.monthly) &&
+    value.monthly.every(
+      (month) =>
+        isRecord(month) &&
+        typeof month.start === "string" && ISO_DATE.test(month.start) &&
+        typeof month.end === "string" && ISO_DATE.test(month.end) &&
+        isInt(month.units, 0),
+    ) &&
+    Array.isArray(value.rows) &&
+    value.rows.every((row) => typeof row === "string")
+  );
+}
+
 function isCarePlan(value: unknown): value is CarePlan {
   if (!isRecord(value) || !Array.isArray(value.services) || value.services.length === 0) return false;
   const count = value.services.length;
@@ -117,6 +142,8 @@ function isCarePlan(value: unknown): value is CarePlan {
     value.services.every(isQuickState) &&
     Array.isArray(value.visits) &&
     value.visits.every(isVisit) &&
+    // Kept authorizations (IMP-19); plans saved before them have none.
+    (value.others === undefined || (Array.isArray(value.others) && value.others.every(isOther))) &&
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
     ((value.view === "plan" && count > 1) || isInt(value.view, 0, count - 1))

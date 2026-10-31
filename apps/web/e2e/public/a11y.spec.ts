@@ -72,6 +72,19 @@ for (const theme of ["light", "dark"] as const) {
     await analyze(page);
   });
 
+  test(`axe: quick fixture G other authorizations in ${theme}`, async ({ page }) => {
+    await useTheme(page, theme);
+    await page.goto("/quick");
+    await pasteCarePlan(page, fixtureText("G-care-plan-report-kept"));
+    await expect(page.getByRole("heading", { name: "Other authorizations" })).toBeVisible();
+    await analyze(page);
+
+    // One kept authorization's rows open, as read from Fusion.
+    await page.getByText("As read from Fusion").first().click();
+    await expect(page.getByText("Home Delivered Meals  2  N/A")).toBeVisible();
+    await analyze(page);
+  });
+
   test(`axe: quick fixture B built in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");

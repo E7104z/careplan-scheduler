@@ -1,8 +1,9 @@
-import type { RulePack, ServiceCode } from "@careplan/engine";
+import { findAppendix1, type RulePack, type ServiceCode } from "@careplan/engine";
 import { MDY, ymd } from "./dates.js";
 import { buildService, type ResultParts } from "./result.js";
 import { readRow, type ReadRow } from "./rows.js";
-import type { ImportedVisit, ImportIssue } from "./types.js";
+import { serviceCodeForLabel } from "./services.js";
+import type { ImportedOther, ImportedVisit, ImportIssue } from "./types.js";
 
 // Fusion's care plan report ("Home & Community Based Services Care Plan"), IMPORT-SPEC 1.3.
 // Cells are separated by tabs (its PDF) or single spaces (copied from a PDF viewer).
@@ -126,11 +127,26 @@ function codeFallback(block: Block, blocks: Block[], pack: RulePack): ServiceCod
 }
 
 /**
+ * IMP-19: whether a block the schedule can't place is kept rather than offered as a service to
+ * choose. A label we know, or a code the rule pack schedules, is a service; T1019 (or a code shared
+ * by labels) is left for the person to say. Any other code is kept: an Appendix 1 service Quick
+ * Schedule doesn't schedule (meals, adult day care, RCF/ALF, ILW supports), or a code outside it.
+ */
+function isKept(block: Block, blocks: Block[], pack: RulePack): boolean {
+  const code = block.months[0]?.code;
+  if (!code || (block.label !== null && serviceCodeForLabel(block.label) !== null)) return false;
+  if (codeFallback(block, blocks, pack) !== null || AMBIGUOUS_CODES.has(code)) return false;
+  const engineCode = findAppendix1(code)?.engineCode ?? null;
+  return engineCode === null;
+}
+
+/**
  * IMP-17/18: read Fusion's care plan report. Participant from "Participant Information" and the
  * first DCN (else the page header), plan dates from "Care Plan Information", and for each
  * service its label, authorization, provider, each month's authorized units and its tasks.
  * A service whose procedure code is a visit in the rule pack (a nurse visit, such as GHE) goes in
- * `visits`, by month, with one note per label. The address, date of birth and phone numbers are never read.
+ * `visits`, by month, with one note per label. A service the schedule can't place is kept in
+ * `others` with its rows as read (IMP-19). The address, date of birth and phone numbers are never read.
  */
 export function readReport(text: string, pack: RulePack): ResultParts {
   const plan = PLAN_RE.exec(text);
@@ -144,6 +160,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
   const skipped: ImportIssue[] = [];
   const services: ResultParts["services"] = [];
   const visits: ImportedVisit[] = [];
+  const others: ImportedOther[] = [];
   const blocks = readBlocks(text);
   for (const block of blocks) {
     const code = block.months[0]?.code ?? null;
@@ -166,6 +183,15 @@ export function readReport(text: string, pack: RulePack): ResultParts {
       continue;
     }
     const monthly = block.months.map(({ start, end, units }) => ({ start, end, units }));
+    if (isKept(block, blocks, pack)) {
+      others.push({
+        label: block.label, code, registryId: code ? (findAppendix1(code)?.id ?? null) : null,
+        provider: block.provider, pa: block.pa,
+        start: monthly.map((m) => m.start).sort()[0] ?? null, end: monthly.map((m) => m.end).sort().at(-1) ?? null,
+        monthly, rows: block.rows,
+      });
+      continue;
+    }
     const rows = block.rows.flatMap((line) => {
       const row = readReportRow(line, pack);
       return row ? [row] : [];
@@ -192,6 +218,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
     paging: [],
     services,
     visits,
+    others,
     duplicates,
     skipped,
   };

@@ -30,6 +30,11 @@ export function mergeFusionText(texts: string[], pack: RulePack): ImportResult {
     for (const visit of next.visits) {
       if (!merged.visits.some((kept) => kept.pa === visit.pa && kept.start === visit.start)) merged.visits.push(visit);
     }
+    for (const other of next.others) {
+      if (!merged.others.some((kept) => kept.pa === other.pa && kept.code === other.code && kept.start === other.start)) {
+        merged.others.push(other);
+      }
+    }
     for (const note of next.skipped) {
       if (!merged.skipped.some((kept) => kept.label === note.label)) merged.skipped.push(note);
     }

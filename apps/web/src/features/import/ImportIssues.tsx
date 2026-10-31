@@ -75,6 +75,9 @@ function ServiceChoice({ label, onChoose }: { label: string; onChoose: (choice: 
       <Button size="sm" onClick={() => onChoose({ kind: "serviceCode", label, code })}>
         Use this service
       </Button>
+      <Button variant="secondary" size="sm" onClick={() => onChoose({ kind: "keep", label })}>
+        Keep it, don't schedule it
+      </Button>
     </div>
   );
 }
@@ -131,8 +134,21 @@ function IssueView({
     case "unknown-service":
       return (
         <IssueBox level="input" title={`Which service is "${issue.label ?? ""}"?`}>
-          <Body>We haven't seen this Fusion service name before. Choose the service it stands for.</Body>
+          <Body>
+            We haven't seen this Fusion service name before. Choose the service it stands for. If it isn't one of
+            these, keep it: it stays with the care plan and its printout, without a schedule.
+          </Body>
           <ServiceChoice label={issue.label ?? ""} onChoose={onChoose} />
+        </IssueBox>
+      );
+    case "nothing-to-schedule":
+      return (
+        <IssueBox level="error" title="Nothing in this care plan goes in the week">
+          <Body>
+            {issue.message} Quick Schedule builds a week from tasks, and these are arranged by date, have no
+            caregiver time, or were kept without a schedule. A care plan with personal care, homemaker, chore or
+            respite tasks builds a schedule, with these listed beside it.
+          </Body>
         </IssueBox>
       );
     case "no-plan-dates":

@@ -3,6 +3,7 @@ import { formatDuration, monthName, niceDate, shortMonth, weekdayName } from "..
 import { serviceName, weekMinutes } from "./carePlan";
 import { hasSchedule, monthFigures } from "./model";
 import { buildScheduleSheet, type ScheduleSheet, type SheetDay, type SheetFact, type SheetFigure } from "./scheduleSheet";
+import { otherLines, planOthers } from "./others";
 import { scheduleStatus } from "./status";
 import type { CarePlan, QuickModel } from "./types";
 
@@ -18,6 +19,21 @@ function unitsCell(minutes: number): string {
 function visitMonths(plan: CarePlan): string {
   const months = [...new Set(plan.visits.map((visit) => visit.start.slice(0, 7)))].sort().map(shortMonth);
   return months.length <= 2 ? months.join(" and ") : `${months.slice(0, -1).join(", ")} and ${months.at(-1)}`;
+}
+
+/**
+ * What the week leaves out, for the printout's note: nurse visits by month and the authorizations
+ * kept without a schedule (IMP-19), so a printout never drops part of the care plan.
+ */
+function outsideWeekNote(plan: CarePlan): string {
+  const visits =
+    plan.visits.length > 0
+      ? ` Nurse visits are authorized by month and aren't in the week: ${plan.visits
+          .map((visit) => `${visit.name}, ${monthName(visit.start.slice(0, 7))}`)
+          .join("; ")}.`
+      : "";
+  const others = planOthers(plan).length > 0 ? ` Also in the care plan, not in the week: ${otherLines(plan).join(" ")}` : "";
+  return visits + others;
 }
 
 /** The month a service's figures are shown for: the one being viewed, else its first scheduled month. */
@@ -48,6 +64,7 @@ export function buildPlanSheet(plan: CarePlan, models: QuickModel[], pack: RuleP
   if (scheduleStart > start) facts.push({ label: "Schedule starts", value: niceDate(scheduleStart) });
   if (providers.length === 1) facts.push({ label: "Provider", value: providers[0]! });
   if (plan.visits.length > 0) facts.push({ label: "Nurse visits", value: visitMonths(plan) });
+  if (planOthers(plan).length > 0) facts.push({ label: "Not in the week", value: String(planOthers(plan).length) });
 
   // One grid: each service's rows in Fusion's order, each naming its service.
   const rows = sheets.flatMap((sheet, index) =>
@@ -109,11 +126,7 @@ export function buildPlanSheet(plan: CarePlan, models: QuickModel[], pack: RuleP
     months: [],
     authorizedNote:
       "Each service keeps its own authorized units: its page, which follows, has them month by month." +
-      (plan.visits.length > 0
-        ? ` Nurse visits are authorized by month and aren't in the week: ${plan.visits
-            .map((visit) => `${visit.name}, ${monthName(visit.start.slice(0, 7))}`)
-            .join("; ")}.`
-        : ""),
+      outsideWeekNote(plan),
     cutNote: null,
     checks,
     reviewed: reviewed.length === 1 && reviewed[0] !== null ? niceDate(reviewed[0]!) : null,
@@ -126,7 +139,10 @@ export function buildPlanSheet(plan: CarePlan, models: QuickModel[], pack: RuleP
  * service with anything scheduled on its own page (APP-SPEC 5.8).
  */
 export function planSheets(plan: CarePlan, models: QuickModel[], pack: RulePack, today: string): ScheduleSheet | ScheduleSheet[] {
-  if (plan.services.length === 1) return buildScheduleSheet(plan.services[0]!, models[0]!, pack, today);
+  if (plan.services.length === 1) {
+    const sheet = buildScheduleSheet(plan.services[0]!, models[0]!, pack, today);
+    return { ...sheet, authorizedNote: sheet.authorizedNote + outsideWeekNote(plan) };
+  }
   const pages = plan.services
     .map((state, index) => ({ state, model: models[index]! }))
     .filter(({ model }) => hasSchedule(model))
