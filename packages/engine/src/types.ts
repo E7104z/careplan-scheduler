@@ -58,6 +58,13 @@ export interface DatedOccurrence {
   date: string;   // YYYY-MM-DD
   minutes: number;
 }
+/** A respite coverage block: a start/end span of care (Policy 3.50), never 15-minute task units. */
+export interface CoverageBlock {
+  id: string;
+  serviceAuthId: string;
+  start: string;  // local ISO "YYYY-MM-DDTHH:mm", America/Chicago
+  end: string;
+}
 export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date

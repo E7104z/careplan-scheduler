@@ -19,6 +19,7 @@ const FOOTNOTE =
 interface SchedulePaneProps {
   state: QuickState;
   model: QuickModel;
+  models: QuickModel[];
   pack: RulePack;
   feedback: QuickFeedback | null;
   dispatch: Dispatch<QuickAction>;
@@ -28,7 +29,7 @@ interface SchedulePaneProps {
  * APP-SPEC 5.4 schedule pane: status, week, daily task list, month, checks, the review with the
  * participant and the footnote, plus the print header and footer (shown only in print).
  */
-export function SchedulePane({ state, model, pack, feedback, dispatch }: SchedulePaneProps) {
+export function SchedulePane({ state, model, models, pack, feedback, dispatch }: SchedulePaneProps) {
   const [highlight, setHighlight] = useState<string | null>(null);
   const clearHighlight = useCallback(() => setHighlight(null), []);
 
@@ -60,7 +61,7 @@ export function SchedulePane({ state, model, pack, feedback, dispatch }: Schedul
         onHighlightDone={clearHighlight}
       />
       <DailyTaskList state={state} model={model} />
-      <MonthPanel state={state} model={model} dispatch={dispatch} />
+      <MonthPanel state={state} model={model} models={models} dispatch={dispatch} />
       <ChecksPanel state={state} model={model} onShowInWeek={setHighlight} />
       {hasSchedule(model) ? <ReviewSection state={state} dispatch={dispatch} /> : null}
 

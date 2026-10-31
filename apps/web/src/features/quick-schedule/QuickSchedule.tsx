@@ -206,7 +206,7 @@ export function QuickSchedule() {
             <div className="print:hidden">
               <CarePlanPane key={`${planKey}-${index}`} state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
             </div>
-            <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+            <SchedulePane state={state} model={model} models={models} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
           {several ? null : <VisitsPanel visits={plan.visits} today={new Date()} />}
           {several ? null : <OthersPanel plan={plan} />}

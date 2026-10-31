@@ -1,4 +1,5 @@
 import {
+  combinedRespiteUnits,
   composeWeek,
   daysInMonth,
   derivedServiceMonthUnits,
@@ -316,4 +317,23 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
     trims,
     trimmedMinutes,
   };
+}
+
+/**
+ * APP-SPEC 5.8: the combined Basic + Advanced respite figure for a month, or null when the plan
+ * doesn't hold both. The figure (and its 868 ceiling) come from the engine's AUTH-09 math, never
+ * re-added here, so the number shown matches the BLOCK the engine emits.
+ */
+export function combinedRespiteFigure(
+  models: QuickModel[],
+  month: string,
+): { units: number; ceiling: number } | null {
+  const respites = models.filter((model) => model.svc.combinedCeilingGroup === "RESPITE");
+  const hasBasic = respites.some((model) => model.svc.code === "S5150");
+  const hasAdvanced = respites.some((model) => model.svc.code === "S5150TF");
+  if (!hasBasic || !hasAdvanced) return null;
+  const authorizations = respites.map((model) => model.auth);
+  const monthly = respites.flatMap((model) => model.monthlyAuthorizations);
+  const ceiling = respites[0]!.svc.monthlyCeiling ?? 0;
+  return { units: combinedRespiteUnits(authorizations, monthly, month), ceiling };
 }

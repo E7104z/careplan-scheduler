@@ -17,6 +17,7 @@ export * from "./calendar/time.js";
 export * from "./calendar/weeks.js";
 export * from "./compose/composeWeek.js";
 export * from "./compose/oneTime.js";
+export * from "./compose/coverage.js";
 export * from "./rules/auth.js";
 export * from "./rules/sch.js";
 export * from "./rules/fit.js";
