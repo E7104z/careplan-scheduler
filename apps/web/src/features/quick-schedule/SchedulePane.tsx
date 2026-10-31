@@ -9,6 +9,7 @@ import { ReviewSection } from "./ReviewSection";
 import { StatusPanel } from "./StatusPanel";
 import { WeeklyPanel } from "./WeeklyPanel";
 import type { QuickAction } from "./state";
+import { hasSchedule } from "./model";
 import type { QuickModel, QuickState } from "./types";
 import type { QuickFeedback } from "./useQuickStore";
 
@@ -61,7 +62,7 @@ export function SchedulePane({ state, model, pack, feedback, dispatch }: Schedul
       <DailyTaskList state={state} model={model} />
       <MonthPanel state={state} model={model} dispatch={dispatch} />
       <ChecksPanel state={state} model={model} onShowInWeek={setHighlight} />
-      {model.tasks.length > 0 ? <ReviewSection state={state} dispatch={dispatch} /> : null}
+      {hasSchedule(model) ? <ReviewSection state={state} dispatch={dispatch} /> : null}
 
       <p className="text-[13px] text-ink-3 print:hidden">
         {FOOTNOTE}{" "}

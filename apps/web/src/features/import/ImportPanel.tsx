@@ -3,8 +3,9 @@ import { MO_2026_07 } from "@careplan/engine";
 import { Button } from "../../ui/Button";
 import { FileDrop } from "../../ui/FileDrop";
 import { Textarea } from "../../ui/Textarea";
+import { singlePlan } from "../quick-schedule/carePlan";
 import { exampleStateA, exampleStateB, manualState } from "../quick-schedule/state";
-import type { QuickState } from "../quick-schedule/types";
+import type { CarePlan, QuickState } from "../quick-schedule/types";
 import { ImportIssues, type ImportNotice, type ImportSource, type NeedsOutcome } from "./ImportIssues";
 import { addPage, emptyImportFlow, next, setChoice, type ImportChoice, type ImportFlow } from "./importFlow";
 import type { PdfReadResult } from "./readPdf";
@@ -15,8 +16,8 @@ export const PASTE_BOX_ID = "qs-paste";
 export type BuiltFrom = "import" | "example" | "manual";
 
 export interface ImportPanelProps {
-  /** A plan is ready: read from a paste or PDF, one of the examples, or an empty one by hand. */
-  onBuilt: (state: QuickState, from: BuiltFrom) => void;
+  /** A plan is ready: read from a paste or PDF (every service in it), an example, or an empty one by hand. */
+  onBuilt: (plan: CarePlan, from: BuiltFrom) => void;
 }
 
 const PASTE_FIRST: ImportNotice = {
@@ -69,7 +70,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
     const result = next(value, MO_2026_07, new Date());
     if (result.kind === "ready") {
       reset();
-      onBuilt(result.state, "import");
+      onBuilt(result.plan, "import");
       return;
     }
     // Text with no care plan in it isn't a page of the plan: the next paste is page 1 again.
@@ -116,7 +117,7 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
 
   const start = (state: QuickState, from: BuiltFrom) => {
     reset();
-    onBuilt(state, from);
+    onBuilt(singlePlan(state), from);
   };
 
   const page = flow.pages.length + 1;

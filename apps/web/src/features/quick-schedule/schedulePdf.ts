@@ -374,7 +374,7 @@ function drawGrid(p: Painter, sheet: ScheduleSheet, top: number, height: number)
   // Totals: each visit's length (what an EVV window is set to), its minutes and its units.
   p.line(LEFT, totalsTop - 1, LEFT + GRID_WIDTH, totalsTop - 1, p.color.ink, 0.9);
   const totals: [string, (index: number) => string, string, Weight][] = [
-    ["Visit length", (index) => sheet.days[index]?.visit ?? "No visit", sheet.week.visit, "bold"],
+    [sheet.kind === "plan" ? "Day total" : "Visit length", (index) => sheet.days[index]?.visit ?? (sheet.kind === "plan" ? "No service" : "No visit"), sheet.week.visit, "bold"],
     ["Minutes", (index) => sheet.days[index]?.minutes ?? "", sheet.week.minutes, "regular"],
     ["Units", (index) => sheet.days[index]?.units ?? "", sheet.week.units, "regular"],
   ];
@@ -556,7 +556,9 @@ function monthLines(sheet: ScheduleSheet): MonthLine[] {
 function stripHeight(p: Painter, sheet: ScheduleSheet): number {
   const notes = [sheet.authorizedNote, sheet.cutNote].filter((note): note is string => note !== null);
   const lines = notes.reduce((sum, note) => sum + p.wrap(note, "regular", 6.5, RIGHT - LEFT).length, 0);
-  return 12 + monthLines(sheet).length * MONTH_ROW + 4 + lines * 8.5;
+  // The whole care plan's page has no months of its own (APP-SPEC 5.8): only its notes.
+  const table = sheet.months.length > 0 ? 12 + monthLines(sheet).length * MONTH_ROW + 4 : 0;
+  return table + lines * 8.5;
 }
 
 function drawMonths(p: Painter, sheet: ScheduleSheet, top: number): number {
@@ -564,27 +566,31 @@ function drawMonths(p: Painter, sheet: ScheduleSheet, top: number): number {
   const columnWidth = Math.min(64, (RIGHT - LEFT - labelWidth) / Math.max(sheet.months.length, 1));
   const tableWidth = labelWidth + columnWidth * sheet.months.length;
   const lines = monthLines(sheet);
-  let y = heading(p, "Units by month", LEFT, top);
+  let y = top;
+  // The whole care plan's page has no months of its own (APP-SPEC 5.8): each service's page has them.
+  if (sheet.months.length > 0) {
+    y = heading(p, "Units by month", LEFT, top);
 
-  p.box(LEFT, y, tableWidth, MONTH_ROW, { fill: p.color.sunk, radius: 2 });
-  lines.forEach((line, index) => {
-    const middle = y + index * MONTH_ROW + MONTH_ROW / 2;
-    const first = index === 0;
-    p.middle(line.label, LEFT + 6, middle, { weight: "semibold", size: 7, color: first ? p.color.ink : p.color["ink-2"] });
-    sheet.months.forEach((month, at) => {
-      const text = line.value(month);
-      const flag = line.flag?.(month) ?? null;
-      const weight = first || flag === "block" ? "semibold" : "regular";
-      p.middle(text, LEFT + labelWidth + columnWidth * at + columnWidth / 2, middle, {
-        weight,
-        size: p.sizeToFit(text, weight, 7, 5.5, columnWidth - 4),
-        color: flag ? p.color[flag] : first ? p.color.ink : p.color["ink-2"],
-        align: "center",
+    p.box(LEFT, y, tableWidth, MONTH_ROW, { fill: p.color.sunk, radius: 2 });
+    lines.forEach((line, index) => {
+      const middle = y + index * MONTH_ROW + MONTH_ROW / 2;
+      const first = index === 0;
+      p.middle(line.label, LEFT + 6, middle, { weight: "semibold", size: 7, color: first ? p.color.ink : p.color["ink-2"] });
+      sheet.months.forEach((month, at) => {
+        const text = line.value(month);
+        const flag = line.flag?.(month) ?? null;
+        const weight = first || flag === "block" ? "semibold" : "regular";
+        p.middle(text, LEFT + labelWidth + columnWidth * at + columnWidth / 2, middle, {
+          weight,
+          size: p.sizeToFit(text, weight, 7, 5.5, columnWidth - 4),
+          color: flag ? p.color[flag] : first ? p.color.ink : p.color["ink-2"],
+          align: "center",
+        });
       });
+      if (!first) p.line(LEFT, y + index * MONTH_ROW, LEFT + tableWidth, y + index * MONTH_ROW, p.color.line, 0.4);
     });
-    if (!first) p.line(LEFT, y + index * MONTH_ROW, LEFT + tableWidth, y + index * MONTH_ROW, p.color.line, 0.4);
-  });
-  y += lines.length * MONTH_ROW + 4;
+    y += lines.length * MONTH_ROW + 4;
+  }
 
   for (const [note, color] of [[sheet.authorizedNote, p.color["ink-3"]], [sheet.cutNote, p.color.warn]] as const) {
     if (note === null) continue;
@@ -599,7 +605,8 @@ function drawMonths(p: Painter, sheet: ScheduleSheet, top: number): number {
 function drawFooter(p: Painter, sheet: ScheduleSheet): void {
   p.line(LEFT, FOOTER_TOP - 5, RIGHT, FOOTER_TOP - 5, p.color.line, 0.5);
   p.text(sheet.footer, LEFT, FOOTER_TOP, { size: 6.5, color: p.color["ink-3"] });
-  p.text("Set each EVV visit window to its visit length.", RIGHT, FOOTER_TOP, { size: 6.5, color: p.color["ink-3"], align: "right" });
+  const evv = sheet.kind === "plan" ? "Each service's own page has its visit lengths for EVV." : "Set each EVV visit window to its visit length.";
+  p.text(evv, RIGHT, FOOTER_TOP, { size: 6.5, color: p.color["ink-3"], align: "right" });
 }
 
 /** Lays the sheet out on the page (or, without a page, only measures). */
@@ -613,8 +620,8 @@ function layOut(p: Painter, sheet: ScheduleSheet): void {
   drawFooter(p, sheet);
 }
 
-/** The one-page PDF of the schedule. */
-export async function renderSchedulePdf(sheet: ScheduleSheet, files: FontFiles, now: Date): Promise<Uint8Array> {
+/** The schedule's PDF: one page for each sheet (the whole care plan, then each service). */
+export async function renderSchedulePdf(sheets: ScheduleSheet | ScheduleSheet[], files: FontFiles, now: Date): Promise<Uint8Array> {
   const doc = await PDFDocument.create({ updateMetadata: false });
   doc.registerFontkit(fontkit);
   const fonts: Fonts = {
@@ -622,8 +629,10 @@ export async function renderSchedulePdf(sheet: ScheduleSheet, files: FontFiles, 
     semibold: await doc.embedFont(files.semibold, { subset: true }),
     bold: await doc.embedFont(files.bold, { subset: true }),
   };
-  const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  layOut(new Painter(page, fonts, printPalette()), sheet);
+  const palette = printPalette();
+  for (const sheet of Array.isArray(sheets) ? sheets : [sheets]) {
+    layOut(new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette), sheet);
+  }
 
   // No name in the title: a PDF viewer shows it in its tab and window list.
   doc.setTitle("Weekly care schedule", { showInWindowTitleBar: true });
@@ -647,7 +656,7 @@ async function fontFiles(): Promise<FontFiles> {
 }
 
 /** The schedule's PDF, ready to open or save. */
-export async function schedulePdfBlob(sheet: ScheduleSheet, now: Date): Promise<Blob> {
-  const bytes = await renderSchedulePdf(sheet, await fontFiles(), now);
+export async function schedulePdfBlob(sheets: ScheduleSheet | ScheduleSheet[], now: Date): Promise<Blob> {
+  const bytes = await renderSchedulePdf(sheets, await fontFiles(), now);
   return new Blob([bytes.slice()], { type: "application/pdf" });
 }

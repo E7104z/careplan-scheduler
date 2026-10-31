@@ -2,6 +2,7 @@ import { CircleCheck, OctagonX } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { monthName } from "../../lib/format";
 import { scheduleStatus } from "./status";
+import { hasSchedule } from "./model";
 import type { QuickModel, QuickState } from "./types";
 
 function Figure({ value, label }: { value: number; label: string }) {
@@ -22,7 +23,7 @@ export function StatusPanel({ state, model }: { state: QuickState; model: QuickM
   const box = "flex flex-wrap items-center gap-x-7 gap-y-4 rounded-md border border-line bg-surface px-5 py-4 max-sm:px-4";
   const { title, detail, blocked, weekMinutes, monthUnits, careDays } = scheduleStatus(state, model);
 
-  if (model.tasks.length === 0) {
+  if (!hasSchedule(model)) {
     return (
       <div role="status" aria-live="polite" aria-label="Schedule status" className={box}>
         <div>

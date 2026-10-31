@@ -502,8 +502,9 @@ nothing.
   ("YYYY-MM", the month the schedule was built; it covers the plan from then on), `viewMonth`,
   `reviewed` (the date it was gone over with the participant, or null), `isExample`, `notes`,
   `rowsRead`.
-- Persist everything **except `identity`** to `sessionStorage` key `cps.quick.v2` (debounced
-  300 ms); restore if the shape validates, else show the example. After a reload the read
+- Persist the whole care plan (5.8), every service **except `identity`**, to `sessionStorage`
+  key `cps.quick.v3` (debounced 300 ms); restore if the shape validates (else a single service
+  under `cps.quick.v2` from the version before), else show the example. After a reload the read
   summary title is "Care plan from Fusion". All storage access in try/catch.
 - Never write Quick Schedule state to `localStorage`, Firestore, the URL, or the console.
 
@@ -534,6 +535,43 @@ nothing.
   fits: "Bathing can't have more than 45 minutes on Monday. To add time here, take it from
   another day first." The box clears on the next accepted change.
 - Other refusals show their sentence next to the control (task days) or in a toast.
+
+### 5.8 The whole care plan: several authorizations, one schedule (Oct 31, 2026)
+Decided in the Oct 31, 2026 review (`docs/PHASE-3-UNIFIED-SCHEDULE.md`): the participant is
+what a schedule is for, and the authorization is a layer under it. Missouri authorizes each
+service on its own, but the participant lives one week. So:
+- **Import reads every block** of a care plan (IMPORT-SPEC IMP-17/18) and builds every
+  time-based authorization at once, in Fusion's order; nothing asks which service to schedule.
+  An unknown label asks which service it is, per label (IMP-11). A service whose authorization
+  ended before this month is left out with a note; when all have ended, the plan has ended.
+- **State** (`CarePlan`, `types.ts`): `services` (one `QuickState` per authorization, each with
+  its own dates, Fusion figures, care days, tasks, checks and review), `visits` (authorized by
+  month, IMP-18), `notes` (about the plan as a whole) and `view` ("plan" or a service's index).
+  A plan of one service (the examples, by hand, a one-service care plan) shows that service as
+  before, with its visits listed under it.
+- **Each authorization keeps its own identity and units.** Service type, authorization (PA),
+  dates and tasks stay together; a procedure code alone never names a service (Fusion shows
+  T1019 under both agency and CDS). Every change goes to one service through its own guard
+  (5.7), so the medically related household tasks stay under agency personal care and never
+  count against homemaker.
+- **Care days across services:** the first service takes the first days from Monday, as
+  before (IMPORT-SPEC 4). Each service after it takes its days from the quietest days of the
+  week built so far (fewest minutes; ties in Monday-first order); a service with only
+  transportation takes the quietest weekday. All of it is editable in that service.
+- **Whole care plan view** (the default with several services): tabs "Whole care plan" and one
+  per service (toggle buttons, `aria-pressed`); the read summary for the plan (dates, services,
+  tasks, visits, and for each authorization whether our total matches Fusion's); Authorizations
+  (each service's PA, its units in the month, scheduled, left, its checks' status, "Open");
+  the participant's week, Sunday to Saturday, every task under the service that authorizes it
+  with that service's minutes and the day's total; Nurse visits by month (Past, This month,
+  Coming up). A service opens in detail on the same page (5.2-5.5) and the whole plan is one
+  click back.
+- **Print**: one service prints its one page (5.4). Several print the whole week first (every
+  service's rows, each naming its service; "Day total", since a day there holds several visits;
+  each service's units and PA; the visits' months), then each service with anything scheduled
+  on its own page, with its months, checks and visit lengths for EVV.
+- **Storage**: the whole plan under `cps.quick.v3` without any `identity` (5.6); a single
+  service saved under `cps.quick.v2` by the version before still opens.
 
 ## 6. Accounts
 
@@ -934,10 +972,12 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-21 | `/rules` lists every rule in `RULE_CATALOG` (including SCH-17) with ID, status, severities and source, and the services table shows each ceiling from `MO_2026_07`. | component test |
 | AC-22 | Engine: `RULE_CATALOG` matches ENGINE-SPEC section 5; TC-38 to TC-40 pass; all earlier engine tests pass. Import: IMP-T01 to IMP-T19 pass. | engine + import tests |
 | AC-23 | Root `npm run typecheck`, `npm test`, `npm run build` pass; `.github/workflows/ci.yml` runs them plus e2e and rules tests. | CI / local |
-| AC-24 | Opening `fusion-care-plan-report.pdf` (Fusion's care plan report, IMPORT-SPEC 1.3) builds the plan with no button press: read summary "SAMPLE PARTICIPANT E", "Read from Fusion · DCN 10000005", the 229 match line, the note "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule.", and "Ready to use". | Playwright |
+| AC-24 | Opening `fusion-care-plan-report.pdf` (Fusion's care plan report, IMPORT-SPEC 1.3) builds the plan with no button press: read summary "SAMPLE PARTICIPANT E", "Read from Fusion · DCN 10000005", the 229 match line, the note "GHE (General Health Evaluation) is a nurse visit, so it's listed by month, not in the week.", and "Ready to use". | Playwright |
 | AC-25 | On Oct 21, 2026: the 5-day example's month view starts at October 2026 with Previous month disabled; B (Dec 2025 to Oct 2026) builds with "Schedule starts Oct 1, 2026" and "for the one month left in the plan"; D (ended Jun 30, 2026) shows "This care plan has ended" and builds nothing. | Playwright |
 | AC-26 | Daily task list: B's Monday "Visit length 5 h 15 min", "315 minutes = 21 units"; Sunday with transportation "235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)". Month balance: B in December 2025 "469 units", "Fusion, for 31 days"; every month's units on request (February 434). Review with the participant: today's date, printed, and cleared by a change. | Component tests |
 | AC-27 | The printout (5.4 Print): B's PDF is one US Letter landscape page titled "Weekly care schedule", with "SAMPLE PARTICIPANT B", Sunday to Saturday, "5 h 15 min" and "3 h 55 min", every month's units and the footer, each day's minutes centered under its name, and every piece of text inside the margins with none overlapping, also with every CDS task and transportation. "Save as PDF" downloads "Care schedule 2025-11-20.pdf"; "Print schedule" opens it in a new tab, or downloads it where the browser shows no PDFs; Ctrl+P and `careplan:print` make the same printout once; only same-origin requests. | unit (read back with pdf.js) + component + Playwright |
+| AC-28 | Whole care plan (5.8): fixture F (agency PC 226, CDS essential transportation 40, homemaker 5, two GHEs) builds with nothing to choose and opens on the whole care plan: each authorization matches Fusion on its own (226, 40, 5); agency Monday to Friday (715 minutes), CDS transportation 120 minutes on the quietest weekday (Friday), homemaker on Saturday; both GHEs listed by month; no month after Oct 31, 2026; zero Must fix. "Open HC" changes homemaker's days under its own rules and the week shows it; a reload keeps every service and the view without the name or DCN; axe passes in both themes; no sideways page scroll on a phone. | unit + component + Playwright |
+| AC-29 | Whole care plan printout (5.8): F prints four US Letter landscape pages, the whole week first ("Services PC - Agency, PC - CDS, HC", every row naming its service, "Day total", "226 units in Oct · PA …", "Nurse visits May 2026 and Aug 2026", no "Units by month"), then each service's own page; every piece of text inside the margins with none overlapping. | unit (read back with pdf.js) + component |
 
 ---
 

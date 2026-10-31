@@ -27,6 +27,9 @@ export function mergeFusionText(texts: string[], pack: RulePack): ImportResult {
     merged.totalCost ??= next.totalCost;
     merged.paging.push(...next.paging);
     merged.duplicates.push(...next.duplicates);
+    for (const visit of next.visits) {
+      if (!merged.visits.some((kept) => kept.pa === visit.pa && kept.start === visit.start)) merged.visits.push(visit);
+    }
     for (const note of next.skipped) {
       if (!merged.skipped.some((kept) => kept.label === note.label)) merged.skipped.push(note);
     }

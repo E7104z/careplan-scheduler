@@ -59,6 +59,19 @@ for (const theme of ["light", "dark"] as const) {
     await analyze(page);
   });
 
+  test(`axe: quick fixture F whole care plan in ${theme}`, async ({ page }) => {
+    await useTheme(page, theme);
+    await page.goto("/quick");
+    await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+    await expect(page.getByRole("heading", { name: "The participant's week" })).toBeVisible();
+    await analyze(page);
+
+    // One service open in detail.
+    await page.getByRole("button", { name: "Open PC - CDS" }).click();
+    await expect(page.getByRole("button", { name: /PC - CDS/, pressed: true })).toBeVisible();
+    await analyze(page);
+  });
+
   test(`axe: quick fixture B built in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");

@@ -14,6 +14,8 @@ export const READ_SUMMARY_TITLE_ID = "qs-read-title";
 export interface ReadSummaryProps {
   state: QuickState;
   model: QuickModel;
+  /** Notes about the plan as a whole (visits, a partial copy), shown with this service's own. */
+  planNotes?: ImportIssue[];
   onNewPlan: () => void;
 }
 
@@ -83,14 +85,14 @@ function ReadTable({ state, model }: { state: QuickState; model: QuickModel }) {
  * APP-SPEC 5.1 read summary: who and what was read from Fusion, whether our total matches Fusion's
  * (IMP-15), the reader's notes, and the rows themselves on request.
  */
-export function ReadSummary({ state, model, onNewPlan }: ReadSummaryProps) {
+export function ReadSummary({ state, model, planNotes = [], onNewPlan }: ReadSummaryProps) {
   const [reviewing, setReviewing] = useState(false);
   const title = state.isExample ? "Example care plan" : (state.identity?.name ?? "Care plan from Fusion");
   const source = state.isExample
     ? "This is what a pasted Fusion plan looks like. Paste one above to make your own."
     : `Read from Fusion${state.identity ? ` · DCN ${state.identity.dcn}` : ""}`;
   const checksum = model.checksum ? checksumLines(model.checksum) : null;
-  const notes = state.notes.filter((note) => note.code !== "duplicate-task");
+  const notes = [...planNotes, ...state.notes].filter((note) => note.code !== "duplicate-task");
 
   return (
     <section

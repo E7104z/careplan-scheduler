@@ -4,6 +4,7 @@ export { textItemsToLines } from "./pdfLines.js";
 export type {
   ImportedTask,
   ImportedService,
+  ImportedVisit,
   ImportIssueCode,
   ImportIssue,
   ImportResult,

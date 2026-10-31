@@ -1,22 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { exampleStateB, manualState, reduce } from "../../src/features/quick-schedule/state";
-import { loadQuickState, saveQuickState } from "../../src/features/quick-schedule/persistence";
+import { loadPlan, loadQuickState, savePlan, saveQuickState } from "../../src/features/quick-schedule/persistence";
+import { addPage, emptyImportFlow, next } from "../../src/features/import/importFlow";
+import type { CarePlan } from "../../src/features/quick-schedule/types";
+import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
 import { buildQuickModel } from "../../src/features/quick-schedule/model";
 
 const TODAY = new Date("2026-10-21T12:00:00-05:00");
-const KEY = "cps.quick.v2";
+const KEY = "cps.quick.v3";
 
 afterEach(() => {
   sessionStorage.clear();
   vi.restoreAllMocks();
 });
 
-/** The saved JSON with one field replaced, as if the stored copy were old or edited by hand. */
+/** The saved service with one field replaced, as if the stored copy were old or edited by hand. */
 function storedWith(change: (saved: Record<string, unknown>) => void): void {
   saveQuickState(exampleStateB(TODAY));
-  const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "{}") as Record<string, unknown>;
-  change(saved);
+  const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "{}") as { services: Record<string, unknown>[] };
+  change(saved.services[0]!);
   sessionStorage.setItem(KEY, JSON.stringify(saved));
 }
 
@@ -102,4 +105,44 @@ describe("Quick Schedule persistence", () => {
     });
     expect(loadQuickState()).toBeNull();
   });
+});
+
+describe("APP-SPEC 5.8: the whole care plan", () => {
+  function planF(): CarePlan {
+    const outcome = next(addPage(emptyImportFlow(), fixtureF), MO_2026_07, TODAY);
+    if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
+    return outcome.plan;
+  }
+
+  it("round trips every service, the visits, the notes and the view, without the name or DCN", () => {
+    const plan = { ...planF(), view: 2 as const };
+    savePlan(plan);
+    const raw = sessionStorage.getItem(KEY) ?? "";
+    expect(raw).not.toContain("SAMPLE PARTICIPANT");
+    expect(raw).not.toContain("10000006");
+    expect(loadPlan()).toEqual({ ...plan, services: plan.services.map((state) => ({ ...state, identity: null })) });
+  });
+
+  it("still opens a single service saved by the version before", () => {
+    const state = { ...exampleStateB(TODAY), identity: null };
+    sessionStorage.setItem("cps.quick.v2", JSON.stringify(state));
+    expect(loadPlan()).toEqual({ services: [state], visits: [], notes: [], view: 0 });
+  });
+
+  const brokenPlan: Record<string, (saved: Record<string, unknown>) => void> = {
+    "no services": (s) => { s.services = []; },
+    "a view past the last service": (s) => { s.view = 3; },
+    "the whole plan with one service": (s) => { s.services = (s.services as unknown[]).slice(0, 1); },
+    "a visit without its month": (s) => { (s.visits as Record<string, unknown>[])[0]!.start = "May"; },
+    "a visit with an unknown code": (s) => { (s.visits as Record<string, unknown>[])[0]!.serviceCode = "X9999"; },
+  };
+  for (const [what, change] of Object.entries(brokenPlan)) {
+    it(`rejects ${what}`, () => {
+      savePlan(planF());
+      const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "{}") as Record<string, unknown>;
+      change(saved);
+      sessionStorage.setItem(KEY, JSON.stringify(saved));
+      expect(loadPlan()).toBeNull();
+    });
+  }
 });

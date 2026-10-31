@@ -1,5 +1,5 @@
 import { groupResults } from "./grouping";
-import { monthFigures } from "./model";
+import { hasSchedule, monthFigures } from "./model";
 import type { QuickModel, QuickState } from "./types";
 
 export interface ScheduleStatus {
@@ -20,7 +20,7 @@ export interface ScheduleStatus {
  * days. The screen's status panel and the printed schedule both say it this way.
  */
 export function scheduleStatus(state: QuickState, model: QuickModel): ScheduleStatus {
-  if (model.tasks.length === 0) {
+  if (!hasSchedule(model)) {
     return {
       title: "Add tasks to start",
       detail: "Your schedule and checks appear here.",
@@ -52,8 +52,9 @@ export function scheduleStatus(state: QuickState, model: QuickModel): ScheduleSt
           ? `Follows every rule we check. ${attention} ${attention === 1 ? "item is" : "items are"} worth a look in Checks.`
           : `Follows every rule we check, ${span}.`,
     blocked: blocks > 0,
-    weekMinutes: model.entries.reduce((sum, entry) => sum + entry.minutes, 0),
+    // Transportation alone (a CDS service with no tasks): the week is its set-aside time.
+    weekMinutes: model.tasks.length > 0 ? model.entries.reduce((sum, entry) => sum + entry.minutes, 0) : (model.allowance?.weeklyMinutes ?? 0),
     monthUnits: monthFigures(model, state.viewMonth).authorizedUnits,
-    careDays: new Set(model.entries.map((entry) => entry.weekday)).size,
+    careDays: model.tasks.length > 0 ? new Set(model.entries.map((entry) => entry.weekday)).size : 1,
   };
 }

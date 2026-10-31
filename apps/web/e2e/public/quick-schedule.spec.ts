@@ -158,7 +158,7 @@ test("AC-24: Fusion's care plan report PDF builds the plan and leaves out the nu
   await expect(page.getByText("Read from Fusion · DCN 10000005")).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeVisible();
   await expect(
-    page.getByText("GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule."),
+    page.getByText("GHE (General Health Evaluation) is a nurse visit, so it's listed by month, not in the week."),
   ).toBeVisible();
   await expect(statusPanel(page)).toContainText("Ready to use");
 });
@@ -173,7 +173,7 @@ test("AC-11: a reload keeps the plan without the DCN; a new tab starts with the 
   await page.goto("/quick");
   await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
-  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v2")?.includes("Laundry (Off Site)"));
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("Laundry (Off Site)"));
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Care plan from Fusion" })).toBeVisible();
@@ -281,7 +281,7 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   await page.goto("/quick");
   await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
-  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v2")?.includes("Laundry (Off Site)"));
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("Laundry (Off Site)"));
   await changeCell(page, "Bathing", "Monday", 45, 30);
   await changeCell(page, "Bathing", "Tuesday", 45, 60);
   await page.getByRole("button", { name: "Use 55 minutes" }).click();
@@ -291,7 +291,7 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   // On to January 2026; the viewed month is saved.
   await page.getByRole("button", { name: "Next month" }).click();
   await expect(page.getByLabel("Units in January 2026")).toBeVisible();
-  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v2")?.includes('"viewMonth":"2026-01"'));
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes('"viewMonth":"2026-01"'));
   await expectNothingStored();
 
   // A partial paste (AC-06).
@@ -399,4 +399,32 @@ test("two panes side by side: no Skip to the schedule link", async ({ page, isMo
   await page.goto("/quick");
   await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Skip to the schedule" })).toBeHidden();
+});
+
+test("AC-28: a care plan report with several services is one schedule for the participant", async ({ page }) => {
+  await page.goto("/quick");
+  await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT F" })).toBeVisible();
+  await expect(page.getByText("Choose the one to schedule")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Whole care plan/, pressed: true })).toBeVisible();
+
+  // Each authorization with its own units, in one week.
+  const authorizations = page.getByRole("table", { name: /Each service's authorization/ });
+  await expect(authorizations).toContainText("226 units in");
+  await expect(authorizations).toContainText("40 units in");
+  await expect(authorizations).toContainText("5 units in");
+  const week = page.locator("section", { has: page.getByRole("heading", { name: "The participant's week" }) });
+  await expect(week.getByRole("region", { name: "Saturday" })).toContainText("Wash Windows/Blinds");
+  await expect(week.getByRole("region", { name: "Friday" })).toContainText("Essential transportation");
+
+  // The nurse visits, by month. On Nov 20, 2025 both are still to come.
+  const visits = page.locator("section", { has: page.getByRole("heading", { name: "Nurse visits" }) });
+  await expect(visits).toContainText("May 2026");
+  await expect(visits).toContainText("August 2026");
+
+  // A service opens in detail on the same page, and the whole plan is one click back.
+  await page.getByRole("button", { name: "Open PC - Agency" }).click();
+  await expect(statusPanel(page)).toContainText("Ready to use");
+  await page.getByRole("button", { name: /Whole care plan/ }).click();
+  await expect(page.getByRole("heading", { name: "The participant's week" })).toBeVisible();
 });

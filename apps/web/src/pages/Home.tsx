@@ -23,8 +23,8 @@ export function Home() {
   const firstName = (user?.displayName ?? "").trim().split(/\s+/)[0] || "there";
   const agencyName = state.tenant?.name ?? "";
   const invitedSomeone = state.members.length > 1 || state.agencyInvites.length > 0;
-  // Quick Schedule saves this key once it has a plan in this tab (APP-SPEC 5.6).
-  const triedQuick = readJson<unknown>("session", "cps.quick.v2") !== null;
+  // Quick Schedule saves its plan under one of these keys once it has one in this tab (APP-SPEC 5.6, 5.8).
+  const triedQuick = readJson<unknown>("session", "cps.quick.v3") !== null || readJson<unknown>("session", "cps.quick.v2") !== null;
 
   const checklist: ChecklistItem[] = [
     { to: "/app/agency/members", label: "Invite your team", done: invitedSomeone },

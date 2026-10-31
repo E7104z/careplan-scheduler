@@ -15,6 +15,9 @@ import type { QuickState } from "../../src/features/quick-schedule/types";
 import tokensCss from "../../src/styles/tokens.css?raw";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
+import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
+import { addPage, emptyImportFlow, next } from "../../src/features/import/importFlow";
+import { planSheets } from "../../src/features/quick-schedule/planSheet";
 
 const require = createRequire(import.meta.url);
 const font = (weight: number) =>
@@ -173,6 +176,26 @@ describe("printed schedule: the PDF", () => {
     expect(pdf.text).toMatch(/And \d+ more checks\. See Checks in Quick Schedule\./);
     expect(pdf.text).toContain("Nov 19, 2025");
     expect(pdf.text).toContain("When a month's units run out");
+    expectTidy(pdf.items);
+  });
+
+  it("APP-SPEC 5.8: a plan of several services prints the whole week, then a page for each service", async () => {
+    const outcome = next(addPage(emptyImportFlow(), fixtureF), MO_2026_07, new Date("2026-10-21T12:00:00-05:00"));
+    if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
+    const models = outcome.plan.services.map((state) => buildQuickModel(state, MO_2026_07));
+    const sheets = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
+    const pdf = await readBack(await renderSchedulePdf(sheets, FONTS, NOW));
+    expect(pdf.pages).toBe(4);
+    for (const text of [
+      "SAMPLE PARTICIPANT F", "Services", "PC - Agency, PC - CDS, HC", "Feb 1, 2026 to Oct 31, 2026", "Nurse visits",
+      "May 2026 and Aug 2026", "Dietary", "Essential transportation", "Wash Windows/Blinds", "Ready to use",
+      "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service",
+      "Each service's own page has its visit lengths for EVV.",
+    ]) {
+      expect(pdf.text).toContain(text);
+    }
+    expect(pdf.text).not.toContain("Units by month");
+    expect(pdf.text).not.toContain("Visit length");
     expectTidy(pdf.items);
   });
 

@@ -106,14 +106,14 @@ Amendment B), so a plan built by hand can have them. The real plan's tasks add u
 | IMP-08 | **Transportation numbers**: find the pair (units, minutes) where `floor(minutes / 15) = units`; for run-together digits try every split point. The plan's transportation is that minutes-per-month value. |
 | IMP-09 | **Task names**: match the rule pack's task names and aliases ignoring case and extra spaces; if none, accept a unique prefix match of 6+ characters (Fusion truncation). A name with a group prefix, such as the care plan report's `Med Rel HC Tasks: Trash`, is matched by the part after the last colon. No match → keep the Fusion name, warn, and schedule it anyway (taskCode `FUSION:<name>`). |
 | IMP-10 | **Monthly authorization**: the group row's units, prorated to each **full** month of the schedule as Fusion prorates (1.2), become a Fusion `MonthlyAuthorization` (source `fusion`) for that month. When our total from the rows read equals Fusion's figure for some month length (IMP-15), each month's figure is our total for that month: Fusion's own method on the same tasks. When it doesn't (rows may be missing), each month's figure is Fusion's, lowered in a month shorter than 30 days by what the daily tasks read lose there, and never raised above Fusion's. Partial months get none (SCH-12 asks for that month's figure). The care plan report gives each month's own figure instead (IMP-17); those are used as they are. |
-| IMP-11 | **Service labels**: `PC - CDS` → `T1019U2`; `PC - Agency` → `T1019` (care plan report, Oct 2026). Any other label → ask the person which service it is (from the rule pack's 15-minute services). Add a label to the map only after seeing it in a real plan. |
+| IMP-11 | **Service labels**: `PC - CDS` → `T1019U2`; `PC - Agency` → `T1019`; `HC` → `S5130` (homemaker) (care plan reports, Oct 2026). On the care plan report, a label not in the map is named by its month table's procedure code when the rule pack has that code as a 15-minute service and no other label in the report uses it; never by `T1019`, which Fusion shows under both agency and CDS. Any other label → ask the person which service it is (from the rule pack's 15-minute services), once per label. Add a label to the map only after seeing it in a real plan. |
 | IMP-12 | **Several pastes**: each new paste is added to the ones before (Fusion page 2, 3…). Rows join the service with the same label and units; a task already read is not added twice; a different DCN is refused. |
 | IMP-13 | **Plan dates** come from the banner, else from the group row. Neither → ask for them. |
 | IMP-14 | **PDF**: text is read in the browser with pdf.js (`isEvalSupported: false`), never uploaded. Blank text items are dropped first (the care plan report draws one across each gap between cells, which would otherwise close the gap). Text items are grouped into lines by baseline (same line when `|Δy| ≤ 0.5 × font height`), sorted left to right, and joined with a tab when the gap is more than 0.8 × font height, a space when more than 0.15 ×, otherwise nothing. Pages are joined with newlines. The result goes through the same reader as a paste. A PDF with no text (a scan) gets its own message. |
 | IMP-15 | **Checksum**: for each month length that occurs among the full plan months, compute derived month units from the rows read. If Fusion's units equal any of them, show "Every task read" with both numbers. If not, show the mismatch with our figures and keep Fusion's figure. |
 | IMP-16 | **Privacy**: participant name and DCN live only in memory. They are never written to storage, the URL, analytics, logs, error messages or Firestore. Reloading the page keeps the plan without them. |
-| IMP-17 | **Care plan report** (1.3): text with `Care Plan Information <date> - <date>`, a `Task #Min/Day` heading or the month table's heading is read as the report. Participant: the name after `Participant Information:` and the first `DCN:` (else the page header). Plan dates from `Care Plan Information`. Each month table starts a service: its label and authorization come from the nearest service row above it (the label, then the last 10+ digit number on that line); its provider from the row's top line, only when that line also starts the phone number (else null); its start and end from the month table; `monthly` from the month table, one entry per row; `units` the most common of those figures. The task table after it, up to the next service (page headers, footers and a repeated heading skipped), gives the rows: a trailing `N/A` (Comments) is dropped, then the row is read as in IMP-06/07, and anything else is unread. Cells may be split by tabs (the PDF) or single spaces (copied from a PDF viewer). There is no paging, so a report is never "incomplete". The address, date of birth and phones are never read. |
-| IMP-18 | **Visits aren't scheduled**: a report service whose procedure code is a visit in the rule pack (T1001, for example GHE) is left out of `services`, with one `not-scheduled` note per label: "GHE (General Health Evaluation) is a nurse visit, so it isn't part of this schedule." |
+| IMP-17 | **Care plan report** (1.3): text with `Care Plan Information <date> - <date>`, a `Task #Min/Day` heading or the month table's heading is read as the report. Participant: the name after `Participant Information:` and the first `DCN:` (else the page header). Plan dates from `Care Plan Information`. Each month table starts a service: its label and authorization come from the nearest service row above it (the label, then the last 10+ digit number on that line); its provider from the row's top line, only when that line ends at the comma before the phone number, which starts there or is on the bottom line (else null); its start and end from the month table; `monthly` from the month table, one entry per row; `units` the most common of those figures. The task table after it, up to the next service (page headers, footers and a repeated heading skipped), gives the rows: a trailing `N/A` (Comments) is dropped, then the row is read as in IMP-06/07; essential transportation has one number, its units a month (`Essential Transportation⇥40⇥N/A` → 40 units, 600 minutes); anything else is unread. Cells may be split by tabs (the PDF) or single spaces (copied from a PDF viewer). There is no paging, so a report is never "incomplete". The address, date of birth and phones are never read. |
+| IMP-18 | **Visits by month**: a report service whose procedure code is a visit in the rule pack (T1001, for example GHE) is not in `services` (it isn't weekly hours). Each month row becomes a `visits` entry (label, code, the task row's name, provider, the month's start and end, units, PA), listed with the schedule in its month (APP-SPEC 5.8), with one `not-scheduled` note per label: "GHE (General Health Evaluation) is a nurse visit, so it's listed by month, not in the week." |
 
 ---
 
@@ -139,6 +139,10 @@ export interface ImportedService {
   unread: { raw: string; reason: "unreadable" | "task-numbers" | "transport-numbers" }[];
   monthly: { start: string; end: string; units: number }[] | null;  // care plan report (IMP-17)
 }
+export interface ImportedVisit {           // IMP-18
+  label: string | null; serviceCode: ServiceCode; name: string | null; provider: string | null;
+  start: string; end: string; units: number; pa: string | null;
+}
 export type ImportIssueCode =
   | "no-rows" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
   | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
@@ -151,6 +155,7 @@ export interface ImportResult {
   totalCost: string | null;
   paging: { from: number; to: number; total: number }[];
   services: ImportedService[];
+  visits: ImportedVisit[];      // IMP-18; [] from the care plan screen
   issues: ImportIssue[];
 }
 export function parseFusionText(text: string, pack: RulePack): ImportResult;
@@ -166,16 +171,16 @@ export interface PdfTextItem { str: string; x: number; y: number; width: number;
 | no-rows | error | yes | "We couldn't find care plan tasks in that text." + how to copy. From a PDF: "We couldn't find care plan tasks in that PDF." + "Open the participant's care plan PDF from Fusion, or copy the care plan from Fusion's screen and paste it above." |
 | incomplete | error | yes, unless the person chooses "Build with the N rows I have" | "This copy has N of the plan's M rows." + paste the next page |
 | different-participant | error | yes | "That page is for a different participant." |
-| unknown-service | input | until a service is chosen | service select |
+| unknown-service | input | until a service is chosen for that label | service select, one per label |
 | no-plan-dates | input | until dates are entered | two date fields |
 | bad-dates | error | yes | "The plan dates don't look right." |
 | plan-ended | error | yes | Set by the app, which knows today's date: the plan ended before this month. "This care plan has ended" + "This care plan ended on Jun 30, 2026. A schedule covers care still to come. Open the participant's current care plan in Fusion and paste it, or open its PDF." Dates the person entered keep the date fields open. |
-| (several services) | input | until one is chosen | one button per service |
 | unread-row | error | no | listed in the read summary with the raw text |
 | unknown-task | warn | no | listed in the read summary |
 | odd-minutes | warn | no | listed in the read summary |
 | duplicate-task | warn | no | the duplicate is dropped (same page pasted twice) |
-| not-scheduled | warn | no | listed in the read summary (IMP-18) |
+| not-scheduled | warn | no | listed in the read summary; the visits are listed by month (IMP-18) |
+| plan-ended (one service) | warn | no | with several services, one whose authorization ended before this month is left out: "HC ended on Jun 30, 2026, so it isn't scheduled." |
 
 ---
 
@@ -184,9 +189,10 @@ export interface PdfTextItem { str: string; x: number; y: number; width: number;
 | Field | Value |
 |---|---|
 | source | `"fusion"` (minutes and days are locked on screen) |
-| serviceCode, plan, headerUnits | from the service and IMP-13 |
+| which services | every service in the plan, each its own state, in Fusion's order (APP-SPEC 5.8) |
+| serviceCode, plan, headerUnits | from the service and IMP-13; on the care plan report, the plan is the service's own authorization dates |
 | tasks | every imported task, ids `qt-1…`, not pinned |
-| care days | the first *d* days of Monday, Tuesday, … Sunday, where *d* is the largest days-per-week of any task (5 → Mon–Fri; 7 → every day), as in Scheduler Lite |
+| care days | the first *d* days of Monday, Tuesday, … Sunday, where *d* is the largest days-per-week of any task (5 → Mon–Fri; 7 → every day), as in Scheduler Lite. A service after the first takes the *d* quietest days of the week built so far; one with only transportation, the quietest weekday (APP-SPEC 5.8) |
 | monthly figures | from the care plan report, each month's authorized units (`fusion`, by month; two periods in one month add up), used instead of IMP-10's prorated header units for full months |
 | schedule months | from this month (`fromMonth`, the month it was built) or the plan's first month, whichever is later, to the plan's end; the plan's own dates are kept as read |
 | transportation | minutes per month from Fusion; usual day = the last care day in that order; weekly hint = `floor(floor(minutes/15) / 5) × 15` minutes |
@@ -232,6 +238,10 @@ and IMP-T25 need the Quick Schedule model, so they live in `apps/web/test/quick/
 | IMP-T23 | E with every tab replaced by one space | same service, months, tasks and issues as IMP-T20 |
 | IMP-T24 | report rows | `Toileting⇥N/A` unread (raw kept); label `XX - Other` → `unknown-service`; a task table split by a page footer and header still reads every row; a second paste with another DCN → `different-participant` |
 | IMP-T25 | E through fromFusion + build (`apps/web/test/quick/`) | service T1019; `fusion` holds 229 for each of the 10 months and the model checks each month against it; checksum `{ "30": 229, "31": 229 }` matches 229; zero BLOCK. With June at 200, June's authorized units are 200 |
+| IMP-T26 | F (a care plan report with several authorizations, made-up identifiers in a real report's layout) | services PC - Agency T1019 226 (8 tasks, household tasks under it), PC - CDS T1019U2 40 (transport 40 units / 600 min, no tasks), HC S5130 5 (Wash Windows/Blinds 15 × 1), each with 9 months and its PA; `visits` two GHEs (May and Aug 2026); the provider on every block, including one whose phone is on the bottom line; issues only the GHE note |
+| IMP-T27 | E | both GHEs listed as visits, in the report's order |
+| IMP-T28 | F with HC relabelled `HMK`, or PC - CDS relabelled | `HMK` named S5130 by its code; a label whose code is T1019 still asks (`unknown-service`) |
+| IMP-T29 | F pasted in two parts | the same services and visits as one paste |
 
 ---
 
@@ -241,10 +251,11 @@ These don't block building; each becomes a fixture and a test when it arrives.
 1. **A real export of the care plan screen's table** (Export → PDF), if Fusion has one. The
    first real Fusion PDF (Oct 2026) was the care plan report (1.3), now read by IMP-17; the
    table PDFs are still look-alikes.
-2. **More service labels.** Seen so far: `PC - CDS`, `PC - Agency`, and `GHE` (a nurse visit,
-   IMP-18). A plan with State Plan and ILW, or Respite, adds more to IMP-11.
-3. **A care plan report for CDS** (`PC - CDS`), to confirm its procedure code and whether it
-   lists essential transportation in the task table.
+2. **More service labels.** Seen so far: `PC - CDS`, `PC - Agency`, `HC` (homemaker), and
+   `GHE` (a nurse visit, IMP-18). A plan with State Plan and ILW, or Respite, adds more to IMP-11.
+3. ~~A care plan report for CDS~~. Seen Oct 2026 (fixture F's layout): its month table shows
+   procedure code T1019, not T1019U2, so the label names it (IMP-11); essential transportation
+   is one row with its units a month (IMP-17).
 4. ~~DHSS answer on 31-day months~~ (1.2). Answered by the Fusion FAQ: Fusion prorates by the
    days in each month, and IMP-10 now does too (Oct 25, 2026). A question to DSDS on what to do
    when a month's units run out anyway is in `docs/DSDS-QUESTIONS.md`.

@@ -6,13 +6,15 @@ import { Button } from "../../ui/Button";
 import { Toast, ToastProvider, ToastViewport } from "../../ui/Toast";
 import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel";
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
+import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
-import { buildQuickModel } from "./model";
+import { buildQuickModel, hasSchedule } from "./model";
+import { AuthorizationsPanel, PlanSummary, PlanWeekPanel, ServiceTabs, VisitsPanel } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
-import type { QuickModel, QuickState } from "./types";
+import type { CarePlan, QuickModel } from "./types";
 import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
 
 const PACK = MO_2026_07;
@@ -22,8 +24,8 @@ const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try aga
 type PrintAction = "print" | "save";
 
 /** A refusal that belongs in a toast, or the QS-02 "Removed …" message after a service change. */
-function toastMessage(feedback: QuickFeedback | null, model: QuickModel): string | null {
-  if (!feedback) return null;
+function toastMessage(feedback: QuickFeedback | null, model: QuickModel | null): string | null {
+  if (!feedback || !model) return null;
   if (feedback.refusal !== undefined) return refusalPlace(feedback.action) === "toast" ? feedback.refusal : null;
   const count = feedback.removed?.length ?? 0;
   if (count === 0) return null;
@@ -34,14 +36,22 @@ function toastMessage(feedback: QuickFeedback | null, model: QuickModel): string
  * APP-SPEC 5.1 Quick Schedule: paste a Fusion care plan (or open its PDF, or start by hand) and
  * get a schedule that follows Missouri's rules. State lives in this tab only (sessionStorage,
  * without the participant's name and DCN).
+ *
+ * APP-SPEC 5.8: a care plan with several authorizations is one schedule for the participant. It
+ * opens on the whole care plan (every service in one week, each authorization's units and the
+ * nurse visits); each service opens in detail to change it, under its own rules.
  */
 export function QuickSchedule() {
   const headingRef = usePageTitle("Quick Schedule | CarePlan Scheduler");
-  const [{ state, feedback }, dispatch] = useQuickStore();
-  const model = useMemo(() => buildQuickModel(state, PACK), [state]);
+  const [{ plan, feedback }, dispatch] = useQuickStore();
+  const models = useMemo(() => plan.services.map((service) => buildQuickModel(service, PACK)), [plan.services]);
+  const index = activeIndex(plan);
+  const state = index === null ? null : plan.services[index]!;
+  const model = index === null ? null : models[index]!;
+  const several = plan.services.length > 1;
   // "New care plan" reopens the import panel over the current schedule until the next plan is built.
   const [importOpen, setImportOpen] = useState(false);
-  const importShown = state.isExample || importOpen;
+  const importShown = plan.services[0]!.isExample || importOpen;
   // A new plan starts its panes fresh (no half-typed values or open tables from the last one).
   const [planKey, setPlanKey] = useState(0);
   const [toast, setToast] = useState<{ seq: number; message: string } | null>(null);
@@ -61,8 +71,8 @@ export function QuickSchedule() {
     document.getElementById(id)?.focus();
   });
 
-  const onBuilt = (next: QuickState, from: BuiltFrom) => {
-    dispatch({ type: "replace", state: next });
+  const onBuilt = (next: CarePlan, from: BuiltFrom) => {
+    dispatch({ type: "replacePlan", plan: next });
     setPlanKey((key) => key + 1);
     setImportOpen(false);
     focusAfter.current = from === "import" ? READ_SUMMARY_TITLE_ID : from === "manual" ? TASK_PICKER_ID : null;
@@ -80,14 +90,14 @@ export function QuickSchedule() {
   // in the same moment, and that is one printout.
   const making = useRef(false);
   const printErrors = useRef(0);
-  const canPrint = model.tasks.length > 0;
+  const canPrint = models.some(hasSchedule);
   /** Makes the printout; false when there's nothing to print (no tasks yet). */
   const makePrintout = (action: PrintAction): boolean => {
     if (!canPrint) return false;
     if (making.current) return true;
     making.current = true;
     setPrinting(action);
-    const source = { state, model, pack: PACK };
+    const source = { plan, models, pack: PACK };
     (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source))
       .catch(() => setToast({ seq: --printErrors.current, message: PRINT_FAILED }))
       .finally(() => {
@@ -149,9 +159,22 @@ export function QuickSchedule() {
           <ImportPanel onBuilt={onBuilt} />
         </div>
       ) : null}
-      {state.source === "fusion" ? (
+      {several ? (
+        <ServiceTabs plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
+      ) : null}
+      {state === null || model === null ? (
         <div className="print:hidden">
-          <ReadSummary key={planKey} state={state} model={model} onNewPlan={startNew} />
+          <PlanSummary key={planKey} plan={plan} models={models} onNewPlan={startNew} />
+        </div>
+      ) : state.source === "fusion" ? (
+        <div className="print:hidden">
+          <ReadSummary
+            key={`${planKey}-${index}`}
+            state={state}
+            model={model}
+            planNotes={several ? [] : plan.notes}
+            onNewPlan={startNew}
+          />
         </div>
       ) : null}
 
@@ -161,21 +184,32 @@ export function QuickSchedule() {
         participant's name and DCN are gone when you close it.
       </p>
 
-      {/* One column (below 1060px): the care plan comes first, and a long one pushes the status and
-          the week several screens down, so this link skips past it. */}
-      <a
-        href="#qs-schedule"
-        className="-my-3 self-start rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center min-[1060px]:hidden print:hidden"
-      >
-        Skip to the schedule
-      </a>
-
-      <div className="grid items-start gap-6 min-[1060px]:grid-cols-[minmax(360px,400px)_minmax(0,1fr)] print:block">
-        <div className="print:hidden">
-          <CarePlanPane key={planKey} state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+      {state === null || model === null ? (
+        <div className="grid gap-5">
+          <AuthorizationsPanel plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
+          <PlanWeekPanel plan={plan} models={models} />
+          <VisitsPanel visits={plan.visits} today={new Date()} />
         </div>
-        <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
-      </div>
+      ) : (
+        <>
+          {/* One column (below 1060px): the care plan comes first, and a long one pushes the status and
+              the week several screens down, so this link skips past it. */}
+          <a
+            href="#qs-schedule"
+            className="-my-3 self-start rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center min-[1060px]:hidden print:hidden"
+          >
+            Skip to the schedule
+          </a>
+
+          <div className="grid items-start gap-6 min-[1060px]:grid-cols-[minmax(360px,400px)_minmax(0,1fr)] print:block">
+            <div className="print:hidden">
+              <CarePlanPane key={`${planKey}-${index}`} state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+            </div>
+            <SchedulePane state={state} model={model} pack={PACK} feedback={feedback} dispatch={dispatch} />
+          </div>
+          {several ? null : <VisitsPanel visits={plan.visits} today={new Date()} />}
+        </>
+      )}
 
       {/* QS-02: toasts belong to this page, so Radix Toast stays out of the other public pages. */}
       <ToastProvider>

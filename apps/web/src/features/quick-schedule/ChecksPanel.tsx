@@ -6,6 +6,7 @@ import { Panel } from "../../ui/Panel";
 import { SeverityPill } from "../../ui/SeverityPill";
 import { contextFor, groupResults } from "./grouping";
 import { copyFor } from "./ruleCopy";
+import { hasSchedule } from "./model";
 import type { CheckGroup } from "./types";
 import type { QuickModel, QuickState } from "./types";
 
@@ -85,7 +86,7 @@ export function ChecksPanel({ state, model, onShowInWeek }: ChecksPanelProps) {
   const attention = groups.filter((group) => group.severity === "REVIEW" || group.severity === "WARN");
   const taskNames = new Map(state.tasks.map((task) => [task.id, task.name]));
 
-  if (model.tasks.length === 0) {
+  if (!hasSchedule(model)) {
     return (
       <Panel title="Checks" className="min-w-0">
         <p className="text-ink-2">Checks run as soon as there's a task.</p>
