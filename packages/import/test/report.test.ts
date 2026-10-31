@@ -157,3 +157,31 @@ describe("IMP-T24 report rows", () => {
     expect(merged.issues[0]).toMatchObject({ code: "different-participant" });
   });
 });
+
+describe("a report whose service table heading wraps differently", () => {
+  // As copied from a viewer: "Start" lands on the second heading line, so the first reads
+  // "Service GHE GHE Prior". The next service's rows must not be read as tasks of the one above.
+  const second = [
+    "Service GHE GHE Prior",
+    "Start Date End Date Provider",
+    "Type Date 1 2 Authorization",
+    "11/01 11/30 TEST HOME CARE LLC , (555) 555-",
+    "PC - CDS N/A N/A 20260000000007",
+    "/2026 /2026 0100",
+    "Start Date End Date Procedure Code Authorized Units",
+    "11/01/2026 11/30/2026 T1019U2 40",
+    "Task #Min/Day #Units/Day #Days/Week #Units/Month Comments",
+    "Bathing 45 3 N/A",
+  ].join("\n");
+  // The first service's tasks end where page 3 ends; the wrapped service table follows them.
+  const first = fixtureText(E).replace(/\t/g, " ").replace(/\r\n/g, "\n").split("Date Generated: 10/23/2026 | Page 3 of 5")[0]!;
+  const text = first.trimEnd() + "\n" + second;
+  const result = parseFusionText(text, PACK);
+
+  it("keeps the service table lines out of the tasks above", () => {
+    expect(result.services.map((s) => s.label)).toEqual(["PC - Agency", "PC - CDS"]);
+    expect(result.services[0]!.unread).toEqual([]);
+    expect(tupleOf(result.services[0]!.tasks)).toEqual(E_TASKS);
+    expect(result.issues.filter((issue) => issue.code !== "not-scheduled")).toEqual([]);
+  });
+});

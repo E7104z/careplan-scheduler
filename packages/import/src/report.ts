@@ -12,7 +12,10 @@ const DCN_RE = /\bDCN:\s*(\d{6,12})\b/;
 // The header at the top of every page after the first: "NAME - DCN:12345678".
 const PAGE_HEADER_RE = /^\s*(.{1,120}?)\s+-\s+DCN:\s*(\d{6,12})\s*$/m;
 const FOOTER_RE = /^\s*Date Generated:/;
-const SERVICE_HEAD_RE = /^\s*Service\b.*\bStart\b/;
+// The service table's heading wraps over three lines, and a copy from a viewer can break it
+// differently ("Service GHE GHE Prior", "Start Date End Date Provider", "Type Date 1 2 Authorization").
+const SERVICE_HEAD_RE =
+  /^\s*Service\b.*\b(?:Start|GHE|Prior)\b|^\s*(?:Start\s+)?(?:Date\s+)?End Date\s+Provider\b|^\s*Type\b.*\bAuthorization\s*$/;
 const MONTH_HEAD_RE = /^\s*Start Date\s+End Date\s+Procedure Code\s+Authorized Units\s*$/;
 const TASK_HEAD_RE = /^\s*Task\s+#Min\/Day\b/;
 const MONTH_ROW_RE = new RegExp(`^\\s*${MDY}\\s+${MDY}\\s+([A-Z]\\d{4}[A-Z0-9]*)\\s+(\\d{1,5})\\s*$`);
