@@ -22,7 +22,7 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   },
   {
     id: "AUTH-05", area: "Authorization", severities: ["INFO"], status: "PARTIAL",
-    rule: "Derived month units use F-3 for in-home task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER). Other services are not prorated.",
+    rule: "Derived month units use F-3 for task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER, and RCF_PC, RCF_APC, whose RCF/ALF care plans INFO 05-25-03 says Fusion prorates). Other services are not prorated.",
     source: "INFO 05-25-03 (May 9, 2025); Fusion FAQ (Jun 4, 2025); DHSS 14a/14b cell D37",
   },
   {
@@ -136,8 +136,8 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   },
   {
     id: "CON-07", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
-    rule: "AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW.",
-    source: "Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)",
+    rule: "AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. RCF_PC, RCF_APC → REVIEW (Policy 3.20 doesn't restate 3.05's aide restrictions; DSDS question 14).",
+    source: "Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)",
   },
   {
     id: "CON-09", area: "Conflicts and eligibility", severities: ["REVIEW", "WARN"], status: "PARTIAL",

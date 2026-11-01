@@ -220,10 +220,14 @@ const FORBIDDEN_FAMILY = new Set([
   "parent", "sibling", "child", "stepchild", "spouse", "grandparent", "grandchild",
 ]);
 const AGENCY_PROGRAMS = new Set(["AGENCY_PC", "APC", "HOMEMAKER", "RESPITE", "CHORE"]);
+// Policy 3.05 and 3.10 say PC and APC are also provided in an RCF/ALF, but Policy 3.20 (the facility
+// policy) doesn't restate 3.05's aide restrictions, so there they are REVIEW until DSDS confirms.
+const FACILITY_PROGRAMS = new Set(["RCF_PC", "RCF_APC"]);
+const FACILITY_QUESTION = "Policy 3.05 restricts PC aides; Policy 3.20 (RCF/ALF) doesn't say whether that applies in a facility";
 
 /**
  * @rule CON-07
- * @source Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)
+ * @source Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)
  */
 export function ruleCON07AgencyAide(
   authorizations: ServiceAuthorization[],
@@ -232,8 +236,10 @@ export function ruleCON07AgencyAide(
 ): ValidationResult[] {
   const results: ValidationResult[] = [];
   for (const auth of authorizations) {
-    if (!AGENCY_PROGRAMS.has(auth.program)) continue;
-    const severity: Severity = auth.program === "CHORE" ? "REVIEW" : "BLOCK";
+    const facility = FACILITY_PROGRAMS.has(auth.program);
+    if (!AGENCY_PROGRAMS.has(auth.program) && !facility) continue;
+    const severity: Severity = auth.program === "CHORE" || facility ? "REVIEW" : "BLOCK";
+    const why = facility ? ` (${FACILITY_QUESTION})` : "";
     const assigned = assignedCaregiverIds(auth, visits);
     for (const caregiver of caregivers) {
       if (!assigned.has(caregiver.id)) continue;
@@ -242,7 +248,7 @@ export function ruleCON07AgencyAide(
         results.push({
           ruleId: "CON-07",
           severity,
-          message: `${auth.program} aide is ${rel}`,
+          message: `${auth.program} aide is ${rel}${why}`,
           refs: { serviceAuthId: auth.id },
         });
       }
@@ -250,7 +256,7 @@ export function ruleCON07AgencyAide(
         results.push({
           ruleId: "CON-07",
           severity,
-          message: `${auth.program} aide is not an agency employee`,
+          message: `${auth.program} aide is not an ${facility ? "employee of the facility" : "agency employee"}${why}`,
           refs: { serviceAuthId: auth.id },
         });
       }
@@ -473,7 +479,10 @@ export function ruleCON17QualificationData(
           refs: { serviceAuthId: auth.id },
         });
       }
-      if (AGENCY_PROGRAMS.has(auth.program) && caregiver.relationships[auth.participantId] === undefined) {
+      if (
+        (AGENCY_PROGRAMS.has(auth.program) || FACILITY_PROGRAMS.has(auth.program)) &&
+        caregiver.relationships[auth.participantId] === undefined
+      ) {
         results.push({
           ruleId: "CON-17",
           severity: "REVIEW",

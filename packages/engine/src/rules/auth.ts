@@ -34,7 +34,8 @@ export function ruleAUTH03DerivedTaskUnits(
   return results;
 }
 
-const PRORATED_PROGRAMS = new Set(["CDS", "ILW", "AGENCY_PC", "APC", "HOMEMAKER"]);
+// INFO 05-25-03 names RCF/ALF care plans among those Fusion prorates by days in the month.
+const PRORATED_PROGRAMS = new Set(["CDS", "ILW", "AGENCY_PC", "APC", "HOMEMAKER", "RCF_PC", "RCF_APC"]);
 
 /**
  * @rule AUTH-05

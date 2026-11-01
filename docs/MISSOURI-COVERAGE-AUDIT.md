@@ -346,6 +346,12 @@ when the email goes:
 12. **ILW case management:** Appendix 1 lists $38.17 a month; the HCBS-3c ILW tab shows
     $458.09. Which applies, and is the 3c amount yearly?
 13. **Appendix 14a/14b:** the current XLSX files, so their formulas can be matched (E-12).
+14. **Aides in an RCF/ALF:** Policy 3.05 bars immediate family and non-employees from delivering
+    PC, and says PC is also provided in an RCF/ALF; Policy 3.20 (rev. Mar 2026) doesn't restate
+    it. Does the restriction apply to RCF/ALF personal care and APC? (CON-07 is REVIEW there.)
+15. **APC transfer device in an RCF/ALF:** Policy 3.10 lists Assistance with Transfer Device and
+    says APC may also be provided in an RCF/ALF; Policy 3.20's APC list leaves it out. May it be
+    authorized in a facility? (The task stays offered, per 3.10.)
 
 ## 10. Decisions taken here
 

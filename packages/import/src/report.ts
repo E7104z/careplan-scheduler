@@ -19,7 +19,8 @@ const SERVICE_HEAD_RE =
   /^\s*Service\b.*\b(?:Start|GHE|Prior)\b|^\s*(?:Start\s+)?(?:Date\s+)?End Date\s+Provider\b|^\s*Type\b.*\bAuthorization\s*$/;
 const MONTH_HEAD_RE = /^\s*Start Date\s+End Date\s+Procedure Code\s+Authorized Units\s*$/;
 const TASK_HEAD_RE = /^\s*Task\s+#Min\/Day\b/;
-const MONTH_ROW_RE = new RegExp(`^\\s*${MDY}\\s+${MDY}\\s+([A-Z]\\d{4}[A-Z0-9]*)\\s+(\\d{1,5})\\s*$`);
+// A code's modifiers may be spaced, as Appendix 1 prints "T1019U3 TF".
+const MONTH_ROW_RE = new RegExp(`^\\s*${MDY}\\s+${MDY}\\s+([A-Z]\\d{4}[A-Z0-9]*(?: [A-Z][A-Z0-9])*)\\s+(\\d{1,5})\\s*$`);
 // The service row's middle line: "PC - Agency⇥N/A⇥N/A⇥20260000000005" (dates and provider wrap above and below).
 const LABEL_RE = /^\s*([A-Z]{2,6}(?:\s*-\s*[A-Z][A-Za-z]*(?: [A-Z][A-Za-z]*)*)?)(?=\t|\s+N\/A\b|\s+\d{6,}|\s*$)/;
 // The service row's top line: "04/01⇥01/31⇥PROVIDER NAME , (555) 555-", or "PROVIDER NAME," when
@@ -117,11 +118,13 @@ function readReportRow(line: string, pack: RulePack): ReadRow | null {
  * IMP-11: a label we haven't seen is named by the code in its month table, when the rule pack has
  * that code as a 15-minute service and no other label in the report uses it. Fusion shows T1019
  * under both "PC - Agency" and "PC - CDS", so T1019, or any code shared by labels, says nothing.
+ * The code is read through Appendix 1, since Fusion prints some with a space ("T1019U3 TF").
  */
 function codeFallback(block: Block, blocks: Block[], pack: RulePack): ServiceCode | null {
   const code = block.months[0]?.code;
   if (!code || AMBIGUOUS_CODES.has(code)) return null;
-  const service = pack.services.find((s) => s.code === code && s.unit === "15min");
+  const scheduled = findAppendix1(code)?.engineCode ?? code;
+  const service = pack.services.find((s) => s.code === scheduled && s.unit === "15min");
   const shared = blocks.some((other) => other.label !== block.label && other.months[0]?.code === code);
   return service && !shared ? service.code : null;
 }
@@ -130,7 +133,8 @@ function codeFallback(block: Block, blocks: Block[], pack: RulePack): ServiceCod
  * IMP-19: whether a block the schedule can't place is kept rather than offered as a service to
  * choose. A label we know, or a code the rule pack schedules, is a service; T1019 (or a code shared
  * by labels) is left for the person to say. Any other code is kept: an Appendix 1 service Quick
- * Schedule doesn't schedule (meals, adult day care, RCF/ALF, ILW supports), or a code outside it.
+ * Schedule doesn't schedule (meals, adult day care, RCF/ALF nurse visits, ILW supports), or a
+ * code outside it.
  */
 function isKept(block: Block, blocks: Block[], pack: RulePack): boolean {
   const code = block.months[0]?.code;

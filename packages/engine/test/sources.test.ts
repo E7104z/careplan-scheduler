@@ -27,7 +27,7 @@ const SOURCES: Record<string, string> = {
   "CON-04": "Product decision approved Oct 20, 2026",
   "CON-05": "FLSA; product decision approved Oct 20, 2026",
   "CON-06": "Policy 3.25 (01/26)",
-  "CON-07": "Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)",
+  "CON-07": "Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)",
   "CON-09": "HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention",
   "CON-10": "Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026)",
   "CON-13": "13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2",

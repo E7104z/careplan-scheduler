@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07, findAppendix1, findTaskByName, serviceByCode } from "../src/index.js";
 
-// The 3a's 11 household rows (B33–B63 / the MED REL HC TASKS set): never a facility task.
+// The 3a's 11 household rows (B33–B63 / the MED REL HC TASKS set).
 const HOUSEHOLD = [
   "Clean Bath", "Clean Kitchen", "Clean Living Area", "Essential Correspondence", "Iron/Mend",
   "Laundry", "Make Bed/Change Linens", "Meals/Dishes", "Shopping/Errands", "Trash", "Wash Windows/Blinds",
 ];
+// Policy 3.20 (rev. Mar 2026) Basic PC in a facility: Essential Correspondence, and Medically
+// Related Household Tasks, which only "clean the resident's living area and launder the resident's
+// clothes and linens". The facility's own housekeeping, linens and meals cover the rest.
+const FACILITY_HOUSEHOLD = ["Clean Living Area", "Essential Correspondence", "Laundry"];
 
 describe("CP2-5 RCF/ALF variants as facility services", () => {
-  it("schedules Basic RCF/ALF PC as its six personal-care tasks, never a household task", () => {
+  it("offers Basic RCF/ALF PC Policy 3.20's tasks: no household row the facility already covers", () => {
     const facility = serviceByCode(MO_2026_07, "T1019U3");
     if (!facility) throw new Error("T1019U3 must resolve");
     expect(facility.code).toBe("T1019U3");
@@ -20,15 +24,18 @@ describe("CP2-5 RCF/ALF variants as facility services", () => {
     expect(taskCodes).toEqual([
       "BATHING",
       "DRESSING_GROOMING",
+      "ESSENTIAL_CORRESPONDENCE",
       "DIETARY",
       "MOBILITY_TRANSFER_POSITION",
       "SELF_ADMIN_OF_MEDICATIONS",
       "TOILETING",
+      "CLEAN_LIVING_AREA",
+      "LAUNDRY",
     ]);
     for (const name of HOUSEHOLD) {
       const task = findTaskByName(MO_2026_07, name);
       expect(task, `${name} resolves`).toBeDefined();
-      expect(task?.programs, name).not.toContain("RCF_PC");
+      expect(task?.programs.includes("RCF_PC"), name).toBe(FACILITY_HOUSEHOLD.includes(name));
     }
   });
 
