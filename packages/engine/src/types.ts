@@ -65,6 +65,21 @@ export interface CoverageBlock {
   start: string;  // local ISO "YYYY-MM-DDTHH:mm", America/Chicago
   end: string;
 }
+/** A dated adult day care attendance event (ADW-03): attendance minutes plus its transport part. */
+export interface AdcAttendance {
+  id: string;
+  serviceAuthId: string;
+  date: string;              // YYYY-MM-DD
+  minutes: number;           // attendance minutes, whole, in 15-minute steps
+  transportMinutes: number;  // the transport part, whole minutes
+}
+/** A dated home delivered meals delivery (ADW-04): a whole number of meals, never minutes. */
+export interface HdmDelivery {
+  id: string;
+  serviceAuthId: string;
+  date: string;              // YYYY-MM-DD
+  meals: number;             // whole meals
+}
 export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date

@@ -141,7 +141,7 @@ export const MO_2026_07: RulePack = {
     hdmMaxUnitsPerDayNote: 2,
     hdmSource: "HCBS-3a (07/26) rate sheet cell G14: \"Max 2/day\"",
     apcSingleTaskStep: 15,
-    adultDayCare: { minuteStep: 15, maxMinutesPerDay: 600, maxDaysPerWeek: 5 },
+    adultDayCare: { minuteStep: 15, maxMinutesPerDay: 600, maxDaysPerWeek: 5, maxTransportMinutesPerDay: 120 },
     limitsSource: "HCBS Manual 4.00 Appendix 3 (rev. May 2025): Advanced Personal Care; Adult Day Care",
   },
   overlap(a: ProgramCode, b: ProgramCode): OverlapRule {
