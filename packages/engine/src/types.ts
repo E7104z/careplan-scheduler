@@ -1,9 +1,11 @@
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;            // 0 = Sunday
 export type Severity = "BLOCK" | "WARN" | "INFO" | "REVIEW";
 export type ProgramCode =
-  | "CDS" | "ILW" | "AGENCY_PC" | "APC" | "NURSE" | "HOMEMAKER" | "CHORE" | "RESPITE";
+  | "CDS" | "ILW" | "AGENCY_PC" | "APC" | "NURSE" | "HOMEMAKER" | "CHORE" | "RESPITE"
+  | "RCF_PC" | "RCF_APC";
 export type ServiceCode =
   | "T1019U2" | "T1019U6" | "T1019" | "T1019TF" | "T1001"
+  | "T1019U3" | "T1019U3TF"
   | "S5130" | "S5120" | "S5150" | "S5150TF";
 export type AuthState =
   | "active" | "future" | "partial" | "suspended" | "expired" | "pending_approval";

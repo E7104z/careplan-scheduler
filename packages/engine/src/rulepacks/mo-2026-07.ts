@@ -24,6 +24,14 @@ const services: ServiceDef[] = [
     unit: "15min", monthlyCeiling: null, source: SRC_APPENDIX,
   },
   {
+    code: "T1019U3", program: "RCF_PC", name: "Basic Personal Care – RCF/ALF",
+    unit: "15min", monthlyCeiling: 438, source: SRC_APPENDIX,
+  },
+  {
+    code: "T1019U3TF", program: "RCF_APC", name: "Advanced Personal Care – RCF/ALF",
+    unit: "15min", monthlyCeiling: null, source: SRC_APPENDIX,
+  },
+  {
     code: "T1001", program: "NURSE", name: "Authorized Nurse Visits",
     unit: "visit", monthlyCeiling: null, perDayMax: 1, perSixMonthMax: 26, source: SRC_HCBS,
   },
@@ -53,17 +61,17 @@ function t(taskCode: string, name: string, aliases: string[], programs: ProgramC
 
 const tasks: TaskDef[] = [
   // CDS / ILW (shared names merged with agency model where identical)
-  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device", "Asst Trans Device"], ["CDS", "ILW", "APC"]),
+  t("ASSISTIVE_TRANSFER_DEVICE", "Assistive Transfer Device", ["Asst. Transfer Device", "Asst Trans Device"], ["CDS", "ILW", "APC", "RCF_APC"]),
   t("ASSISTANCE_WITH_TOILETING", "Assistance with Toileting", ["Asstance with Toileting", "Asst. with Toileting"], ["CDS", "ILW"]),
-  t("BATHING", "Bathing", [], ["CDS", "ILW", "AGENCY_PC"]),
+  t("BATHING", "Bathing", [], ["CDS", "ILW", "AGENCY_PC", "RCF_PC"]),
   t("BOWEL_BLADDER_ROUTINE", "Bowel/Bladder Routine", [], ["CDS", "ILW"]),
-  t("CATHETER_HYGIENE", "Catheter Hygiene", [], ["CDS", "ILW", "APC"]),
+  t("CATHETER_HYGIENE", "Catheter Hygiene", [], ["CDS", "ILW", "APC", "RCF_APC"]),
   t("CHANGE_LINENS", "Change Linens", [], ["CDS", "ILW"]),
   t("CLEAN_BATH", "Clean Bath", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_FLOORS", "Clean Floors", [], ["CDS", "ILW"]),
   t("CLEAN_KITCHEN", "Clean Kitchen", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("CLEAN_MAINTAIN_EQUIPMENT", "Clean/Maintain Equipment", [], ["CDS", "ILW"]),
-  t("DRESSING_GROOMING", "Dressing/Grooming", ["Dressing/ Grooming"], ["CDS", "ILW", "AGENCY_PC"]),
+  t("DRESSING_GROOMING", "Dressing/Grooming", ["Dressing/ Grooming"], ["CDS", "ILW", "AGENCY_PC", "RCF_PC"]),
   t("ESSENTIAL_CORRESPONDENCE", "Essential Correspondence", ["Essential Correspond"], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("LAUNDRY_HOME", "Laundry (Home)", [], ["CDS", "ILW"]),
   t("LAUNDRY_OFF_SITE", "Laundry (Off Site)", [], ["CDS", "ILW"]),
@@ -71,8 +79,8 @@ const tasks: TaskDef[] = [
   t("MEAL_PREP_EATING", "Meal Prep/Eating", [], ["CDS", "ILW"]),
   t("MEDICATIONS", "Medications", [], ["CDS", "ILW"]),
   t("MOBILITY_TRANSFER", "Mobility/Transfer", [], ["CDS", "ILW"]),
-  t("OSTOMY_HYGIENE", "Ostomy Hygiene", [], ["CDS", "ILW", "APC"]),
-  t("PASSIVE_ROM", "Passive ROM", [], ["CDS", "ILW", "APC"]),
+  t("OSTOMY_HYGIENE", "Ostomy Hygiene", [], ["CDS", "ILW", "APC", "RCF_APC"]),
+  t("PASSIVE_ROM", "Passive ROM", [], ["CDS", "ILW", "APC", "RCF_APC"]),
   t("TIDY_AND_DUST", "Tidy and Dust", [], ["CDS", "ILW"]),
   t("TRASH", "Trash", [], ["CDS", "ILW", "HOMEMAKER", "AGENCY_PC"]),
   t("TREATMENTS", "Treatments", [], ["CDS", "ILW"]),
@@ -81,10 +89,10 @@ const tasks: TaskDef[] = [
   t("ESSENTIAL_TRANSPORTATION", "Essential Transportation", [], ["CDS", "ILW"], true),
 
   // Basic PC (agency model)
-  t("DIETARY", "Dietary", [], ["AGENCY_PC"]),
-  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", ["Mobility/ Transfer/ Position"], ["AGENCY_PC"]),
-  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds", "Self Admin of Medications"], ["AGENCY_PC"]),
-  t("TOILETING", "Toileting", [], ["AGENCY_PC"]),
+  t("DIETARY", "Dietary", [], ["AGENCY_PC", "RCF_PC"]),
+  t("MOBILITY_TRANSFER_POSITION", "Mobility/Transfer/Position", ["Mobility/ Transfer/ Position"], ["AGENCY_PC", "RCF_PC"]),
+  t("SELF_ADMIN_OF_MEDICATIONS", "Self-Admin of Medications", ["Self Admin of Meds", "Self Admin of Medications"], ["AGENCY_PC", "RCF_PC"]),
+  t("TOILETING", "Toileting", [], ["AGENCY_PC", "RCF_PC"]),
 
   // Homemaker (agency model): the 3a's 11 household rows (B33–B63), shared with AGENCY_PC to match
   // the MED REL HC TASKS control row (B29) and the N29/N66 switch — a household task counts under
@@ -98,9 +106,9 @@ const tasks: TaskDef[] = [
   t("WASH_WINDOWS_BLINDS", "Wash Windows/Blinds", ["Wash Windows/ Blinds"], ["HOMEMAKER", "AGENCY_PC"]),
 
   // APC (agency model)
-  t("ASEPTIC_DRESSINGS", "Aseptic Dressings", [], ["APC"]),
-  t("BOWEL_PROGRAM", "Bowel Program", [], ["APC"]),
-  t("NON_INJECTABLE_MEDS", "Non-Injectable Meds", [], ["APC"]),
+  t("ASEPTIC_DRESSINGS", "Aseptic Dressings", [], ["APC", "RCF_APC"]),
+  t("BOWEL_PROGRAM", "Bowel Program", [], ["APC", "RCF_APC"]),
+  t("NON_INJECTABLE_MEDS", "Non-Injectable Meds", [], ["APC", "RCF_APC"]),
 
   // Respite
   t("BASIC_RESPITE", "Basic Respite", [], ["RESPITE"]),
