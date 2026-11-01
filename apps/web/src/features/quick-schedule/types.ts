@@ -12,7 +12,7 @@ import type {
   TemplateEntry,
   Weekday,
 } from "@careplan/engine";
-import type { ImportIssue } from "@careplan/import";
+import type { ImportIssue, SourceRef } from "@careplan/import";
 
 export interface Plan {
   start: string;
@@ -29,6 +29,10 @@ export interface QuickTask {
   /** null = we choose the days; [] = the person unselected every day (off the week for now). */
   pinned: Weekday[] | null;
   locked: boolean;
+  /** The task's Fusion row exactly as read (SOURCE-01); absent for a task added by hand. */
+  raw?: string | null;
+  /** Where that row was read on the pasted page (SOURCE-01). */
+  source?: SourceRef | null;
 }
 
 export interface FusionTransport {
@@ -52,10 +56,13 @@ export interface QuickState {
   pa: string | null;
   serviceLabel: string | null;
   serviceCode: ServiceCode;
+  /** Where the authorization's service row was read (SOURCE-01); absent for a plan by hand. */
+  sourceRef?: SourceRef | null;
   plan: Plan;
   headerUnits: number | null;
   tasks: QuickTask[];
-  nextId: number;
+  /** A UUID for this authorization (JOIN-03); every task id is unique under it. */
+  id: string;
   activeDays: boolean[]; // length 7, index 0 = Sunday
   transport: QuickTransport;
   edits: Record<string, number>; // `${taskId}:${weekday}` -> minutes

@@ -2,6 +2,7 @@ import { MO_2026_07 } from "@careplan/engine";
 import { parseFusionText } from "@careplan/import";
 import { addMonths, lastDayIso, localMonth, monthsBetween } from "./model.js";
 import { fromFusion } from "../import/fromFusion.js";
+import { newId } from "./ids.js";
 import type { QuickState } from "./types.js";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
@@ -19,7 +20,7 @@ export function manualState(today: Date): QuickState {
     plan: { start: `${start}-01`, end: lastDayIso(addMonths(start, 11)) },
     headerUnits: null,
     tasks: [],
-    nextId: 1,
+    id: newId(),
     activeDays: [true, true, true, true, true, true, true],
     transport: { minPerTrip: 0, tripsPerWeek: 1, day: 1 },
     edits: {},

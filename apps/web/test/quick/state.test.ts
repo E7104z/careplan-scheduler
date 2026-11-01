@@ -19,17 +19,16 @@ describe("Quick Schedule state", () => {
     expect(state.viewMonth).toBe("2026-11");
   });
 
-  it("QS-04: addTask assigns qt-N with 15 min/day, every day, unpinned", () => {
+  it("QS-04: addTask assigns a UUID with 15 min/day, every day, unpinned", () => {
     const state = addTask(manualState(TODAY), "BATHING", "Bathing");
     expect(state.tasks).toHaveLength(1);
     expect(state.tasks[0]).toMatchObject({
-      id: "qt-1",
       minPerDay: 15,
       daysPerWeek: 7,
       pinned: null,
       locked: false,
     });
-    expect(state.nextId).toBe(2);
+    expect(state.tasks[0]!.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   it("QS-02: changing service removes unavailable tasks and returns their names", () => {

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { CircleCheck, CircleHelp } from "lucide-react";
 import { daysInMonth, monthTaskUnits } from "@careplan/engine";
-import type { ImportIssue } from "@careplan/import";
+import type { ImportIssue, SourceRef } from "@careplan/import";
 import { cn } from "../../lib/cn";
 import { monthName, niceDate } from "../../lib/format";
 import { Button } from "../../ui/Button";
@@ -35,6 +35,16 @@ function noteText(note: ImportIssue): string {
   return note.message;
 }
 
+/** SOURCE-01: the task's Fusion row as read, its tabs and spacing flattened for display. */
+function rowText(raw: string | null | undefined): string {
+  return raw ? raw.replace(/\s+/g, " ").trim() : "—";
+}
+
+/** SOURCE-01: where a field was read on the pasted page, for the raw view. */
+function where(source: SourceRef | null | undefined): string {
+  return source ? `Page ${source.page} · line ${source.line}` : "—";
+}
+
 /** "Review what we read": every row the schedule is built from, with its units in the viewed month. */
 function ReadTable({ state, model }: { state: QuickState; model: QuickModel }) {
   const [year = 0, month = 1] = state.viewMonth.split("-").map(Number);
@@ -49,15 +59,18 @@ function ReadTable({ state, model }: { state: QuickState; model: QuickModel }) {
         <thead className="bg-sunk text-[13px] text-ink-2">
           <tr>
             <th scope="col" className={cn(cell, "font-semibold")}>Task</th>
+            <th scope="col" className={cn(cell, "font-normal")}>Fusion row</th>
             <th scope="col" className={cn(number, "font-semibold")}>Minutes a day</th>
             <th scope="col" className={cn(number, "font-semibold")}>Days a week</th>
             <th scope="col" className={cn(number, "font-semibold")}>Units in {monthName(state.viewMonth).split(" ")[0]}</th>
+            <th scope="col" className={cn(number, "font-semibold")}>Where</th>
           </tr>
         </thead>
         <tbody>
           {state.tasks.map((task) => (
             <tr key={task.id}>
               <th scope="row" className={cn(cell, "font-normal")}>{task.name}</th>
+              <td className={cn(cell, "text-ink-2")}>{rowText(task.raw)}</td>
               <td className={number}>{task.minPerDay ?? "—"}</td>
               <td className={number}>{task.daysPerWeek === 7 ? "Every day" : task.daysPerWeek}</td>
               <td className={number}>
@@ -65,14 +78,17 @@ function ReadTable({ state, model }: { state: QuickState; model: QuickModel }) {
                   ? "—"
                   : monthTaskUnits(task.minPerDay * task.daysPerWeek, task.daysPerWeek, days).units}
               </td>
+              <td className={number}>{where(task.source)}</td>
             </tr>
           ))}
           {model.allowance ? (
             <tr>
               <th scope="row" className={cn(cell, "font-normal")}>Essential transportation</th>
+              <td className={cn(cell, "text-ink-2")}>—</td>
               <td className={number}>—</td>
               <td className={number}>—</td>
               <td className={number}>{model.allowance.units}</td>
+              <td className={number}>—</td>
             </tr>
           ) : null}
         </tbody>

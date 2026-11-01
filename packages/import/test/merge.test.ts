@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mergeFusionText, parseFusionText } from "../src/index.js";
-import { B_TASKS, PACK, fixtureText, tupleOf } from "./helpers.js";
+import { B_TASKS, PACK, contentServices, fixtureText, tupleOf } from "./helpers.js";
 
 const PAGE_1 = fixtureText("B-page1-of-2.txt");
 const PAGE_2 = fixtureText("B-page2-of-2.txt");
@@ -26,7 +26,7 @@ describe("IMP-T05 two pages merged", () => {
 
   it("gives the same plan as the single-page copy of the same table", () => {
     const whole = parseFusionText(fixtureText("B-tabbed-7day-455.txt"), PACK);
-    expect(result.services).toEqual(whole.services);
+    expect(contentServices(result.services)).toEqual(contentServices(whole.services));
   });
 
   it("does not depend on which page is pasted first", () => {

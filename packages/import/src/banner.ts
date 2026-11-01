@@ -6,6 +6,8 @@ export interface Banner {
   start: string;
   end: string;
   totalCost: string | null;
+  /** Where the banner starts in the text (SOURCE-01). */
+  index: number;
 }
 
 // "NAME (DCN: 12345678) Care Plan: 08/01/2025 - 06/30/2026 Total Cost: $2468.56"
@@ -26,5 +28,6 @@ export function readBanner(text: string): Banner | null {
     start: ymd(m1!, d1!, y1!),
     end: ymd(m2!, d2!, y2!),
     totalCost: cost ? cost.replace(/,/g, "") : null,
+    index: m.index,
   };
 }

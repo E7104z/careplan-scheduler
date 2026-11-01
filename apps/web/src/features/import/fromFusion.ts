@@ -1,6 +1,7 @@
 import type { Weekday } from "@careplan/engine";
 import type { ImportedService, ImportResult } from "@careplan/import";
 import { MONDAY_FIRST, localMonth, monthsBetween } from "../quick-schedule/model.js";
+import { newId } from "../quick-schedule/ids.js";
 import type { QuickState } from "../quick-schedule/types.js";
 
 /** IMP-17: the care plan report's authorized units for each plan month (two periods in a month add up). */
@@ -61,7 +62,6 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
 
   const currentMonth = localMonth(today);
   const months = monthsBetween(plan.start, plan.end);
-  let n = 0;
 
   return {
     source: "fusion",
@@ -74,19 +74,19 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
     serviceCode: service.serviceCode,
     plan,
     headerUnits: service.units,
-    tasks: service.tasks.map((task) => {
-      n += 1;
-      return {
-        id: `qt-${n}`,
-        taskCode: task.taskCode ?? `FUSION:${task.name}`,
-        name: task.name,
-        minPerDay: task.minPerDay,
-        daysPerWeek: task.daysPerWeek,
-        pinned: null,
-        locked: true,
-      };
-    }),
-    nextId: n + 1,
+    tasks: service.tasks.map((task) => ({
+      id: newId(),
+      taskCode: task.taskCode ?? `FUSION:${task.name}`,
+      name: task.name,
+      minPerDay: task.minPerDay,
+      daysPerWeek: task.daysPerWeek,
+      pinned: null,
+      locked: true,
+      raw: task.raw,
+      source: task.source,
+    })),
+    id: newId(),
+    sourceRef: service.source,
     activeDays,
     transport: {
       minutesPerMonth: service.transport ? service.transport.minutesPerMonth : 0,

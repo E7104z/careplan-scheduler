@@ -1,5 +1,7 @@
 import { MO_2026_07 } from "@careplan/engine";
+import type { SourceRef } from "@careplan/import";
 import { singlePlan } from "./carePlan.js";
+import { newId } from "./ids.js";
 import type { CarePlan, QuickState } from "./types.js";
 
 /** APP-SPEC 5.8: the participant's whole care plan. */
@@ -21,6 +23,8 @@ function isInt(value: unknown, min: number, max = Number.MAX_SAFE_INTEGER): bool
 
 const isWeekday = (value: unknown): boolean => isInt(value, 0, 6);
 const isStringOrNull = (value: unknown): boolean => value === null || typeof value === "string";
+const isSourceRef = (value: unknown): value is SourceRef =>
+  isRecord(value) && isInt(value.page, 1) && isInt(value.line, 1);
 
 function isTask(value: unknown): boolean {
   return (
@@ -31,7 +35,9 @@ function isTask(value: unknown): boolean {
     (value.minPerDay === null || isInt(value.minPerDay, 0)) &&
     isInt(value.daysPerWeek, 1, 7) &&
     (value.pinned === null || (Array.isArray(value.pinned) && value.pinned.every(isWeekday))) &&
-    typeof value.locked === "boolean"
+    typeof value.locked === "boolean" &&
+    (value.raw === undefined || value.raw === null || typeof value.raw === "string") &&
+    (value.source === undefined || value.source === null || isSourceRef(value.source))
   );
 }
 
@@ -53,9 +59,10 @@ function isNote(value: unknown): boolean {
 
 /**
  * Everything buildQuickModel relies on, so a stored copy from an older version (or one edited by
- * hand) falls back to the example instead of breaking the page.
+ * hand) falls back to the example instead of breaking the page. `id` (JOIN-03) is optional here so
+ * a plan saved before task UUIDs still loads.
  */
-function isQuickState(value: unknown): value is QuickState {
+function isStoredState(value: unknown): value is StoredState {
   return (
     isRecord(value) &&
     (value.source === "fusion" || value.source === "manual") &&
@@ -75,9 +82,10 @@ function isQuickState(value: unknown): value is QuickState {
     isStringOrNull(value.provider) &&
     isStringOrNull(value.pa) &&
     isStringOrNull(value.serviceLabel) &&
+    (value.id === undefined || typeof value.id === "string") &&
+    (value.sourceRef === undefined || value.sourceRef === null || isSourceRef(value.sourceRef)) &&
     Array.isArray(value.tasks) &&
     value.tasks.every(isTask) &&
-    isInt(value.nextId, 1) &&
     Array.isArray(value.activeDays) &&
     value.activeDays.length === 7 &&
     value.activeDays.every((day) => typeof day === "boolean") &&
@@ -86,11 +94,25 @@ function isQuickState(value: unknown): value is QuickState {
     Object.values(value.edits).every((minutes) => isInt(minutes, 0, 1440)) &&
     isRecord(value.fusion) &&
     Object.values(value.fusion).every((units) => isInt(units, 0)) &&
-    typeof value.isExample === "boolean" &&
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
+    typeof value.isExample === "boolean" &&
     isInt(value.rowsRead, 0)
   );
+}
+
+/** A QuickState as it may be stored: `id` (JOIN-03) is optional so a copy saved before it still loads. */
+type StoredState = Omit<QuickState, "id"> & { id?: string };
+/** A CarePlan as it may be stored, with services that may predate task UUIDs. */
+type StoredCarePlan = Omit<CarePlan, "services"> & { services: StoredState[] };
+
+/** JOIN-03: give a stored authorization without a UUID a fresh one so every authorization has one. */
+function migrateState(state: StoredState): QuickState {
+  return { ...state, id: state.id ?? newId() };
+}
+
+function migratePlan(plan: StoredCarePlan): CarePlan {
+  return { ...plan, services: plan.services.map(migrateState) };
 }
 
 function isVisit(value: unknown): boolean {
@@ -135,11 +157,11 @@ function isOther(value: unknown): boolean {
   );
 }
 
-function isCarePlan(value: unknown): value is CarePlan {
+function isStoredCarePlan(value: unknown): value is StoredCarePlan {
   if (!isRecord(value) || !Array.isArray(value.services) || value.services.length === 0) return false;
   const count = value.services.length;
   return (
-    value.services.every(isQuickState) &&
+    value.services.every(isStoredState) &&
     Array.isArray(value.visits) &&
     value.visits.every(isVisit) &&
     // Kept authorizations (IMP-19); plans saved before them have none.
@@ -173,13 +195,14 @@ export function loadPlan(): CarePlan | null {
     const raw = sessionStorage.getItem(PLAN_KEY);
     if (raw !== null) {
       const parsed: unknown = JSON.parse(raw);
-      if (!isCarePlan(parsed)) return null;
-      return { ...parsed, services: parsed.services.map((state) => ({ ...state, identity: null })) };
+      if (!isStoredCarePlan(parsed)) return null;
+      const plan = migratePlan(parsed);
+      return { ...plan, services: plan.services.map((state) => ({ ...state, identity: null })) };
     }
     const old = sessionStorage.getItem(STATE_KEY);
     if (old === null) return null;
     const state: unknown = JSON.parse(old);
-    return isQuickState(state) ? singlePlan({ ...state, identity: null }) : null;
+    return isStoredState(state) ? singlePlan({ ...migrateState(state), identity: null }) : null;
   } catch {
     return null;
   }

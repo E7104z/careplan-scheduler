@@ -13,11 +13,11 @@ export function mergeFusionText(texts: string[], pack: RulePack): ImportResult {
   const [firstText, ...rest] = texts;
   if (firstText === undefined) return parseFusionText("", pack);
 
-  const merged = readPaste(firstText, pack);
+  const merged = readPaste(firstText, pack, 1);
   const refused: ImportIssue[] = [];
 
   rest.forEach((text, i) => {
-    const next = readPaste(text, pack);
+    const next = readPaste(text, pack, i + 2);
     if (merged.participant && next.participant && merged.participant.dcn !== next.participant.dcn) {
       refused.push({ level: "error", code: "different-participant", message: `Page ${i + 2} is for a different participant.` });
       return;

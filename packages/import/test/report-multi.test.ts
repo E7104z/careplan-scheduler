@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mergeFusionText, parseFusionText } from "../src/index.js";
-import { PACK, fixtureText, tupleOf, type TaskTuple } from "./helpers.js";
+import { PACK, contentServices, contentVisits, fixtureText, tupleOf, type TaskTuple } from "./helpers.js";
 
 // IMP-T26..T29: fixture F has the layout of a real care plan report with several authorizations
 // (Oct 2026): agency personal care, CDS essential transportation, two General Health Evaluations
@@ -62,7 +62,7 @@ describe("IMP-T26 fixture F: every authorization in the report is read", () => {
   });
 
   it("keeps both General Health Evaluations as visits in their own months", () => {
-    expect(result.visits).toEqual([
+    expect(result.visits).toMatchObject([
       {
         label: "GHE", serviceCode: "T1001", name: "General Health Evaluation", provider: "TEST HOME CARE LLC",
         start: "2026-05-01", end: "2026-05-31", units: 1, pa: "20260000000013",
@@ -113,8 +113,8 @@ describe("IMP-T29 fixture F pasted in two parts", () => {
 
   it("reads the same services and visits as one paste", () => {
     const whole = parseFusionText(text, PACK);
-    expect(result.services).toEqual(whole.services);
-    expect(result.visits).toEqual(whole.visits);
+    expect(contentServices(result.services)).toEqual(contentServices(whole.services));
+    expect(contentVisits(result.visits)).toEqual(contentVisits(whole.visits));
     expect(result.issues).toEqual([GHE_NOTE]);
   });
 });

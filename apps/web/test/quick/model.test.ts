@@ -143,7 +143,7 @@ describe("Quick Schedule model", () => {
         { id: "t4", taskCode: "LAUNDRY", name: "Laundry", minPerDay: 30, daysPerWeek: 2, pinned: null, locked: false },
         { id: "t5", taskCode: "KITCHEN", name: "Clean Kitchen", minPerDay: 10, daysPerWeek: 2, pinned: null, locked: false },
       ],
-      nextId: 6,
+      id: "auth-test-1",
       activeDays: [true, true, true, true, true, true, true],
       transport: { minPerTrip: 0, tripsPerWeek: 1, day: 1 },
       edits: {},

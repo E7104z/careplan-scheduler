@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { MO_2026_07 } from "@careplan/engine";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import type { TextItem } from "pdfjs-dist/types/src/display/api.js";
-import type { ImportedTask, PdfTextItem } from "../src/index.js";
+import type { ImportedService, ImportedTask, ImportedVisit, PdfTextItem } from "../src/index.js";
 
 export const PACK = MO_2026_07;
 
@@ -18,6 +18,24 @@ export type TaskTuple = [name: string, minPerDay: number, daysPerWeek: number];
 
 export function tupleOf(tasks: ImportedTask[]): TaskTuple[] {
   return tasks.map((task) => [task.name, task.minPerDay, task.daysPerWeek]);
+}
+
+/** A service without SOURCE-01 provenance: no service/task source and no task raw text. */
+export type ContentService = Omit<ImportedService, "source" | "tasks"> & {
+  tasks: Omit<ImportedTask, "source" | "raw">[];
+};
+
+/** Services minus SOURCE-01 provenance (source/raw), for comparing parsed content across pages. */
+export function contentServices(services: ImportedService[]): ContentService[] {
+  return services.map(({ source: _source, tasks, ...rest }) => ({
+    ...rest,
+    tasks: tasks.map(({ source: _taskSource, raw: _raw, ...task }) => task),
+  }));
+}
+
+/** Visits minus SOURCE-01 provenance (source), for comparing parsed content across pages. */
+export function contentVisits(visits: ImportedVisit[]): Omit<ImportedVisit, "source">[] {
+  return visits.map(({ source: _source, ...rest }) => rest);
 }
 
 function toPdfItem(item: TextItem): PdfTextItem {

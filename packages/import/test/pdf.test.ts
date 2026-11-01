@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { parseFusionText, textItemsToLines, type PdfTextItem } from "../src/index.js";
-import { B_TASKS, PACK, fixtureText, pdfPages, tupleOf } from "./helpers.js";
+import { B_TASKS, PACK, contentServices, fixtureText, pdfPages, tupleOf } from "./helpers.js";
 
 describe("IMP-T14 fusion-table-with-banner.pdf", () => {
   let pages: PdfTextItem[][];
@@ -22,7 +22,7 @@ describe("IMP-T14 fusion-table-with-banner.pdf", () => {
     expect(fromPdf.plan).toEqual({ start: "2025-12-01", end: "2026-10-31" });
     expect(fromPdf.totalCost).toBe("2436.53");
     expect(fromPdf.issues).toEqual([]);
-    expect(fromPdf.services).toEqual(fromPaste.services);
+    expect(contentServices(fromPdf.services)).toEqual(contentServices(fromPaste.services));
   });
 });
 

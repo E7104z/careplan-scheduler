@@ -11,4 +11,5 @@ export type {
   ImportResult,
   PagingEntry,
   PdfTextItem,
+  SourceRef,
 } from "./types.js";

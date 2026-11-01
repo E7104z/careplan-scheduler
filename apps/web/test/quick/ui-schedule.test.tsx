@@ -114,7 +114,7 @@ describe("Quick Schedule: month", () => {
     expect(
       screen.getByText(/This month's tasks need more than Fusion's 440 units, so the schedule stops 320 minutes early, starting Dec 30, 2025\./),
     ).toBeInTheDocument();
-    expect(screen.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min")).toBeInTheDocument();
+    expect(screen.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Dressing/Grooming 15 min, Wash Dishes 5 min")).toBeInTheDocument();
     expect(screen.getByText(/^Dec 31, 2025: Meal Prep\/Eating 60 min, Bathing 45 min, Clean Bath 20 min, /)).toBeInTheDocument();
     expect(screen.getByText(/a consistent need to change a task should prompt a request to the care plan change team \(INFO 09-25-02\)/)).toBeInTheDocument();
 

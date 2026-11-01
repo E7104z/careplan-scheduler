@@ -1,11 +1,24 @@
 import type { ServiceCode } from "@careplan/engine";
 
+/**
+ * SOURCE-01: where a value was read. `page` is the 1-based paste (or PDF page) and `line` the
+ * 1-based line within that page's text. Provenance only; never a key or an identity.
+ */
+export interface SourceRef {
+  page: number;
+  line: number;
+}
+
 export interface ImportedTask {
   name: string;            // rule-pack name when matched, else the Fusion name
   fusionName: string;      // exactly as read
   taskCode: string | null; // null when not in the rule pack
   minPerDay: number;
   daysPerWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  /** The row exactly as read (SOURCE-01 raw view). */
+  raw: string;
+  /** Where the row was read (SOURCE-01). */
+  source: SourceRef;
 }
 
 export interface ImportedService {
@@ -20,6 +33,8 @@ export interface ImportedService {
   unread: { raw: string; reason: "unreadable" | "task-numbers" | "transport-numbers" }[];
   /** The care plan report's authorized units for each month (IMP-17); null from the care plan screen. */
   monthly: { start: string; end: string; units: number }[] | null;
+  /** Where the service was read (SOURCE-01). */
+  source: SourceRef;
 }
 
 /** A visit authorization from the care plan report (IMP-18), such as a General Health Evaluation. */
@@ -31,6 +46,8 @@ export interface ImportedVisit {
   start: string; end: string;    // YYYY-MM-DD: the period it is authorized for
   units: number;                 // visits authorized in that period
   pa: string | null;
+  /** Where the visit was read (SOURCE-01). */
+  source: SourceRef;
 }
 
 /**
@@ -50,6 +67,8 @@ export interface ImportedOther {
   monthly: { start: string; end: string; units: number }[];
   /** Its task rows, exactly as read. */
   rows: string[];
+  /** Where the authorization was read (SOURCE-01). */
+  source: SourceRef;
 }
 
 export type ImportIssueCode =
@@ -78,6 +97,12 @@ export interface ImportResult {
   /** Authorizations kept but not scheduled (IMP-19). */
   others: ImportedOther[];
   issues: ImportIssue[];
+  /** Where the participant, plan and total cost were read (SOURCE-01); null when absent. */
+  sources: {
+    participant: SourceRef | null;
+    plan: SourceRef | null;
+    totalCost: SourceRef | null;
+  };
 }
 
 /** A pdf.js text item reduced to what IMP-14 needs. y grows upward, as in PDF space. */

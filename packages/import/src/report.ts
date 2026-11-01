@@ -1,9 +1,10 @@
 import { findAppendix1, type RulePack, type ServiceCode } from "@careplan/engine";
 import { MDY, ymd } from "./dates.js";
+import { lineAt } from "./provenance.js";
 import { buildService, type ResultParts } from "./result.js";
 import { readRow, type ReadRow } from "./rows.js";
 import { serviceCodeForLabel } from "./services.js";
-import type { ImportedOther, ImportedVisit, ImportIssue } from "./types.js";
+import type { ImportedOther, ImportedVisit, ImportIssue, SourceRef } from "./types.js";
 
 // Fusion's care plan report ("Home & Community Based Services Care Plan"), IMPORT-SPEC 1.3.
 // Cells are separated by tabs (its PDF) or single spaces (copied from a PDF viewer).
@@ -41,6 +42,10 @@ interface Block {
   provider: string | null;
   months: { start: string; end: string; code: string; units: number }[];
   rows: string[];
+  /** 1-based line of the month-table heading, where the authorization was read (SOURCE-01). */
+  line: number;
+  /** 1-based line of each row in `rows` (SOURCE-01). */
+  rowLines: number[];
 }
 
 /** The task name at the start of a report row: the first cell, or the text before the first number. */
@@ -71,20 +76,31 @@ function serviceRow(above: string[]): Pick<Block, "label" | "pa" | "provider"> {
 
 /** Split the report into services: a month table, then the task table that follows it. */
 function readBlocks(text: string): Block[] {
-  const lines = text.split("\n").filter((line) => line.trim() !== "" && !FOOTER_RE.test(line) && !PAGE_HEADER_RE.test(line));
+  const rawLines = text.split("\n");
+  const lines: { line: number; text: string }[] = [];
+  rawLines.forEach((text, i) => {
+    if (text.trim() === "" || FOOTER_RE.test(text) || PAGE_HEADER_RE.test(text)) return;
+    lines.push({ line: i + 1, text });
+  });
   const blocks: Block[] = [];
   let mode: "none" | "months" | "tasks" = "none";
-  lines.forEach((line, i) => {
+  lines.forEach(({ line, text: lineText }, i) => {
     const block = blocks[blocks.length - 1];
-    if (MONTH_HEAD_RE.test(line)) {
-      blocks.push({ ...serviceRow(lines.slice(Math.max(0, i - 6), i)), months: [], rows: [] });
+    if (MONTH_HEAD_RE.test(lineText)) {
+      blocks.push({
+        ...serviceRow(lines.slice(Math.max(0, i - 6), i).map((entry) => entry.text)),
+        months: [],
+        rows: [],
+        line,
+        rowLines: [],
+      });
       mode = "months";
-    } else if (TASK_HEAD_RE.test(line)) {
+    } else if (TASK_HEAD_RE.test(lineText)) {
       mode = block ? "tasks" : "none";
-    } else if (SERVICE_HEAD_RE.test(line)) {
+    } else if (SERVICE_HEAD_RE.test(lineText)) {
       mode = "none";
     } else if (mode === "months" && block) {
-      const m = MONTH_ROW_RE.exec(line);
+      const m = MONTH_ROW_RE.exec(lineText);
       if (m) {
         const [, m1, d1, y1, m2, d2, y2, code, units] = m;
         block.months.push({ start: ymd(m1!, d1!, y1!), end: ymd(m2!, d2!, y2!), code: code!, units: Number(units) });
@@ -92,7 +108,8 @@ function readBlocks(text: string): Block[] {
         mode = "none";
       }
     } else if (mode === "tasks" && block) {
-      block.rows.push(line.trim());
+      block.rows.push(lineText.trim());
+      block.rowLines.push(line);
     }
   });
   return blocks;
@@ -102,9 +119,10 @@ function readBlocks(text: string): Block[] {
  * IMP-17: one task row. The Comments cell ("N/A") is dropped; an unread row keeps its full text.
  * Essential transportation has one number, its units a month ("Essential Transportation⇥40⇥N/A").
  */
-function readReportRow(line: string, pack: RulePack): ReadRow | null {
+function readReportRow(line: string, pack: RulePack, source: SourceRef): ReadRow | null {
   const cells = line.replace(/\s+N\/A\s*$/i, "");
-  const row = readRow(cells, pack);
+  const row = readRow(cells, pack, source);
+  if (row?.kind === "task") return { kind: "task", task: { ...row.task, raw: line } };
   if (row?.kind === "unread" && row.reason === "transport-numbers") {
     const units = /^\D*?\s(\d{1,4})\s*$/.exec(cells)?.[1];
     if (units !== undefined) {
@@ -152,9 +170,10 @@ function isKept(block: Block, blocks: Block[], pack: RulePack): boolean {
  * `visits`, by month, with one note per label. A service the schedule can't place is kept in
  * `others` with its rows as read (IMP-19). The address, date of birth and phone numbers are never read.
  */
-export function readReport(text: string, pack: RulePack): ResultParts {
-  const plan = PLAN_RE.exec(text);
-  const name = PARTICIPANT_RE.exec(text)?.[1];
+export function readReport(text: string, pack: RulePack, page = 1): ResultParts {
+  const planMatch = PLAN_RE.exec(text);
+  const participantMatch = PARTICIPANT_RE.exec(text);
+  const name = participantMatch?.[1];
   const dcn = DCN_RE.exec(text)?.[1];
   const pageHeader = PAGE_HEADER_RE.exec(text);
   const participant =
@@ -167,6 +186,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
   const others: ImportedOther[] = [];
   const blocks = readBlocks(text);
   for (const block of blocks) {
+    const source: SourceRef = { page, line: block.line };
     const code = block.months[0]?.code ?? null;
     const label = block.label ?? code;
     const visitService = code ? pack.services.find((service) => service.code === code && service.unit === "visit") : undefined;
@@ -175,7 +195,7 @@ export function readReport(text: string, pack: RulePack): ResultParts {
       for (const month of block.months) {
         visits.push({
           label, serviceCode: visitService.code, name: what || null, provider: block.provider,
-          start: month.start, end: month.end, units: month.units, pa: block.pa,
+          start: month.start, end: month.end, units: month.units, pa: block.pa, source,
         });
       }
       if (!skipped.some((note) => note.label === label)) {
@@ -192,12 +212,12 @@ export function readReport(text: string, pack: RulePack): ResultParts {
         label: block.label, code, registryId: code ? (findAppendix1(code)?.id ?? null) : null,
         provider: block.provider, pa: block.pa,
         start: monthly.map((m) => m.start).sort()[0] ?? null, end: monthly.map((m) => m.end).sort().at(-1) ?? null,
-        monthly, rows: block.rows,
+        monthly, rows: block.rows, source,
       });
       continue;
     }
-    const rows = block.rows.flatMap((line) => {
-      const row = readReportRow(line, pack);
+    const rows = block.rows.flatMap((line, i) => {
+      const row = readReportRow(line, pack, { page, line: block.rowLines[i] ?? block.line });
       return row ? [row] : [];
     });
     const service = buildService({
@@ -210,14 +230,19 @@ export function readReport(text: string, pack: RulePack): ResultParts {
       cost: null,
       pa: block.pa,
       monthly,
+      source,
     }, rows, duplicates);
     service.serviceCode ??= codeFallback(block, blocks, pack);
     services.push(service);
   }
 
+  const participantRef: SourceRef | null = participantMatch
+    ? { page, line: lineAt(text, participantMatch.index) }
+    : pageHeader ? { page, line: lineAt(text, pageHeader.index) } : null;
+
   return {
     participant,
-    bannerPlan: plan ? { start: ymd(plan[1]!, plan[2]!, plan[3]!), end: ymd(plan[4]!, plan[5]!, plan[6]!) } : null,
+    bannerPlan: planMatch ? { start: ymd(planMatch[1]!, planMatch[2]!, planMatch[3]!), end: ymd(planMatch[4]!, planMatch[5]!, planMatch[6]!) } : null,
     totalCost: null,
     paging: [],
     services,
@@ -225,5 +250,10 @@ export function readReport(text: string, pack: RulePack): ResultParts {
     others,
     duplicates,
     skipped,
+    sources: {
+      participant: participantRef,
+      plan: planMatch ? { page, line: lineAt(text, planMatch.index) } : null,
+      totalCost: null,
+    },
   };
 }
