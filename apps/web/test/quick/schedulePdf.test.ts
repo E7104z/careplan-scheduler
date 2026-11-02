@@ -189,13 +189,28 @@ describe("printed schedule: the PDF", () => {
     for (const text of [
       "SAMPLE PARTICIPANT F", "Services", "PC - Agency, PC - CDS, HC", "Feb 1, 2026 to Oct 31, 2026", "Nurse visits",
       "May 2026 and Aug 2026", "Dietary", "Essential transportation", "Wash Windows/Blinds", "Ready to use",
-      "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service",
+      "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service", "Service days this week",
       "Each service's own page has its visit lengths for EVV.",
     ]) {
       expect(pdf.text).toContain(text);
     }
     expect(pdf.text).not.toContain("Units by month");
     expect(pdf.text).not.toContain("Visit length");
+    expectTidy(pdf.items);
+  });
+
+  it("APP-SPEC 5.8: the plan page warns when the week has more service days than planned", async () => {
+    const outcome = next(addPage(emptyImportFlow(), fixtureF), MO_2026_07, new Date("2026-10-21T12:00:00-05:00"));
+    if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
+    // Move CDS transportation onto Saturday: six service days, still five planned.
+    outcome.plan.services[1]!.transport.day = 6;
+    const models = outcome.plan.services.map((state) => buildQuickModel(state, MO_2026_07));
+    const sheets = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
+    if (!Array.isArray(sheets)) throw new Error("Expected a plan of several services");
+    const plan = sheets[0]!;
+    expect(plan.warning).toBe("This week has more service days than the plan's 5 days a week. Check each service's care days.");
+    const pdf = await readBack(await renderSchedulePdf(sheets, FONTS, NOW));
+    expect(pdf.text).toContain("This week has more service days than the plan's 5 days a week");
     expectTidy(pdf.items);
   });
 
