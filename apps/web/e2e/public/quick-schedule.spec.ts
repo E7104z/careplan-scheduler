@@ -414,7 +414,7 @@ test("AC-28: a care plan report with several services is one schedule for the pa
   await expect(authorizations).toContainText("40 units in");
   await expect(authorizations).toContainText("5 units in");
   const week = page.locator("section", { has: page.getByRole("heading", { name: "The participant's week" }) });
-  await expect(week.getByRole("region", { name: "Saturday" })).toContainText("Wash Windows/Blinds");
+  await expect(week.getByRole("region", { name: "Thursday" })).toContainText("Wash Windows/Blinds");
   await expect(week.getByRole("region", { name: "Friday" })).toContainText("Essential transportation");
 
   // The nurse visits, by month. On Nov 20, 2025 both are still to come.

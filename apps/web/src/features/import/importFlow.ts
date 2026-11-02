@@ -10,7 +10,7 @@ import {
 import { daysInMonth, type RulePack, type ServiceCode } from "@careplan/engine";
 import { niceDate } from "../../lib/format";
 import { dayLoad } from "../quick-schedule/carePlan.js";
-import { localMonth } from "../quick-schedule/model.js";
+import { localMonth, MONDAY_FIRST } from "../quick-schedule/model.js";
 import { fromFusion, serviceDates } from "./fromFusion.js";
 import type { CarePlan, Plan, PlanOther, PlanVisit, QuickState } from "../quick-schedule/types.js";
 
@@ -195,6 +195,15 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
   const notes: ImportIssue[] = parsed.issues.filter(
     (issue) => !SERVICE_NOTES.includes(issue.code) && (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete"),
   );
+  // APP-SPEC 5.8 (superseded Oct 31, 2026): the client's services combine on one shared set of
+  // care days, sized to the largest days-per-week among the services being scheduled. Each service
+  // then takes its own days from that set, so none spreads onto its own days of the week.
+  const scheduled = parsed.services.filter((service) => !ended(service) && !keptByChoice(service));
+  const sharedSize = scheduled.reduce((max, service) => {
+    const daysPerWeek = service.tasks.reduce((largest, task) => Math.max(largest, task.daysPerWeek), 1);
+    return Math.max(max, daysPerWeek);
+  }, 1);
+  const sharedDays = MONDAY_FIRST.slice(0, sharedSize);
   parsed.services.forEach((service, index) => {
     if (ended(service)) {
       notes.push({
@@ -216,7 +225,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
       return;
     }
     resolved.services[index]!.serviceCode = codeFor(service);
-    const state = fromFusion(resolved, index, today, services.length > 0 ? dayLoad(services, pack) : undefined);
+    const state = fromFusion(resolved, index, today, services.length > 0 ? dayLoad(services, pack) : undefined, sharedDays);
     state.notes = parsed.issues.filter((issue) => SERVICE_NOTES.includes(issue.code) && concerns(issue, service));
     services.push(state);
   });

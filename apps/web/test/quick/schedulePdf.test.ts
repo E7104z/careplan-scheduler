@@ -189,7 +189,7 @@ describe("printed schedule: the PDF", () => {
     for (const text of [
       "SAMPLE PARTICIPANT F", "Services", "PC - Agency, PC - CDS, HC", "Feb 1, 2026 to Oct 31, 2026", "Nurse visits",
       "May 2026 and Aug 2026", "Dietary", "Essential transportation", "Wash Windows/Blinds", "Ready to use",
-      "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service",
+      "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service", "Service days this week",
       "Each service's own page has its visit lengths for EVV.",
     ]) {
       expect(pdf.text).toContain(text);

@@ -6,7 +6,7 @@ import { formatDuration, formatUnits, monthName, niceDate, weekdayName } from ".
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
 import { READ_SUMMARY_TITLE_ID } from "../import/ReadSummary";
-import { isUpcoming, planWeek, serviceName, type PlanDay } from "./carePlan";
+import { isUpcoming, planWeek, serviceDays, serviceName, type PlanDay } from "./carePlan";
 import { checksumLines } from "./checksumText";
 import { monthBalance, monthFigures } from "./model";
 import { otherAmount, otherDetail, otherName, otherReason, otherService, planOthers } from "./others";
@@ -319,6 +319,7 @@ export function PlanWeekPanel({ plan, models }: PlanProps) {
         Every service on each day, under the service that authorizes it. Set each EVV visit window from that
         service's minutes. To move a task, open its service above.
       </p>
+      <p className="mb-3 text-sm font-semibold text-ink">Service days this week: {serviceDays(plan, models)}</p>
       <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         {week.map((day) => (
           <DayCard key={day.weekday} day={day} names={names} />

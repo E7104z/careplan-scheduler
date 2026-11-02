@@ -556,10 +556,11 @@ service on its own, but the participant lives one week. So:
   T1019 under both agency and CDS). Every change goes to one service through its own guard
   (5.7), so the medically related household tasks stay under agency personal care and never
   count against homemaker.
-- **Care days across services:** the first service takes the first days from Monday, as
-  before (IMPORT-SPEC 4). Each service after it takes its days from the quietest days of the
-  week built so far (fewest minutes; ties in Monday-first order); a service with only
-  transportation takes the quietest weekday. All of it is editable in that service.
+- **Care days across services (superseded Oct 31, 2026 review):** every service combines on one
+  shared set of care days, sized to the largest days-per-week across the client's services, the
+  first days from Monday (IMPORT-SPEC 4). Each service takes its own days from that set — a
+  service with the full count takes them all, one with fewer days takes the lightest subset, and
+  transportation takes one weekday from it. All of it is editable in that service.
 - **Whole care plan view** (the default with several services): tabs "Whole care plan" and one
   per service (toggle buttons, `aria-pressed`); the read summary for the plan (dates, services,
   tasks, visits, and for each authorization whether our total matches Fusion's); Authorizations

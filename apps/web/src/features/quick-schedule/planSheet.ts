@@ -1,6 +1,6 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import { formatDuration, monthName, niceDate, shortMonth, weekdayName } from "../../lib/format";
-import { serviceName, weekMinutes } from "./carePlan";
+import { serviceName, serviceDays, weekMinutes } from "./carePlan";
 import { hasSchedule, monthFigures } from "./model";
 import { buildScheduleSheet, type ScheduleSheet, type SheetDay, type SheetFact, type SheetFigure } from "./scheduleSheet";
 import { otherLines, planOthers } from "./others";
@@ -63,6 +63,7 @@ export function buildPlanSheet(plan: CarePlan, models: QuickModel[], pack: RuleP
   facts.push({ label: "Plan", value: `${niceDate(start)} to ${niceDate(end)}` });
   if (scheduleStart > start) facts.push({ label: "Schedule starts", value: niceDate(scheduleStart) });
   if (providers.length === 1) facts.push({ label: "Provider", value: providers[0]! });
+  facts.push({ label: "Service days this week", value: `${serviceDays(plan, models)}` });
   if (plan.visits.length > 0) facts.push({ label: "Nurse visits", value: visitMonths(plan) });
   if (planOthers(plan).length > 0) facts.push({ label: "Not in the week", value: String(planOthers(plan).length) });
 

@@ -37,6 +37,25 @@ export function dayLoad(states: QuickState[], pack: RulePack): number[] {
   return load;
 }
 
+/** How many distinct days of the week carry service, across every service in the plan. */
+export function serviceDays(plan: CarePlan, models: QuickModel[]): number {
+  const days = new Set<Weekday>();
+  plan.services.forEach((state, index) => {
+    weekMinutes(state, models[index]!).forEach((minutes, day) => {
+      if (minutes > 0) days.add(day as Weekday);
+    });
+  });
+  return days.size;
+}
+
+/** The largest days-per-week across the plan's tasks (transportation alone counts as one day). */
+export function maxServiceDays(models: QuickModel[]): number {
+  return models.reduce((max, model) => {
+    const daysPerWeek = model.tasks.reduce((largest, task) => Math.max(largest, task.daysPerWeek), 1);
+    return Math.max(max, daysPerWeek);
+  }, 0);
+}
+
 export interface PlanDayItem {
   /** Index of the service in the plan. */
   service: number;
