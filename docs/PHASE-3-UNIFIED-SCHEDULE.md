@@ -134,12 +134,14 @@ IMP-T26 to IMP-T29.
    this real plan.
 3. **CDS essential transportation** is read from its one number, units a month (40 → 600
    minutes), and set aside on one day: 120 minutes a week, the reviewer's figure.
-4. **Placement:** agency PC Monday to Friday as before; each later service takes the
-   quietest days of the week so far. That puts homemaker on Saturday (as proposed) and
-   transportation on the quietest weekday, Friday, rather than the proposal's Wednesday. Both
-   are editable choices in the service, as the proposal says. Agency PC comes to 715 minutes a
-   week, matching the proposal; its days differ from the illustration because the composer
-   spreads tasks by its own rules.
+4. **Placement (superseded: services no longer spread across the week):** every service
+   combines on one shared set of care days, sized to the largest days-per-week across the
+   client's services. Agency PC takes Monday to Friday; each later service takes its own days
+   from that same set — a service with fewer days takes the lightest subset, and transportation
+   takes the quietest weekday. So homemaker lands on Thursday (not Saturday) and transportation
+   on Friday. Each is still an editable choice in the service, as the proposal says. Agency PC
+   comes to 715 minutes a week, matching the proposal; its days differ from the illustration
+   because the composer spreads tasks by its own rules.
 5. **Two views:** the whole care plan (default with several services) and each service in
    detail on the same page, one click apart. Moving a task never reopens anything.
 6. **Authorization dates:** each service schedules only its own authorized months from this
