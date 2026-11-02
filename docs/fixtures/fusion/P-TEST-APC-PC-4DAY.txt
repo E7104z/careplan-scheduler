@@ -1,0 +1,68 @@
+Participant Information: SAMPLE PARTICIPANT P
+Physical Address:	DCN: 10000016
+100 Sample Street	DOB: 01/01/1950
+Apt 1	COOP Priority: 2 - Medium
+Sampletown, MO 650000000
+Primary Phone: N/A
+Secondary Phone: (555) 555-0101
+Home & Community Based Services Care Plan
+The information below lists the services you have been authorized to receive. These services are intended to help you remain in
+your home. The services will be paid for by MO HealthNet as long as you have active MO HealthNet benefits.
+Each service and its unit description are listed on a separate line. The dates you are eligible to receive the service, the total
+monthly units, and the provider who is to deliver your service are also on the line. Under each service, the specific task(s) and/or
+days of the week for service delivery is shown.
+Care Plan Information 02/01/2026 - 10/31/2026
+Date Generated: 10/23/2026 | Page 1 of 5
+SAMPLE PARTICIPANT P - DCN:10000016
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+02/01	10/31	TEST HOME CARE LLC , (555) 555-
+APC	N/A	N/A	20260000000041
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+02/01/2026	02/28/2026	T1019TF	114
+03/01/2026	03/31/2026	T1019TF	114
+04/01/2026	04/30/2026	T1019TF	114
+05/01/2026	05/31/2026	T1019TF	114
+06/01/2026	06/30/2026	T1019TF	114
+07/01/2026	07/31/2026	T1019TF	114
+08/01/2026	08/31/2026	T1019TF	114
+09/01/2026	09/30/2026	T1019TF	114
+10/01/2026	10/31/2026	T1019TF	114
+Date Generated: 10/23/2026 | Page 2 of 5
+SAMPLE PARTICIPANT P - DCN:10000016
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Asst Trans Device	30	4	N/A
+Bowel Program	30	4	N/A
+Catheter Hygiene	30	4	N/A
+Date Generated: 10/23/2026 | Page 3 of 5
+SAMPLE PARTICIPANT P - DCN:10000016
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+02/01	10/31	TEST HOME CARE LLC , (555) 555-
+PC - Agency	N/A	N/A	20260000000042
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+02/01/2026	02/28/2026	T1019	336
+03/01/2026	03/31/2026	T1019	336
+04/01/2026	04/30/2026	T1019	336
+05/01/2026	05/31/2026	T1019	336
+06/01/2026	06/30/2026	T1019	336
+07/01/2026	07/31/2026	T1019	336
+08/01/2026	08/31/2026	T1019	336
+09/01/2026	09/30/2026	T1019	336
+10/01/2026	10/31/2026	T1019	336
+Date Generated: 10/23/2026 | Page 4 of 5
+SAMPLE PARTICIPANT P - DCN:10000016
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Make Bed/Change Linens	10	4	N/A
+Bathing	60	4	N/A
+Dressing/Grooming	30	4	N/A
+Laundry	30	4	N/A
+Mobility/Transfer/Position	45	4	N/A
+Toileting	30	4	N/A
+Dietary	45	4	N/A
+Clean Living Area	15	4	N/A
+Date Generated: 10/23/2026 | Page 5 of 5
