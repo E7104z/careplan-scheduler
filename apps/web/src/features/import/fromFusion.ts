@@ -14,8 +14,6 @@ function reportFigures(monthly: ImportedService["monthly"], months: string[]): R
   return figures;
 }
 
-const WEEKDAYS_MON_FRI: Weekday[] = [1, 2, 3, 4, 5];
-
 /** The n days with the fewest minutes already scheduled, ties in Monday-first order, in week order. */
 function quietestDays(load: number[], n: number, from: Weekday[] = MONDAY_FIRST): Weekday[] {
   return [...from]
@@ -37,11 +35,19 @@ export function serviceDates(parsed: ImportResult, service: ImportedService): { 
  * IMPORT-SPEC section 4: turn one parsed Fusion service into Quick Schedule state with locked
  * plan values. Unmatched tasks keep taskCode `FUSION:<name>` (IMP-09).
  *
- * `load` is the minutes a day the participant's other services already have (APP-SPEC 5.8): a
- * service built after them takes its care days from the quietest days, so the week is spread
- * out rather than stacked. Without it, the care days are the first days from Monday.
+ * `sharedDays` is the client's one set of care days (APP-SPEC 5.8, superseded Oct 31, 2026):
+ * every service takes its own days from it — a service with the full number takes them all, one
+ * with fewer days takes the lightest subset, and transportation takes one weekday from it.
+ * Without it (a plan of one service), the care days are the first days from Monday. `load` is
+ * the minutes a day the participant's other services already have, used to pick that subset.
  */
-export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Date, load?: number[]): QuickState {
+export function fromFusion(
+  parsed: ImportResult,
+  serviceIndex: number,
+  today: Date,
+  load?: number[],
+  sharedDays?: Weekday[],
+): QuickState {
   const service = parsed.services[serviceIndex];
   if (!service) throw new Error(`No service at index ${serviceIndex}`);
   if (!service.serviceCode) {
@@ -53,9 +59,10 @@ export function fromFusion(parsed: ImportResult, serviceIndex: number, today: Da
   // Care days: d days, where d is the largest days-per-week. Transportation alone takes one weekday.
   const maxDaysPerWeek = service.tasks.reduce((max, task) => Math.max(max, task.daysPerWeek), 1);
   const transportOnly = service.tasks.length === 0 && service.transport !== null;
-  const careDays = load
-    ? quietestDays(load, maxDaysPerWeek, transportOnly ? WEEKDAYS_MON_FRI : MONDAY_FIRST)
-    : MONDAY_FIRST.slice(0, maxDaysPerWeek);
+  // Every service shares one set of care days; a transport-only service still only uses weekdays.
+  const pool = sharedDays ?? MONDAY_FIRST;
+  const candidates = transportOnly ? pool.filter((day) => day !== 0 && day !== 6) : pool;
+  const careDays = quietestDays(load ?? [], Math.min(maxDaysPerWeek, candidates.length), candidates);
   const activeDays: boolean[] = [false, false, false, false, false, false, false];
   for (const day of careDays) activeDays[day] = true;
   const lastActive: Weekday = careDays.slice(-1)[0]!;
