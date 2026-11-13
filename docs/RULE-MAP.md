@@ -41,6 +41,7 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | EVT-01 | `packages/engine/src/rules/evt.ts` | `ruleEVT01EventDates`; `placeEvent` in `packages/engine/src/events/place.ts` | `packages/engine/test/events.test.ts` | EVT-01 | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
 | EVT-02 | `packages/engine/src/rules/evt.ts` | `ruleEVT02EventQuantity`, `placedInMonth`; `eventBalance` in `packages/engine/src/events/place.ts` | `packages/engine/test/events.test.ts` | EVT-02 | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
 | EVT-03 | `packages/engine/src/rules/evt.ts` | `ruleEVT03ContextEvents` | `packages/engine/test/events.test.ts` | EVT-03 | 3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026) |
+| NUR-01 | `packages/engine/src/rules/nur.ts` | `ruleNUR01ApcFirstMonth`; run by `validatePlan` with `authorizedStarts` | `packages/engine/test/nur.test.ts` | RN-03 | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count |
 | NUR-02 | `packages/engine/src/rules/nur.ts` | `ruleNUR02UnplacedVisits` | `packages/engine/test/events.test.ts` | RN-04 | Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026 |
 
 ### Conflicts and eligibility

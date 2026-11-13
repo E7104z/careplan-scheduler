@@ -20,6 +20,7 @@ import {
   ruleSCH12PartialMonth,
   ruleSCH14VisitDates,
 } from "./rules/sch.js";
+import { ruleNUR01ApcFirstMonth } from "./rules/nur.js";
 import {
   ruleCON01SameServiceOverlap,
   ruleCON02DifferentServiceOverlap,
@@ -59,6 +60,12 @@ export interface ValidatePlanInput {
   template: ScheduleTemplate;
   exceptions: CalendarException[];
   months: string[];
+  /**
+   * An authorization's own first date, by its id, when the schedule being checked starts later
+   * (a schedule covers only care still to come). NUR-01 reads it to tell a first month from a
+   * later one.
+   */
+  authorizedStarts?: Record<string, string>;
 }
 
 export interface ValidateScheduleInput extends ValidatePlanInput {
@@ -196,6 +203,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   results.push(...ruleSCH08CalendarCheck(authorizations, monthlyAuthorizations, template, exceptions, months));
   results.push(...ruleSCH11RepeatedExceptions(exceptions));
   results.push(...ruleSCH12PartialMonth(authorizations, monthlyAuthorizations));
+  results.push(...ruleNUR01ApcFirstMonth(authorizations, months, input.authorizedStarts));
   return results;
 }
 

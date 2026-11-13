@@ -231,7 +231,8 @@ Entry points (`src/validate.ts`): `validateSchedule(input)` runs every rule belo
 result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN, INFO.
 `validatePlan(input)` (Amendment B) takes the same input without `visits`, `caregivers`,
 `enrollments` and `tenantWorkweekStart`, and runs the rules that read the plan: AUTH-03 to
-AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, plus CON-09 on the expanded template: each
+AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, NUR-01 (with the optional
+`authorizedStarts`: each authorization's own first date, when the schedule starts later), plus CON-09 on the expanded template: each
 ILW or Respite authorization's task minutes on each date (template plus exceptions), checked as
 visits would be, keeping only the Sunday–Saturday week results (REVIEW; a repeating week makes
 every rolling 7-day window equal its week or less), with `refs.month` the week's first month.
@@ -271,6 +272,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | EVT-01 | A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked. | BLOCK | APPROVED | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
 | EVT-02 | Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once. | BLOCK | APPROVED | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
 | EVT-03 | A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity. | BLOCK | APPROVED | 3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026) |
+| NUR-01 | An Advanced Personal Care authorization (T1019TF, identified by its code) whose first month is in the schedule → REVIEW "A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan." Never BLOCK or PASS, and nothing in later months. No visit is created or linked: the app offers a date only for a nurse visit Fusion authorized. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count |
 | NUR-02 | An authorized nurse visit month that has passed with no date placed → WARN "No date was placed for this month's visit." It says nothing about whether the visit happened: the app schedules, it does not record delivery. | WARN | APPROVED | Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026 |
 
 ### Conflicts and eligibility (`con.ts`)

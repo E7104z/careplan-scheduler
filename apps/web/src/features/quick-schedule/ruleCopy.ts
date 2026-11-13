@@ -114,6 +114,11 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "Only a reminder can go on this authorization. It is never a visit and is never billed.",
   },
+  "NUR-01/REVIEW": {
+    title: "Advanced Personal Care: check the first month's nurse visits",
+    whatToDo:
+      "A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan. DHSS hasn't confirmed the first-month visit count, so this stays under review.",
+  },
   "NUR-02/WARN": {
     title: "No date was placed for this month's visit",
     whatToDo:

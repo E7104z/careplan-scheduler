@@ -210,7 +210,11 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   // it has no first visit to check.
   const results: ScheduleValidationResult[] =
     scheduled
-      ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })
+      ? validatePlan({
+          pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months,
+          // The plan's own first date: the schedule may start later, at this month (step 5).
+          authorizedStarts: { [auth.id]: state.plan.start },
+        })
       : [];
 
   return {

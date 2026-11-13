@@ -1,6 +1,33 @@
 import type { EventAuthorization, PlanEvent } from "../events/types.js";
-import type { ValidationResult } from "../types.js";
+import type { ServiceAuthorization, ValidationResult } from "../types.js";
 import { placedInMonth } from "./evt.js";
+
+/**
+ * A new Advanced Personal Care authorization (T1019TF, by its code) in its first month: REVIEW,
+ * never BLOCK or PASS. Appendix 3 expects two nurse visits in that month unless an ongoing nurse
+ * visit covers it; DHSS has not confirmed the first-month count, so the engine only asks the
+ * person to check. It creates no visit and reads none. `authorizedStarts` gives an
+ * authorization's own first date when the schedule being checked starts later.
+ * @rule NUR-01
+ * @source HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count
+ */
+export function ruleNUR01ApcFirstMonth(
+  authorizations: readonly ServiceAuthorization[],
+  months: readonly string[],
+  authorizedStarts: Readonly<Record<string, string>> = {},
+): ValidationResult[] {
+  return authorizations
+    .filter((authorization) => authorization.serviceCode === "T1019TF")
+    .map((authorization) => ({ authorization, firstMonth: (authorizedStarts[authorization.id] ?? authorization.start).slice(0, 7) }))
+    .filter(({ firstMonth }) => months.includes(firstMonth))
+    .map(({ authorization, firstMonth }): ValidationResult => ({
+      ruleId: "NUR-01",
+      severity: "REVIEW",
+      message:
+        "A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan.",
+      refs: { serviceAuthId: authorization.id, month: firstMonth },
+    }));
+}
 
 /**
  * Missed-visit follow-up: an authorized nurse visit month that has passed with no date placed.

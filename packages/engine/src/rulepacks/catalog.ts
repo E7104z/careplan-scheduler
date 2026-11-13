@@ -123,6 +123,11 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     source: "3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026)",
   },
   {
+    id: "NUR-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "An Advanced Personal Care authorization (T1019TF, identified by its code) whose first month is in the schedule → REVIEW \"A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan.\" Never BLOCK or PASS, and nothing in later months. No visit is created or linked: the app offers a date only for a nurse visit Fusion authorized.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count",
+  },
+  {
     id: "NUR-02", area: "Schedule", severities: ["WARN"], status: "APPROVED",
     rule: "An authorized nurse visit month that has passed with no date placed → WARN \"No date was placed for this month's visit.\" It says nothing about whether the visit happened: the app schedules, it does not record delivery.",
     source: "Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026",
