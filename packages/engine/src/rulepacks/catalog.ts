@@ -107,6 +107,21 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "A schedule that spans a care plan amendment → REVIEW \"amendment effective date needs confirmation, Manual 4.20\", one for each amendment, on its effective date. The amendment's direction (increase, decrease, reduction-immediate) and effective date are stored as recorded; occurrences keep the version in effect on their date, so history is never rewritten.",
     source: "HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)",
   },
+  {
+    id: "EVT-01", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked.",
+    source: "The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026",
+  },
+  {
+    id: "EVT-02", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once.",
+    source: "Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits",
+  },
+  {
+    id: "EVT-03", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity.",
+    source: "3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026)",
+  },
 
   // Conflicts and eligibility (conflicts.ts)
   {

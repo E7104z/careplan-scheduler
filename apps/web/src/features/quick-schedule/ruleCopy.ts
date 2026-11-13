@@ -99,6 +99,21 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "The schedule crosses a care plan change. Check the date the change takes effect against the care plan in Fusion.",
   },
+  "EVT-01/BLOCK": {
+    title: "That date is outside the authorization",
+    whatToDo:
+      "Pick a date inside the dates and months the care plan authorizes for this service.",
+  },
+  "EVT-02/BLOCK": {
+    title: "That is more than the care plan authorizes this month",
+    whatToDo:
+      "The care plan's count for the month is the limit. Remove a date first, or choose another month.",
+  },
+  "EVT-03/BLOCK": {
+    title: "This authorization has no caregiver time",
+    whatToDo:
+      "Only a reminder can go on this authorization. It is never a visit and is never billed.",
+  },
 };
 
 
