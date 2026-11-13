@@ -316,3 +316,19 @@ security and privacy (tenant isolation, no PHI in diagnostics, BAA decision befo
    month row reads a spaced modifier ("T1019U3 TF", as Appendix 1 prints it) and the code is
    resolved through Appendix 1; before this, the advanced code asked "which service" and could be
    picked as home APC (INV-04). The RCF/ALF nurse visit (T1001U3) is still kept.
+
+**CP2-7 (Nov 13, 2026).** Decisions taken while building the amendment model:
+
+1. **Where it lives.** The model is engine-only for now: `AuthorizationChain` in
+   `packages/engine/src/amendments/versions.ts`, with the rule in `rules/amend.ts`. Nothing in
+   the app stores an amendment yet, so no saved plan changes shape; Coverage Phase 3 (CP3-6) adds
+   the screen and the optional storage field.
+2. **The rule ID is `AMEND-01`**, in the Schedule table (ENGINE-SPEC section 5, Amendment D),
+   status PARTIAL, severity REVIEW only. It fires once for each amendment, on its effective date.
+3. **History is protected in two places.** `addVersion` refuses a version that takes effect on or
+   before the one before it, and `expandChainMonth` expands each version over its own dates only.
+4. **A version that ends early leaves a gap, not the old version.** After `effectiveTo`, no
+   version is in effect until the next one starts. An earlier version coming back would be the
+   app deciding what the care plan says.
+5. **Nothing is applied to the stored date.** A decrease recorded mid-month is kept as recorded;
+   moving it to the first of the next month is the Phase 3 behavior, and until then it is REVIEW.

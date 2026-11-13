@@ -37,6 +37,7 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | SCH-14 | `packages/engine/src/rules/sch.ts` | `ruleSCH14VisitDates` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-22, TC-24, FIX-6c | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | `packages/engine/src/calendar/time.ts` | `elapsedMinutes`, `splitByDate` | `packages/engine/test/calendar.test.ts` | TC-27, TC-28 | Product decision approved Oct 20, 2026 |
 | SCH-17 | `packages/engine/src/rules/fit.ts` | `fitToAuthorization` | `packages/engine/test/fit.test.ts` | TC-38, TC-39 | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
+| AMEND-01 | `packages/engine/src/rules/amend.ts`; model in `packages/engine/src/amendments/versions.ts` | `ruleAMEND01EffectiveDates`; `chainOf`, `addVersion`, `versionOn`, `expandChainMonth` | `packages/engine/test/amendments.test.ts` | AMEND-01 | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
 
 ### Conflicts and eligibility
 

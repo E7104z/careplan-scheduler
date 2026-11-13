@@ -24,6 +24,8 @@ export * from "./rules/auth.js";
 export * from "./rules/sch.js";
 export * from "./rules/fit.js";
 export * from "./rules/conflicts.js";
+export * from "./rules/amend.js";
+export * from "./amendments/versions.js";
 export * from "./validate.js";
 export * from "./stateparity/rowMath.js";
 export * from "./stateparity/calc3c.js";

@@ -21,6 +21,7 @@ const SOURCES: Record<string, string> = {
   "SCH-14": "Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval)",
   "SCH-15": "Product decision approved Oct 20, 2026",
   "SCH-17": "Product decision approved Oct 21, 2026 (schedules never exceed SCH-08)",
+  "AMEND-01": "HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)",
   "CON-01": "CDS policy clarification Q5",
   "CON-02": "CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)",
   "CON-03": "Policy 3.50 (rev. Jul 2026)",

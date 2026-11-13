@@ -94,6 +94,11 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     title: "Future authorization",
     whatToDo: "Visits for this authorization are drafts until it starts.",
   },
+  "AMEND-01/REVIEW": {
+    title: "A care plan change needs its start date checked",
+    whatToDo:
+      "The schedule crosses a care plan change. Check the date the change takes effect against the care plan in Fusion.",
+  },
 };
 
 

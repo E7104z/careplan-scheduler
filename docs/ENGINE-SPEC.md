@@ -15,6 +15,13 @@ figure on its derived units, as WARN (a plan built by hand had no ceiling check 
 `validatePlan` checks CON-09's Sunday–Saturday weeks on the expanded template (no visits needed).
 No formula or expected value changed.
 
+**Amendment D (Nov 13, 2026, Coverage Phase 2 prompt CP2-7):** the effective-dated
+authorization model: `AmendmentDirection`, `AuthorizationVersion`, `AuthorizationChain` and
+`VersionedOccurrence` (section 2), the functions `chainOf`, `addVersion`, `versionOn` and
+`expandChainMonth` (`src/amendments/versions.ts`), and rule AMEND-01. A plan with no amendment is a
+chain of one version and behaves exactly as before. The Manual 4.20 effective-date behaviors
+are not applied here; they are Coverage Phase 3 (CP3-6). No formula or expected value changed.
+
 ---
 
 ## 1. Principles (apply to every module)
@@ -113,6 +120,41 @@ export interface ValidationResult {
   refs: { taskId?: string; visitId?: string; date?: string; month?: string; serviceAuthId?: string };
 }
 ```
+
+Amendment D adds the effective-dated model (AMEND-01):
+
+```ts
+/** How a care plan amendment changes the authorization (Manual 4.20). Stored, never inferred. */
+export type AmendmentDirection = "increase" | "decrease" | "reduction-immediate";
+/**
+ * One effective-dated version of an authorization and its weekly pattern (AMEND-01). The first
+ * version of a chain is the authorization as imported (`amendmentId` and `direction` null).
+ */
+export interface AuthorizationVersion {
+  amendmentId: string | null;
+  direction: AmendmentDirection | null;
+  effectiveFrom: string;          // YYYY-MM-DD, the first date this version is in effect
+  effectiveTo?: string;           // the last date; absent = until the next version or the authorization's end
+  recordedOn?: string;            // the date the amendment was made
+  authorization: ServiceAuthorization;
+  template: ScheduleTemplate;
+}
+/** An authorization's versions, oldest first. A plan with no amendment has one. */
+export interface AuthorizationChain { serviceAuthId: string; versions: AuthorizationVersion[]; }
+/** A scheduled occurrence and the version in effect on its date (null = the original). */
+export interface VersionedOccurrence {
+  date: string; taskId: string; minutes: number;
+  amendmentId: string | null; serviceAuthId: string;
+}
+```
+
+`chainOf(authorization, template)` makes the one-version chain. `addVersion(chain, version)`
+returns a new chain and refuses a version that reuses an amendment id, takes effect on or before
+the version before it, or falls outside the authorization's dates. `versionOn(chain, date)` is
+the latest version that has taken effect (null outside the authorization, and null after a
+version's `effectiveTo` until the next one starts). `expandChainMonth(chain, exceptions, year,
+month)` expands each version over its own dates only and tags every occurrence with its
+`amendmentId`, so a later amendment never changes an occurrence before its effective date.
 
 ---
 
@@ -225,6 +267,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-17 | Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: "fit"`, `reason: "Units for the month run out"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results. | — | APPROVED | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
+| AMEND-01 | A schedule that spans a care plan amendment → REVIEW "amendment effective date needs confirmation, Manual 4.20", one for each amendment, on its effective date. The amendment's direction (increase, decrease, reduction-immediate) and effective date are stored as recorded; occurrences keep the version in effect on their date, so history is never rewritten. | REVIEW | PARTIAL | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
 
 ### Conflicts and eligibility (`con.ts`)
 

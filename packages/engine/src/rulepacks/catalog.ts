@@ -102,6 +102,11 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: \"fit\"`, `reason: \"Units for the month run out\"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results.",
     source: "Product decision approved Oct 21, 2026 (schedules never exceed SCH-08)",
   },
+  {
+    id: "AMEND-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "A schedule that spans a care plan amendment → REVIEW \"amendment effective date needs confirmation, Manual 4.20\", one for each amendment, on its effective date. The amendment's direction (increase, decrease, reduction-immediate) and effective date are stored as recorded; occurrences keep the version in effect on their date, so history is never rewritten.",
+    source: "HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)",
+  },
 
   // Conflicts and eligibility (conflicts.ts)
   {
