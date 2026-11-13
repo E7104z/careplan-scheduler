@@ -22,6 +22,7 @@ const PACK = MO_2026_07;
 // The dated side (nurse visit dates and the rest of Coverage Phase 3) is its own chunk, loaded
 // only for a plan that has something to place.
 const VisitsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitsPanel })));
+const OtherPlacing = lazy(() => import("./extras").then((extras) => ({ default: extras.OtherPlacing })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
 
@@ -138,6 +139,17 @@ export function QuickSchedule() {
       </Suspense>
     ) : null;
 
+  const othersPanel = (
+    <OthersPanel
+      plan={plan}
+      placing={(other) => (
+        <Suspense fallback={null}>
+          <OtherPlacing plan={plan} other={other} feedback={feedback} dispatch={dispatch} />
+        </Suspense>
+      )}
+    />
+  );
+
   return (
     <div className="mx-auto grid w-full max-w-[1440px] gap-6 px-[max(16px,env(safe-area-inset-left))] pb-16 pt-6">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 print:hidden">
@@ -200,7 +212,7 @@ export function QuickSchedule() {
           <AuthorizationsPanel plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
           <PlanWeekPanel plan={plan} models={models} />
           {visitsPanel}
-          <OthersPanel plan={plan} />
+          {othersPanel}
         </div>
       ) : (
         <>
@@ -220,7 +232,7 @@ export function QuickSchedule() {
             <SchedulePane state={state} model={model} models={models} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
           {several ? null : visitsPanel}
-          {several ? null : <OthersPanel plan={plan} />}
+          {several ? null : othersPanel}
         </>
       )}
 

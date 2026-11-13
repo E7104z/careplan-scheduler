@@ -599,6 +599,33 @@ service on its own, but the participant lives one week. So:
   shows "No date was placed for this month's visit. Pick a date above if one was arranged."
   (rule NUR-02, WARN); it says nothing about whether the visit happened. No visit month is ever
   derived: a plan shows only the months Fusion authorized (RN-01).
+- **Services arranged by date** (Coverage Phase 3; `OtherPlacing.tsx`, `eventText.ts`). In Other
+  authorizations, a kept authorization whose Appendix 1 class is APPOINTMENT gets a group "Place
+  on the calendar" (`role="group"`, named "Place <label> on the calendar"). It stays in
+  `others`; its events point at it by its id. One line says what it holds, then the fields and
+  one button:
+  - Adult day care (`S5100HC`, `S5100HB`): "Attendance, in 15-minute steps. It is never
+    caregiver time."; Date, "Minutes attended", "Transportation minutes" (its own entry, counted
+    toward its own 120 minutes a day); button "Add day care day".
+  - Home delivered meals (`S5170`): "Counted as meals, never as time. No more than 2 a day.";
+    Date, "Meals"; button "Add delivery".
+  - Structured family caregiver (`S5126HB`): "A covered day is one day, never 15-minute
+    units."; Date; button "Mark covered day".
+  - An RCF/ALF nurse visit (`T1001U3`): "One visit a day, in a month the care plan
+    authorizes."; Date; button "Add visit".
+  A missing value is said before anything is sent: "Pick a date first.", "Enter the minutes as a
+  whole number.", "Enter the number of meals.", "Enter the transportation minutes as a whole
+  number." Every placement goes through `placeEvent` (5.7); the caps are the engine's own rules
+  (adult day care 600 minutes a day in 15-minute steps, 5 days a week, 120 transportation
+  minutes a day; 2 meals a day; one covered day a day; the month's authorized quantity) and a
+  refusal is shown in the group (`role="alert"`): "Not placed. Home delivered meals are limited
+  to 2 a day. Enter 2 or fewer for Nov 3, 2026." Placed dates are listed, each with "Remove"
+  ("Nov 3, 2026 · 2 meals", "Nov 2, 2026 · 8 h · 60 min transportation"), and each month with
+  something placed shows its balance in the service's own unit: "62 meals in November 2026, 10
+  placed, 52 left", "100 h in November 2026, 8 h placed, 92 h left", "2 covered days of 30
+  authorized in November 2026". The reason line keeps "Arranged by date" and adds the count:
+  "Arranged by date · 5 dates placed". Nothing placed here enters the week, a caregiver's time
+  or any 15-minute unit total.
 
 ## 6. Accounts
 

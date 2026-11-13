@@ -51,6 +51,19 @@ export function otherAmount(other: PlanOther): string {
   return months.map((month) => `${amount(month.units)} in ${shortMonth(month.start.slice(0, 7))}`).join("; ");
 }
 
+/** How many billable dates are placed against a kept authorization (reminders are notes, not dates of service). */
+export function placedDates(plan: CarePlan, other: PlanOther): number {
+  if (other.id === undefined) return 0;
+  return (plan.events ?? []).filter((event) => event.authorizationId === other.id && event.billable).length;
+}
+
+/** "Arranged by date", with the count once dates are placed: "Arranged by date · 3 dates placed". */
+export function otherReasonLine(plan: CarePlan, other: PlanOther): string {
+  const reason = otherReason(other);
+  const placed = placedDates(plan, other);
+  return placed > 0 ? `${reason} · ${placed} ${placed === 1 ? "date" : "dates"} placed` : reason;
+}
+
 /** The kept authorizations of a plan; plans saved before IMP-19 have none. */
 export function planOthers(plan: CarePlan): PlanOther[] {
   return plan.others ?? [];

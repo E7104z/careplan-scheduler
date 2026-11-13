@@ -10,3 +10,4 @@ registerPlanExtras((plan, action, pack) => {
 });
 
 export { VisitsPanel } from "./NurseVisits";
+export { OtherPlacing } from "./OtherPlacing";
