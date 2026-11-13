@@ -170,9 +170,9 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     source: "Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026)",
   },
   {
-    id: "CON-09", area: "Conflicts and eligibility", severities: ["REVIEW", "WARN"], status: "PARTIAL",
-    rule: "ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN.",
-    source: "HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention",
+    id: "CON-09", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "PARTIAL",
+    rule: "ILW and Respite (Basic and Advanced combined): any scheduled time → one REVIEW showing the highest Sunday–Saturday week and the highest rolling 7-day stretch, since DHSS hasn't defined the week (E-02); > 49 h in every reading (seven days from each weekday, inside one month) → BLOCK.",
+    source: "HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); which seven days make the week is open (audit E-02)",
   },
   {
     id: "CON-10", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "VERIFIED",

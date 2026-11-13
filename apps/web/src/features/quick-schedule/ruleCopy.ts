@@ -181,13 +181,13 @@ const CON_COPY: Record<string, RuleCopy> = {
     title: "Check this Chore worker's relationship",
     whatToDo: "Family members providing Chore need review.",
   },
-  "CON-09/REVIEW": {
-    title: "Over 49 hours in a Sunday–Saturday week",
-    whatToDo: "ILW and Respite are limited to 49 hours a week. Review this week.",
+  "CON-09/BLOCK": {
+    title: "Over 49 hours a week, whichever day the week starts",
+    whatToDo: "ILW, and Basic and Advanced Respite together, are limited to 49 hours a week. Take time off some days.",
   },
-  "CON-09/WARN": {
-    title: "Over 49 hours in a 7-day stretch",
-    whatToDo: "A 7-day window crossing two weeks goes over 49 hours.",
+  "CON-09/REVIEW": {
+    title: "Check the 49-hour week",
+    whatToDo: "DHSS hasn't confirmed which seven days make the week for the 49-hour limit. Check the care plan.",
   },
   "CON-10/BLOCK": {
     title: "Too many nurse visits",

@@ -20,6 +20,7 @@ import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
+import { respiteWeeklyHours } from "./respiteHours.js";
 import { sfcResults } from "./sfc.js";
 import { engineEnrollments } from "./waivers.js";
 
@@ -119,6 +120,7 @@ export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: Rul
     ...ruleCON07AgencyAide(authorizations, caregivers, assigned),
     ...ruleCON16WaiverEnrollments(enrollments, visits),
     ...ruleCON17QualificationData(authorizations, caregivers, assigned),
+    ...respiteWeeklyHours(plan),
     ...sfcResults(plan),
   ];
 }

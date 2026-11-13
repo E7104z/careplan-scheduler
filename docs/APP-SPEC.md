@@ -488,8 +488,8 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | CON-06 | REVIEW | Check this attendant's relationship | A spouse or guardian as ILW attendant needs review. |
 | CON-07 | BLOCK | This aide can't serve this participant | A close family member or a non-employee can't provide this agency service. |
 | CON-07 | REVIEW | Check this Chore worker's relationship | Family members providing Chore need review. |
-| CON-09 | REVIEW | Over 49 hours in a Sunday–Saturday week | ILW and Respite are limited to 49 hours a week. Review this week. |
-| CON-09 | WARN | Over 49 hours in a 7-day stretch | A 7-day window crossing two weeks goes over 49 hours. |
+| CON-09 | BLOCK | Over 49 hours a week, whichever day the week starts | ILW, and Basic and Advanced Respite together, are limited to 49 hours a week. Take time off some days. |
+| CON-09 | REVIEW | Check the 49-hour week | DHSS hasn't confirmed which seven days make the week for the 49-hour limit. Check the care plan. |
 | CON-10 | BLOCK | Too many nurse visits | Nurse visits are limited to one a day and 26 in six months. |
 | CON-13 | WARN | First visit is late | Agency personal care should start within 10 days of the referral. |
 | CON-13 | REVIEW | Referral date is missing | Enter the date the referral was received. |

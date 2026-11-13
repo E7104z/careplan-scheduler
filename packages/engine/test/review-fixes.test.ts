@@ -190,37 +190,39 @@ describe("FIX-3 derived monthly units include transport", () => {
 });
 
 describe("FIX-4 49-hour checks run per participant and per limit group", () => {
-  it("P-1 and P-2 at 28 h of ILW each → no CON-09", () => {
+  it("P-1 and P-2 at 28 h of ILW each → one REVIEW each (E-02), no BLOCK", () => {
     const visits = [
       ...weekOfVisits("P-1", "T1019U6", "08:00", "12:00"),
       ...weekOfVisits("P-2", "T1019U6", "08:00", "12:00"),
     ];
-    expect(byRule(validate({ visits }), "CON-09")).toEqual([]);
+    const results = byRule(validate({ visits }), "CON-09");
+    expect(results.map((r) => [r.severity, r.refs.participantId])).toEqual([
+      ["REVIEW", "P-1"],
+      ["REVIEW", "P-2"],
+    ]);
+    expect(results[0]!.message).toContain("28 h");
   });
 
-  it("P-1 at 52.5 h of ILW → one REVIEW for P-1 plus the rolling-window WARN", () => {
+  it("P-1 at 52.5 h of ILW in one Sunday-Saturday week → one REVIEW for P-1 with both figures", () => {
     const results = byRule(validate({ visits: weekOfVisits("P-1", "T1019U6", "08:00", "15:30") }), "CON-09");
-    const reviews = results.filter((r) => r.severity === "REVIEW");
-    expect(reviews).toHaveLength(1);
-    expect(reviews[0]!.refs.participantId).toBe("P-1");
-    expect(reviews[0]!.message).toContain("P-1");
-    expect(reviews[0]!.message).toContain("ILW");
-    expect(results.filter((r) => r.severity === "WARN")).toHaveLength(1);
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.severity).toBe("REVIEW");
+    expect(results[0]!.refs.participantId).toBe("P-1");
+    expect(results[0]!.message).toBe(
+      "P-1 ILW: Highest Sunday-Saturday week 52 h 30 min (week of 2026-11-01); highest 7-day stretch 52 h 30 min (2026-11-01 to 2026-11-07)",
+    );
   });
 
-  it("P-1 Respite Basic 28 h + Advanced 28 h combine → one REVIEW plus its WARN", () => {
+  it("P-1 Respite Basic 28 h + Advanced 28 h combine → one REVIEW naming RESPITE at 56 h", () => {
     const visits = [
       ...weekOfVisits("P-1", "S5150", "08:00", "12:00"),
       ...weekOfVisits("P-1", "S5150TF", "13:00", "17:00"),
     ];
     const results = byRule(validate({ visits }), "CON-09");
-    const reviews = results.filter((r) => r.severity === "REVIEW");
-    expect(reviews).toHaveLength(1);
-    expect(reviews[0]!.refs.participantId).toBe("P-1");
-    expect(reviews[0]!.message).toContain("RESPITE");
-    expect(results.filter((r) => r.severity === "WARN")).toHaveLength(1);
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.severity).toBe("REVIEW");
+    expect(results[0]!.message).toContain("P-1 RESPITE: ");
+    expect(results[0]!.message).toContain("56 h");
   });
 });
 

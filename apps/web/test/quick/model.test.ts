@@ -179,20 +179,21 @@ describe("Quick Schedule model", () => {
     expect(ceiling.map((r) => [r.severity, r.refs.month])).toEqual(model.months.map((month) => ["WARN", month]));
   });
 
-  it("CON-09: by hand, ILW over 49 hours a week needs review in every month (the weekly pattern is checked)", () => {
+  it("CON-09: by hand, ILW gets one plan-wide REVIEW (E-02), and over 49 hours every week is refused (the weekly pattern is checked)", () => {
     let state = reduce(manualState(TODAY), { type: "setService", code: "T1019U6" }, MO_2026_07).state;
     for (const [taskCode, name] of [["BATHING", "Bathing"], ["MEAL_PREP_EATING", "Meal Prep/Eating"], ["MOBILITY_TRANSFER", "Mobility/Transfer"]]) {
       state = reduce(state, { type: "addTask", taskCode: taskCode!, name: name! }, MO_2026_07).state;
     }
-    // 150 minutes a day for each of three daily tasks: 52 hours 30 minutes a week.
+    // 140 minutes a day for each of three daily tasks: 49 hours a week, not over.
     for (const task of state.tasks) {
-      state = reduce(state, { type: "setMinutes", taskId: task.id, minutes: 150 }, MO_2026_07).state;
+      state = reduce(state, { type: "setMinutes", taskId: task.id, minutes: 140 }, MO_2026_07).state;
     }
-    const model = buildQuickModel(state, MO_2026_07);
-    const weekly = model.results.filter((r) => r.ruleId === "CON-09");
-    expect(weekly.length).toBeGreaterThan(40);
-    expect(new Set(weekly.map((r) => r.severity))).toEqual(new Set(["REVIEW"]));
-    expect([...new Set(weekly.map((r) => r.refs.month))]).toEqual(model.months);
+    const weekly = buildQuickModel(state, MO_2026_07).results.filter((r) => r.ruleId === "CON-09");
+    expect(weekly.map((r) => [r.severity, r.refs.month])).toEqual([["REVIEW", undefined]]);
+    // 150 for the last task would be 52 hours 30 minutes every week: refused.
+    const refused = reduce(state, { type: "setMinutes", taskId: state.tasks[2]!.id, minutes: 150 }, MO_2026_07);
+    expect(refused.refusal).toBeDefined();
+    expect(refused.state).toBe(state);
   });
 
   it("builds fixture B in under 50 ms", () => {

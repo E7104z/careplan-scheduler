@@ -29,13 +29,12 @@ import {
   ruleCON05CaregiverHours,
   ruleCON06AttendantRelationship,
   ruleCON07AgencyAide,
-  ruleCON09WeeklyHours,
   ruleCON10NurseVisits,
   ruleCON13FirstVisit,
   ruleCON16WaiverEnrollments,
   ruleCON17QualificationData,
-  type WeeklyHourGroup,
 } from "./rules/conflicts.js";
+import { ruleCON09WeeklyHours, type WeeklyHourGroup } from "./rules/weeklyHours.js";
 import type { RulePack } from "./rulepacks/types.js";
 import type {
   CalendarException,
@@ -233,9 +232,8 @@ function visitRules(input: ValidateScheduleInput): ValidationResult[] {
 
 /**
  * CON-09 on the expanded template, for a plan with no visits (Amendment B): the task minutes each
- * ILW or Respite authorization's template puts on each date, checked as visits would be. The
- * template repeats every week, so each rolling 7-day window equals its Sunday–Saturday week (or
- * less, where a month-end trim shortens it): only the week results are kept.
+ * ILW or Respite authorization's template puts on each date, checked as visits would be, with the
+ * authorization's id on each result.
  */
 function templateWeeklyHours(input: ValidatePlanInput): ValidationResult[] {
   const { authorizations, template, exceptions, months } = input;
@@ -252,11 +250,7 @@ function templateWeeklyHours(input: ValidatePlanInput): ValidationResult[] {
       }
     }
     for (const result of ruleCON09WeeklyHours(daily)) {
-      if (result.severity !== "REVIEW") continue;
-      results.push({
-        ...result,
-        refs: { ...result.refs, serviceAuthId: auth.id, month: (result.refs.date ?? "").slice(0, 7) },
-      });
+      results.push({ ...result, refs: { ...result.refs, serviceAuthId: auth.id } });
     }
   }
   return results;
