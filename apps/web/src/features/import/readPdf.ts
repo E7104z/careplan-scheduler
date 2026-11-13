@@ -18,13 +18,12 @@ const NOT_A_PDF: PdfReadResult = {
 const NO_TEXT: PdfReadResult = {
   kind: "error",
   title: "This PDF has no readable text",
-  detail: "It may be a scan or a photo. Paste the care plan from Fusion instead.",
+  detail: "It may be a scan or a photo. Download the care plan PDF from Fusion again.",
 };
 const UNREADABLE: PdfReadResult = {
   kind: "error",
   title: "We couldn't read that PDF",
-  detail:
-    "Check that it's the care plan PDF from Fusion and not password-protected. You can also paste the care plan instead.",
+  detail: "Check that it's the care plan PDF from Fusion and not password-protected.",
 };
 
 function looksLikePdf(file: File): boolean {
@@ -37,8 +36,8 @@ function toPdfTextItem(item: TextItem): PdfTextItem {
 }
 
 /**
- * IMP-14: read a care plan PDF in the browser (nothing is uploaded) and return its text as a
- * paste would give it, or the message to show. Never throws.
+ * IMP-14: read a care plan PDF in the browser (nothing is uploaded) and return its text, page
+ * after page, for the reader in `@careplan/import`, or the message to show. Never throws.
  */
 export async function readPdf(file: File): Promise<PdfReadResult> {
   if (!looksLikePdf(file)) return NOT_A_PDF;

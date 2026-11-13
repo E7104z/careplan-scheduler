@@ -4,6 +4,8 @@ import { cn } from "../lib/cn";
 
 export interface FileDropProps {
   onFile: (file: File) => void;
+  /** The file input's id, so a page can put focus on the chooser. */
+  id?: string;
   accept?: string;
   acceptLabel?: string;
   title?: string;
@@ -13,6 +15,7 @@ export interface FileDropProps {
 
 export function FileDrop({
   onFile,
+  id,
   accept,
   acceptLabel = "PDF",
   title = "Choose a file",
@@ -56,6 +59,7 @@ export function FileDrop({
       {hint ? <span className="text-[13px] text-ink-3">{hint}</span> : null}
       <input
         ref={inputRef}
+        id={id}
         type="file"
         accept={accept}
         className="sr-only"

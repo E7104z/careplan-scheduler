@@ -31,7 +31,7 @@ export interface QuickTask {
   locked: boolean;
   /** The task's Fusion row exactly as read (SOURCE-01); absent for a task added by hand. */
   raw?: string | null;
-  /** Where that row was read on the pasted page (SOURCE-01). */
+  /** Where that row was read in the PDF's text (SOURCE-01). */
   source?: SourceRef | null;
 }
 

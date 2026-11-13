@@ -121,7 +121,7 @@ function keptRows(service: ImportedService): string[] {
 }
 
 /**
- * Parse the pasted pages, then either report the hard stops still open or build the participant's
+ * Parse what the PDFs read as, then either report the hard stops still open or build the participant's
  * whole care plan (APP-SPEC 5.8): one schedule state per authorization, in Fusion's order, each
  * with its own dates, units and checks, and the visits by month. A service whose authorization
  * ended before this month is left out with a note; when all have ended, the plan has ended.
@@ -244,7 +244,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
 
 /**
  * IMP-12: combine the pages. A page for a different participant (another DCN) is refused: it is
- * left out, and reported while it is the latest page, so pasting the right page carries on.
+ * left out, and reported while it is the latest page, so opening the right PDF carries on.
  * A task already read is dropped, keeping the first.
  */
 function readPages(flow: ImportFlow, pack: RulePack): { parsed: ImportResult; refusedPage: number | null } {

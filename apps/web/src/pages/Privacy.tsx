@@ -10,8 +10,8 @@ export function Privacy() {
       </h1>
       <div className="mt-4 max-w-[62ch] space-y-4 text-ink-2">
         <p>
-          Quick Schedule reads the care plan you paste or open in your browser, on your
-          computer. Nothing you paste is uploaded. The participant's name and DCN stay in
+          Quick Schedule reads the care plan PDF you open, on your computer. Nothing you
+          open is uploaded. The participant's name and DCN stay in
           the tab and are cleared when you reload the page or close it.
         </p>
         <p>

@@ -4,7 +4,7 @@ import { MO_2026_07 } from "@careplan/engine";
 import { usePageTitle } from "../../lib/usePageTitle";
 import { Button } from "../../ui/Button";
 import { Toast, ToastProvider, ToastViewport } from "../../ui/Toast";
-import { ImportPanel, PASTE_BOX_ID, type BuiltFrom } from "../import/ImportPanel";
+import { ImportPanel, PDF_CHOOSER_ID, type BuiltFrom } from "../import/ImportPanel";
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
@@ -33,7 +33,7 @@ function toastMessage(feedback: QuickFeedback | null, model: QuickModel | null):
 }
 
 /**
- * APP-SPEC 5.1 Quick Schedule: paste a Fusion care plan (or open its PDF, or start by hand) and
+ * APP-SPEC 5.1 Quick Schedule: open a Fusion care plan PDF (or start by hand) and
  * get a schedule that follows Missouri's rules. State lives in this tab only (sessionStorage,
  * without the participant's name and DCN).
  *
@@ -80,7 +80,7 @@ export function QuickSchedule() {
 
   const startNew = () => {
     setImportOpen(true);
-    focusAfter.current = PASTE_BOX_ID;
+    focusAfter.current = PDF_CHOOSER_ID;
   };
 
   // APP-SPEC 5.4 Print: the one-page PDF. Print errors get their own toasts, numbered below the
@@ -135,8 +135,8 @@ export function QuickSchedule() {
             Quick Schedule
           </h1>
           <p className="mt-1 max-w-[64ch] text-ink-2">
-            Paste a care plan from Fusion or open its PDF. You get a ready schedule that follows Missouri's rules,
-            and you can change it within them.
+            Open a care plan PDF from Fusion. You get a ready schedule that follows Missouri's rules, and you can
+            change it within them.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 sm:ml-auto">
@@ -180,8 +180,8 @@ export function QuickSchedule() {
 
       <p role="note" className="flex items-start gap-2.5 rounded-sm bg-info-bg px-3.5 py-2.5 text-sm text-ink print:hidden">
         <Info className="mt-0.5 h-4 w-4 flex-none text-info" aria-hidden="true" />
-        Nothing you paste or open is uploaded or saved to our servers. It stays in this browser tab, and the
-        participant's name and DCN are gone when you close it.
+        Nothing you open is uploaded or saved to our servers. It stays in this browser tab, and the participant's
+        name and DCN are gone when you close it.
       </p>
 
       {state === null || model === null ? (

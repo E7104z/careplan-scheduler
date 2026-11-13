@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
+import { openCarePlanText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
 import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
 import fixtureG from "@fixtures/fusion/G-care-plan-report-kept.txt?raw";
@@ -17,7 +17,7 @@ describe("Quick Schedule: other authorizations (IMP-19)", () => {
 
     it("schedules CDS and lists the five others with their own units and why", async () => {
       const { user } = renderQuick();
-      await pasteText(user, fixtureG);
+      await openCarePlanText(user, fixtureG);
       await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT G" });
 
       const panel = othersPanel();
@@ -38,7 +38,7 @@ describe("Quick Schedule: other authorizations (IMP-19)", () => {
 
     it("says on the whole care plan what was read and what became of it", async () => {
       const { user } = renderQuick();
-      await pasteText(user, fixtureF);
+      await openCarePlanText(user, fixtureF);
       const summary = await screen.findByRole("region", { name: "SAMPLE PARTICIPANT F" });
       expect(within(summary).getByText(/5 authorizations read: 3 scheduled in the week, 2 nurse visits by month\./)).toBeInTheDocument();
       expect(screen.queryByRole("heading", { level: 2, name: "Other authorizations" })).not.toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("Quick Schedule: other authorizations (IMP-19)", () => {
 
     it("can be kept instead of named, and then says there's nothing to place in the week", async () => {
       const { user } = renderQuick();
-      await pasteText(user, fixtureA.replace("PC - CDS", "PC - Foo"));
+      await openCarePlanText(user, fixtureA.replace("PC - CDS", "PC - Foo"));
       await screen.findByRole("heading", { name: 'Which service is "PC - Foo"?' });
       await user.click(screen.getByRole("button", { name: "Keep it, don't schedule it" }));
       expect(await screen.findByRole("heading", { name: "Nothing in this care plan goes in the week" })).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
+import { openCarePlanText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 
 setUpQuickTests();
@@ -40,7 +40,7 @@ describe("Quick Schedule: plan start by hand", () => {
 
 describe("Quick Schedule: for the caregiver, the participant and EVV", () => {
   async function buildB(user: ReturnType<typeof renderQuick>["user"]): Promise<void> {
-    await pasteText(user, fixtureB);
+    await openCarePlanText(user, fixtureB);
     await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
   }
 

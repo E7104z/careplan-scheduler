@@ -1,13 +1,11 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { readPdf } from "../../src/features/import/readPdf";
 import { schedulePdfBlob } from "../../src/features/quick-schedule/schedulePdf";
 import type { ScheduleSheet } from "../../src/features/quick-schedule/scheduleSheet";
-import { pasteText, renderQuick, setUpQuickTests, statusPanel } from "./ui-helpers";
+import { openCarePlanText, readPdfMock, renderQuick, setUpQuickTests, statusPanel } from "./ui-helpers";
 import fixtureE from "@fixtures/fusion/E-care-plan-report-229.txt?raw";
 import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
 
-vi.mock("../../src/features/import/readPdf", () => ({ readPdf: vi.fn() }));
 vi.mock("../../src/features/quick-schedule/schedulePdf", () => ({
   schedulePdfBlob: vi.fn(async () => new Blob(["%PDF-1.7"], { type: "application/pdf" })),
 }));
@@ -29,7 +27,7 @@ function day(name: string): HTMLElement {
 }
 
 async function openF() {
-  vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: fixtureF });
+  readPdfMock.mockResolvedValue({ kind: "text", text: fixtureF });
   const result = renderQuick();
   await result.user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT F" });
@@ -156,7 +154,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
 
 describe("a care plan report with one service", () => {
   it("shows that service as before, with its nurse visits listed by month", async () => {
-    vi.mocked(readPdf).mockResolvedValue({ kind: "text", text: fixtureE });
+    readPdfMock.mockResolvedValue({ kind: "text", text: fixtureE });
     const { user } = renderQuick();
     await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
     await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT E" });
@@ -167,9 +165,9 @@ describe("a care plan report with one service", () => {
     expect(within(visits).getByText("Past")).toBeInTheDocument();
   });
 
-  it("a pasted plan of several services also opens on the whole care plan", async () => {
+  it("a plan of several services opened through the helper also opens on the whole care plan", async () => {
     const { user } = renderQuick();
-    await pasteText(user, fixtureF);
+    await openCarePlanText(user, fixtureF);
     expect(await screen.findByRole("heading", { level: 2, name: "The participant's week" })).toBeInTheDocument();
   });
 });

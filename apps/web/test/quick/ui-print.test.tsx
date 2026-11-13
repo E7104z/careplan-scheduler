@@ -3,7 +3,7 @@ import type { UserEvent } from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { schedulePdfBlob } from "../../src/features/quick-schedule/schedulePdf";
 import type { ScheduleSheet } from "../../src/features/quick-schedule/scheduleSheet";
-import { BEFORE_B, pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
+import { BEFORE_B, openCarePlanText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 
 // pdf.js-free and font-free: the PDF itself is checked in schedulePdf.test.ts. Here, what the page
@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 async function buildB(user: UserEvent): Promise<void> {
-  await pasteText(user, fixtureB);
+  await openCarePlanText(user, fixtureB);
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
 }
 
