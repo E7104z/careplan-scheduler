@@ -1,6 +1,6 @@
 import type { RuleCopy } from "./ruleCopy.js";
 
-/** APP-SPEC 5.5 copy for the CDS task rules and program checks (CP4-7), verbatim. */
+/** APP-SPEC 5.5 copy for the CDS task rules and program checks (CP4-7) and the cost cap (CP4-8), verbatim. */
 export const PROGRAM_COPY: Record<string, RuleCopy> = {
   "CDS-01/BLOCK": {
     title: "Prompting or stand-by can't be a CDS task",
@@ -38,6 +38,11 @@ export const PROGRAM_COPY: Record<string, RuleCopy> = {
     title: "This DMH program rules out this personal care",
     whatToDo:
       "DD Shared Living, Residential Habilitation and Individualized Supportive Living rule out State Plan personal care. DMH self-directed services rule out CDS and ILW. Check the program dates against the care plan.",
+  },
+  "CAP-01/REVIEW": {
+    title: "Combined State Plan personal care and CDS are subject to the 60% cost maximum",
+    whatToDo:
+      "Together they can't go over 60% of the participant's cost maximum. Advanced Personal Care and nurse visits can take the plan past 60%, up to 100%. Over 100% with the ADW or ILW needs approval from the Bureau of Federal Programs.",
   },
   "PRG-03/REVIEW": {
     title: "State Plan personal care comes before DD waiver personal assistance",

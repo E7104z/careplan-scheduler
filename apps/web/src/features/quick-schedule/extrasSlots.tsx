@@ -12,6 +12,7 @@ const Checks = lazy(() => import("./extras").then((extras) => ({ default: extras
 const Caregivers = lazy(() => import("./extras").then((extras) => ({ default: extras.CaregiversPanel })));
 const Waivers = lazy(() => import("./extras").then((extras) => ({ default: extras.WaiversPanel })));
 const Programs = lazy(() => import("./extras").then((extras) => ({ default: extras.ProgramsPanel })));
+const Backup = lazy(() => import("./extras").then((extras) => ({ default: extras.BackupPanel })));
 const Coverage = lazy(() => import("./extras").then((extras) => ({ default: extras.CoverageBlocks })));
 
 export function VisitsSlot(props: ComponentProps<typeof Visits>) {
@@ -82,6 +83,14 @@ export function ProgramsSlot(props: ComponentProps<typeof Programs>) {
   return (
     <Suspense fallback={null}>
       <Programs {...props} />
+    </Suspense>
+  );
+}
+
+export function BackupSlot(props: ComponentProps<typeof Backup>) {
+  return (
+    <Suspense fallback={null}>
+      <Backup {...props} />
     </Suspense>
   );
 }

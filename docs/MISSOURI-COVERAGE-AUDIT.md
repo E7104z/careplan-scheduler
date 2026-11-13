@@ -382,3 +382,12 @@ when the email goes:
    (CDS-03), NEMT coverage of a CDS trip (CDS-04) and whether State Plan care is used up before
    DD waiver personal assistance (PRG-03). The prompt's "DMH residential limits State Plan PC"
    is stronger in 4.35.1 ("not eligible"), so PRG-02 is BLOCK.
+7. **Cost cap and backup coverage (CP4-8, Nov 13, 2026).** CAP-01's words are Manual 4.20's
+   (rev. Jul 2025): agency model PC and CDS together may not exceed 60% of the cost maximum; APC
+   and RN visits can take it past 60%, only to 100%; over 100% with ADW or ILW needs Bureau of
+   Federal Programs approval. Advanced PC with CDS isn't flagged, since 4.20 lets APC exceed 60%.
+   For backup coverage, 4.15 sets the COOP priority risk indicator per participant, which
+   orders participants (agency mode, CP4-9). In Quick Schedule's one participant it can't order
+   uncovered tasks, so the person enters a priority for each task and the list follows it. The
+   40-hour check for a replacement uses every seven days that include the date, because Quick
+   Schedule has no agency workweek (CON-05 waits for CP4-9).

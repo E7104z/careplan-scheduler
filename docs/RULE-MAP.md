@@ -70,6 +70,7 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | PRG-01 | `packages/engine/src/rules/programs.ts` | `rulePRG01Pace` | `packages/engine/test/cds-programs.test.ts` | PRG-01 | Policy 4.35.3 (rev. May 2023) |
 | PRG-02 | `packages/engine/src/rules/programs.ts` | `rulePRG02DmhPrograms` | `packages/engine/test/cds-programs.test.ts` | PRG-02 | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
 | PRG-03 | `packages/engine/src/rules/programs.ts` | `rulePRG03FundingSequence` | `packages/engine/test/cds-programs.test.ts` | PRG-03 | Policy 4.35.1 (read Nov 13, 2026) |
+| CAP-01 | `packages/engine/src/rules/cap.ts` | `ruleCAP01CombinedCostCap` | `packages/engine/test/cap.test.ts` | CAP-01 | HCBS Manual 4.20 (rev. Jul 2025); Policy 3.25 (rev. Jan 2026) |
 
 ## Catalog
 

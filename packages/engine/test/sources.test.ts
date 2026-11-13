@@ -49,6 +49,7 @@ const SOURCES: Record<string, string> = {
   "PRG-01": "Policy 4.35.3 (rev. May 2023)",
   "PRG-02": "Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026)",
   "PRG-03": "Policy 4.35.1 (read Nov 13, 2026)",
+  "CAP-01": "HCBS Manual 4.20 (rev. Jul 2025); Policy 3.25 (rev. Jan 2026)",
   // Amendment C: worksheet rules (src/stateparity/rules.ts).
   "WS-R01": "HCBS-3c (10/26) and HCBS-3a (07/26) suggested time columns",
   "WS-R02": "HCBS Manual 4.00 Appendix 4 (rev. Jul 2026) and Appendix 3 (rev. May 2025): Description of Needs is required for ILW requests",

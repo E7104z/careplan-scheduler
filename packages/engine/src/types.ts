@@ -86,7 +86,14 @@ export interface CalendarException {
   id: string; participantId: string; date: string;
   taskId: string; minutesDelta: number;   // + adds, - removes on that date
   reason: string; author: string; createdAt: string;
-  kind?: "change" | "fit";                // Amendment A: "fit" = automatic trim from SCH-17; absent = "change"
+  kind?: "change" | "fit" | "substitute"; // Amendment A: "fit" = automatic trim from SCH-17; absent = "change"
+  /**
+   * kind "substitute" (CP4-8, Manual 4.15 backup coverage): a different caregiver gives one
+   * visit's care on `date`. It covers the whole visit, so `taskId` is "" and `minutesDelta` 0; it
+   * never changes the authorization or its minutes, and is never passed to `expandMonth`.
+   */
+  caregiverId?: string;
+  serviceAuthId?: string;
 }
 /** How a care plan amendment changes the authorization (Manual 4.20). Stored, never inferred. */
 export type AmendmentDirection = "increase" | "decrease" | "reduction-immediate";

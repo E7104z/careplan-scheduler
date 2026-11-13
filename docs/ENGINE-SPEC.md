@@ -312,6 +312,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | PRG-01 | A PACE enrollment the person entered that overlaps an HCBS authorization → BLOCK on each overlapping authorization. Never inferred. | BLOCK | VERIFIED | Policy 4.35.3 (rev. May 2023) |
 | PRG-02 | An entered DD Shared Living, Residential Habilitation or Individualized Supportive Living enrollment overlapping State Plan personal care (CDS, AGENCY_PC, APC, RCF_PC, RCF_APC) → BLOCK; an entered DMH self-directed enrollment overlapping CDS or ILW → BLOCK. One result per authorization. | BLOCK | VERIFIED | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
 | PRG-03 | An entered DD waiver personal assistant enrollment → REVIEW: State Plan personal care must be used up before that comparable waiver service, and whether it is isn't on the plan. | REVIEW | PARTIAL | Policy 4.35.1 (read Nov 13, 2026) |
+| CAP-01 | Agency Basic Personal Care (T1019) and CDS (T1019U2) on overlapping dates → REVIEW on each: together they may not exceed 60% of the cost maximum; APC and RN visits can take it to 100%; over 100% with an HCBS waiver needs Bureau of Federal Programs approval. The scheduler holds no costs, so this is a flag, never a balance or a block. | REVIEW | VERIFIED | HCBS Manual 4.20 (rev. Jul 2025); Policy 3.25 (rev. Jan 2026) |
 
 ---
 

@@ -108,6 +108,22 @@ function isProgram(value: unknown): boolean {
   );
 }
 
+const PRIORITIES = new Set(["HIGH", "MEDIUM", "LOW"]);
+
+/** Backup coverage (CP4-8) as stored: who is away, the substitutes chosen, and task priorities. */
+function isBackup(value: unknown): boolean {
+  if (!isRecord(value) || !Array.isArray(value.unavailable) || !Array.isArray(value.substitutes) || !isRecord(value.priorities)) return false;
+  const away = value.unavailable.every(
+    (entry) => isRecord(entry) && typeof entry.id === "string" && typeof entry.caregiverId === "string" &&
+      typeof entry.start === "string" && ISO_DATE.test(entry.start) && typeof entry.end === "string" && ISO_DATE.test(entry.end),
+  );
+  const substitutes = value.substitutes.every(
+    (entry) => isRecord(entry) && entry.kind === "substitute" && typeof entry.id === "string" && typeof entry.caregiverId === "string" &&
+      typeof entry.serviceAuthId === "string" && typeof entry.date === "string" && ISO_DATE.test(entry.date) && entry.minutesDelta === 0,
+  );
+  return away && substitutes && Object.values(value.priorities).every((priority) => typeof priority === "string" && PRIORITIES.has(priority));
+}
+
 /**
  * A caregiver (Coverage Phase 4) as storage may hold one: an id and the qualifications the person
  * entered. A stored caregiver with a `name` is refused: names live in memory only, like the
@@ -142,7 +158,8 @@ export function planExtrasValid(value: Record<string, unknown>): boolean {
     isOptional(value.events, (list) => Array.isArray(list) && list.every(isEvent)) &&
     isOptional(value.caregivers, (list) => Array.isArray(list) && list.every(isCaregiver)) &&
     isOptional(value.waivers, (list) => Array.isArray(list) && list.every(isWaiver)) &&
-    isOptional(value.programs, (list) => Array.isArray(list) && list.every(isProgram))
+    isOptional(value.programs, (list) => Array.isArray(list) && list.every(isProgram)) &&
+    isOptional(value.backup, isBackup)
   );
 }
 

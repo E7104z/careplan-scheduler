@@ -505,6 +505,7 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | CDS-05 | BLOCK | CDS can't be given to an RCF or ALF resident | People who live in a nursing facility, RCF or ALF aren't eligible for CDS. End CDS before the facility care starts. |
 | PRG-01 | BLOCK | HCBS can't be given during PACE | A participant enrolled in PACE isn't eligible for any HCBS service. Check the PACE dates against the care plan. |
 | PRG-02 | BLOCK | This DMH program rules out this personal care | DD Shared Living, Residential Habilitation and Individualized Supportive Living rule out State Plan personal care. DMH self-directed services rule out CDS and ILW. Check the program dates against the care plan. |
+| CAP-01 | REVIEW | Combined State Plan personal care and CDS are subject to the 60% cost maximum | Together they can't go over 60% of the participant's cost maximum. Advanced Personal Care and nurse visits can take the plan past 60%, up to 100%. Over 100% with the ADW or ILW needs approval from the Bureau of Federal Programs. |
 | PRG-03 | REVIEW | State Plan personal care comes before DD waiver personal assistance | State Plan personal care must be used up before a comparable DD waiver service. Check with the participant's DD support coordinator. |
 
 Unknown rule ID or severity: the engine message is the title and "Rule <id>" the detail; log
@@ -810,6 +811,31 @@ service on its own, but the participant lives one week. So:
   - **Not guarded.** An entered program is a fact about the participant, not a change to the
     schedule, so it is always recorded; refusing it would hide why the plan can't be used. What
     it rules out shows as "Must fix before you use this schedule" under Visit checks.
+- **Cost cap** (CP4-8, CAP-01, Manual 4.20). With Agency Basic Personal Care (`T1019`) and CDS
+  (`T1019U2`) on overlapping dates, Visit checks shows one "Needs review" line naming both. The
+  scheduler holds no costs, so it is never a balance and never a block.
+- **Backup coverage** (CP4-8; `BackupPanel.tsx`, `backup.ts`; Manual 4.15 and 4.20). A panel
+  "Backup coverage" (meta "Nothing uncovered" or "N uncovered"). With no caregivers: "Add
+  caregivers and visit times first. Then mark a caregiver away to see the visits left uncovered
+  and who can cover them." Otherwise "Caregiver", "First day away", "Last day away" and "Mark
+  away" (dates that aren't dates, or a last day before the first, are refused in the panel).
+  - **Uncovered visits** are the built visits (5.8 Visits) whose caregiver is away that day. Each
+    shows the service, date and start time, and "Priority of <task> if missed" (Not entered /
+    High / Medium / Low) for each task. The list is ordered by the highest priority entered for
+    any of a visit's tasks, then date and time; tasks within a visit go highest first. Priority
+    is only what the person enters: DSDS's COOP risk indicator is set per participant at
+    assessment, and in a one-participant schedule it can't order tasks, so the person ranks them.
+  - **Replacements.** "Replacement for <service> on <date>" offers only caregivers who can cover
+    the visit: not away that day, not booked at that time and not barred by a rule (the guard's
+    own check, so CON-04, CON-06 and CON-07), with the details CON-17 needs entered, and not over
+    40 hours in any seven days that include the date. The rest are listed as "Not offered:
+    Caregiver 3. Booked at that time." With none offered: "No caregiver on this plan can cover
+    this visit. Use the participant's backup plan." "Use this caregiver" records the choice as a
+    `CalendarException` of kind "substitute" (taskId "", minutesDelta 0) through the guard; the
+    visit then takes that caregiver. Each is listed with "Undo". Nothing is assigned until the
+    person chooses, and the authorization, its tasks and its minutes never change.
+  - Stored as optional `CarePlan.backup` (`unavailable`, `substitutes`, `priorities` by task
+    id), with caregiver ids only, never names.
 
 ## 6. Accounts
 

@@ -35,14 +35,7 @@ import {
   ruleCON17QualificationData,
 } from "./rules/conflicts.js";
 import { ruleCON09WeeklyHours, type WeeklyHourGroup } from "./rules/weeklyHours.js";
-import {
-  ruleCDS01PromptingCueing,
-  ruleCDS02WaitingTime,
-  ruleCDS03LicensedTasks,
-  ruleCDS04NemtTrips,
-  ruleCDS05FacilityResidents,
-} from "./rules/cds.js";
-import { rulePRG01Pace, rulePRG02DmhPrograms, rulePRG03FundingSequence } from "./rules/programs.js";
+import { cdsTaskResults, settingAndProgramResults } from "./eligibility.js";
 import type { RulePack } from "./rulepacks/types.js";
 import type {
   CalendarException,
@@ -206,12 +199,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
     results.push(...ruleAUTH11ProjectIlwSwitch(dailyUnits, statePlanUnits, ilwUnits));
   }
   results.push(...ruleAUTH12PendingApproval(authorizations));
-
-  // CDS task rules (Policy 3.25): from the labels and transportation the plan states
-  results.push(...ruleCDS01PromptingCueing(authorizations));
-  results.push(...ruleCDS02WaitingTime(authorizations));
-  results.push(...ruleCDS03LicensedTasks(authorizations));
-  results.push(...ruleCDS04NemtTrips(authorizations));
+  results.push(...cdsTaskResults(authorizations));
 
   // Schedule rules (SCH-*) on the template
   results.push(...ruleSCH02TemplateDays(template, tasks));
@@ -244,13 +232,7 @@ function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   results.push(...ruleCON13FirstVisit(authorizations, visits));
   results.push(...ruleCON16WaiverEnrollments(enrollments, visits));
   results.push(...ruleCON17QualificationData(authorizations, caregivers, visits));
-
-  // Setting and program compatibility (CP4-7): across the plan's services and entered programs
-  const programs = input.programs ?? [];
-  results.push(...ruleCDS05FacilityResidents(authorizations));
-  results.push(...rulePRG01Pace(authorizations, programs));
-  results.push(...rulePRG02DmhPrograms(authorizations, programs));
-  results.push(...rulePRG03FundingSequence(authorizations, programs));
+  results.push(...settingAndProgramResults(authorizations, input.programs ?? []));
   return results;
 }
 

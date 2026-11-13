@@ -1,7 +1,7 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
-import type { CarePlan, DayChange, PlanCaregiver, PlanProgram, PlanWaiver } from "./types.js";
+import type { CarePlan, CoopPriority, DayChange, PlanCaregiver, PlanProgram, PlanWaiver } from "./types.js";
 
 /**
  * Changes to the plan's dated side (Coverage Phase 3 on): events on the calendar. The code that
@@ -36,6 +36,12 @@ export type PlanExtraAction =
   | { type: "addProgram" }
   | { type: "updateProgram"; index: number; patch: Partial<PlanProgram> }
   | { type: "removeProgram"; index: number }
+  /** Backup coverage (CP4-8): mark a caregiver away, set a task's priority, choose or undo a replacement. A choice is refused if a rule forbids it. */
+  | { type: "markUnavailable"; caregiverId: string; start: string; end: string }
+  | { type: "removeUnavailable"; id: string }
+  | { type: "setTaskPriority"; taskId: string; priority: CoopPriority | null }
+  | { type: "chooseReplacement"; visitId: string; caregiverId: string }
+  | { type: "undoReplacement"; id: string }
   /** Respite coverage blocks (Policy 3.50): add a same-day span of care, or take one off. Refused if a rule forbids it. */
   | { type: "addCoverageBlock"; service: number; date: string; start: string; end: string }
   | { type: "removeCoverageBlock"; service: number; blockId: string };
@@ -52,6 +58,7 @@ const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
   "addCaregiver", "updateCaregiver", "removeCaregiver", "assignCaregiver", "setSfcCaregiver",
   "addWaiver", "updateWaiver", "removeWaiver",
   "addProgram", "updateProgram", "removeProgram",
+  "markUnavailable", "removeUnavailable", "setTaskPriority", "chooseReplacement", "undoReplacement",
   "addCoverageBlock", "removeCoverageBlock",
 ]);
 
