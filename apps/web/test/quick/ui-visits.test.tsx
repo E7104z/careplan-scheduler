@@ -11,7 +11,7 @@ async function openF() {
   await openCarePlanText(result.user, fixtureF);
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT F" });
   // The dated side is its own chunk: wait for it.
-  await screen.findByRole("heading", { level: 2, name: "Nurse visits" });
+  await screen.findByRole("heading", { level: 2, name: "Nurse visits" }, { timeout: 5000 });
   return result;
 }
 

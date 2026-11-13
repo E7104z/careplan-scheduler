@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { expectNoPageScroll, expectTouchTargets } from "../layout-checks";
-import { fixtureText, openCarePlanText } from "./helpers";
+import { fixturePdf, fixtureText, openCarePlan, openCarePlanText } from "./helpers";
 
 // Coverage Phase 3: dated events on the participant's care plan. Apr 15, 2026 is inside fixture
 // F's plan (Feb 1 to Oct 31, 2026) and before its May and August evaluations.
@@ -149,4 +149,46 @@ test("CP3-5: financial management shows its authorization and offers nothing to 
   await expect(page.getByText("Nothing to place: this is authorization context only.")).toBeVisible();
   await expect(page.getByRole("group", { name: "Place FMS on the calendar" })).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Place XYZ on the calendar" })).toHaveCount(0);
+});
+
+test("AMEND-01: a care plan change is recorded on a service, forward only, and stays under review", async ({ page, isMobile }) => {
+  // Nov 20, 2025: before fixture B's plan (Dec 1, 2025 to Oct 31, 2026) starts.
+  await page.clock.setFixedTime(new Date("2025-11-20T12:00:00-06:00"));
+  await page.goto("/quick");
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
+
+  const panel = page.locator("section", { has: page.getByRole("heading", { name: "Care plan changes" }) });
+  const form = panel.getByRole("group", { name: "Record a care plan change" });
+  await expect(panel.getByText("None recorded")).toBeVisible();
+
+  // A decrease dated mid-month, from the keyboard.
+  await form.getByLabel("Kind of change").selectOption("decrease");
+  await form.getByLabel("Effective date").fill("2026-01-15");
+  await form.getByLabel("Bathing: minutes a day from the change on").fill("30");
+  await form.getByRole("button", { name: "Record change" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(panel.getByText("Decrease · Takes effect Feb 1, 2026 (entered Jan 15, 2026; a decrease starts on the first of a month)")).toBeVisible();
+  await expect(panel.getByText("Bathing: 45 min a day, 7 days a week → 30 min a day, 7 days a week")).toBeVisible();
+  await expect(panel.getByText("Needs review: check the date this change takes effect against the care plan (Manual 4.20).")).toBeVisible();
+
+  // A change that would take effect before it is refused: history is not rewritten.
+  await form.getByLabel("Kind of change").selectOption("increase");
+  await form.getByLabel("Effective date").fill("2026-01-10");
+  await form.getByLabel("Bathing: minutes a day from the change on").fill("60");
+  await form.getByRole("button", { name: "Record change" }).click();
+  await expect(form.getByRole("alert")).toContainText("Not recorded. A change takes effect after Feb 1, 2026");
+  await expect(panel.getByText("1 recorded")).toBeVisible();
+
+  // What Fusion printed is as read, and the status of the plan is unchanged.
+  await expect(page.getByText("Our total from these tasks matches Fusion's 455 units for a 30-day month.", { exact: false })).toBeVisible();
+  await analyze(page);
+  if (isMobile) {
+    await expectNoPageScroll(page);
+    await expectTouchTargets(page);
+  }
+
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("amendments"));
+  await page.reload();
+  await expect(page.locator("section", { has: page.getByRole("heading", { name: "Care plan changes" }) }).getByText("1 recorded")).toBeVisible();
 });

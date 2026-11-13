@@ -22,6 +22,7 @@ const PACK = MO_2026_07;
 // The dated side (nurse visit dates and the rest of Coverage Phase 3) is its own chunk, loaded
 // only for a plan that has something to place.
 const VisitsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitsPanel })));
+const AmendmentsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.AmendmentsPanel })));
 const OtherPlacing = lazy(() => import("./extras").then((extras) => ({ default: extras.OtherPlacing })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
@@ -231,6 +232,12 @@ export function QuickSchedule() {
             </div>
             <SchedulePane state={state} model={model} models={models} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
+          {/* Care plan changes (Manual 4.20), for a plan the person opened or built. */}
+          {state.isExample || index === null ? null : (
+            <Suspense fallback={null}>
+              <AmendmentsPanel key={`${planKey}-${index}`} state={state} model={model} service={index} pack={PACK} feedback={feedback} dispatch={dispatch} />
+            </Suspense>
+          )}
           {several ? null : visitsPanel}
           {several ? null : othersPanel}
         </>

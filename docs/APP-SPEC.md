@@ -638,6 +638,37 @@ service on its own, but the participant lives one week. So:
   only." Any other event on a context authorization is refused by the engine (EVT-03): "Not
   placed. This authorization has no caregiver time, so only a reminder can go on it." The
   scheduler holds no costs; these authorizations have no cost field.
+- **Care plan changes** (Coverage Phase 3, Manual 4.20; `AmendmentsPanel.tsx`,
+  `amendments.ts`). With a service open in detail (not the example), a panel "Care plan
+  changes" (meta "None recorded" or "N recorded") says: "If the care plan changes partway
+  through, record the change here. The schedule follows it from the date it takes effect;
+  nothing before that date moves, and Fusion's figures are kept as read." The form "Record a
+  care plan change" (`role="group"`) has: "Kind of change" (Increase / Decrease / Reduction
+  asked for by the participant); "Effective date" (a date in the schedule's dates); "New units
+  a month (optional)"; a table of every task with "Minutes a day" and "Days a week", prefilled
+  ("Enter 0 minutes to take a task out of the week from the change on."); a checkbox "The care
+  plan shows this date"; button "Record change". For a decrease it says: "A decrease starts on
+  the first of a month. One dated later in a month starts the first of the next month."
+  - The engine sets where the change takes effect (`amendmentEffectiveDate`): an increase and a
+    participant-requested reduction on their date, a decrease on the first of a month. The app
+    never picks a date for the person, and a change is "Needs review: check the date this change
+    takes effect against the care plan (Manual 4.20)." (AMEND-01) until the box is ticked ("You
+    said the care plan shows this date.").
+  - A change is stored on its service as a version (`QuickState.amendments`, optional in
+    storage). It never edits the imported tasks, units or monthly figures. Occurrences are
+    recalculated from the effective date forward only (`serviceChain`, `expandChainMonth`).
+  - Recording goes through the guard (5.7) and is refused beside the form (`role="alert"`),
+    with the plan unchanged: "Not recorded. Change a task's minutes or days, or enter the new
+    units a month."; "Not recorded. A change takes effect after Dec 1, 2025 and no later than
+    Oct 31, 2026; this one would take effect on <date>." (also for a change that would take
+    effect before one already recorded: history is not rewritten); or the sentence of the
+    Must-fix rule the changed plan would break. Changes are kept in the order recorded.
+  - Recorded changes are listed: "Increase · Takes effect Jan 15, 2026", then each task's
+    "Bathing: 45 min a day, 7 days a week → 60 min a day, 7 days a week" and "480 units a month
+    from the change on", with "Remove change". A decrease that was moved reads "Decrease ·
+    Takes effect Feb 1, 2026 (entered Jan 15, 2026; a decrease starts on the first of a month)".
+  - The weekly grid, month view and one-service printout show the plan before any change. The
+    participant calendar (below) shows the version in effect on each date.
 
 ## 6. Accounts
 

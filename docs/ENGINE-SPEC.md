@@ -136,6 +136,8 @@ export interface AuthorizationVersion {
   effectiveFrom: string;          // YYYY-MM-DD, the first date this version is in effect
   effectiveTo?: string;           // the last date; absent = until the next version or the authorization's end
   recordedOn?: string;            // the date the amendment was made
+  requestedDate?: string;         // the date as entered, when the Manual 4.20 behavior moved it
+  dateConfirmed?: boolean;        // the effective date is on the care plan; absent = not confirmed
   authorization: ServiceAuthorization;
   template: ScheduleTemplate;
 }
@@ -155,6 +157,15 @@ the latest version that has taken effect (null outside the authorization, and nu
 version's `effectiveTo` until the next one starts). `expandChainMonth(chain, exceptions, year,
 month)` expands each version over its own dates only and tags every occurrence with its
 `amendmentId`, so a later amendment never changes an occurrence before its effective date.
+
+Coverage Phase 3 (CP3-6, Nov 13, 2026) wires the Manual 4.20 behaviors onto the model
+(`src/amendments/apply.ts`). `amendmentEffectiveDate(direction, date)`: an increase and a
+participant-requested reduction take effect on their date; a decrease on the first day of a
+month, so one dated mid-month takes effect on the first of the next month and one dated the 1st
+takes effect that day. `applyAmendment(chain, request)` resolves the date, keeps the date as
+entered in `requestedDate` when it moved, and adds the version with `addVersion`. AMEND-01 stays
+REVIEW for an amendment until its effective date is confirmed from the care plan
+(`dateConfirmed`); the engine never picks or confirms a date for the person.
 
 ---
 
@@ -268,7 +279,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-17 | Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: "fit"`, `reason: "Units for the month run out"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results. | — | APPROVED | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
-| AMEND-01 | A schedule that spans a care plan amendment → REVIEW "amendment effective date needs confirmation, Manual 4.20", one for each amendment, on its effective date. The amendment's direction (increase, decrease, reduction-immediate) and effective date are stored as recorded; occurrences keep the version in effect on their date, so history is never rewritten. | REVIEW | PARTIAL | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
+| AMEND-01 | A care plan amendment whose effective date is not confirmed from the care plan → REVIEW "amendment effective date needs confirmation, Manual 4.20", one for each such amendment, on its effective date. A decrease takes effect on the first day of a month (one dated mid-month, on the first of the next month); an increase on its date, which may be mid-month; a participant-requested reduction on its date. Occurrences are recalculated from the effective date forward only and keep the version in effect on their date, so history is never rewritten. | REVIEW | PARTIAL | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
 | EVT-01 | A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked. | BLOCK | APPROVED | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
 | EVT-02 | Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once. | BLOCK | APPROVED | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
 | EVT-03 | A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity. | BLOCK | APPROVED | 3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026) |

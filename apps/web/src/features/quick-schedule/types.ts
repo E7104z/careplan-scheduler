@@ -1,4 +1,5 @@
 import type {
+  AmendmentDirection,
   AuthorizedTask,
   CalendarException,
   DaysPerWeek,
@@ -49,6 +50,23 @@ export interface ManualTransport {
 
 export type QuickTransport = FusionTransport | ManualTransport;
 
+/**
+ * A care plan change recorded on a service (Coverage Phase 3, Manual 4.20): a version from its
+ * effective date on. It never edits the imported state; the schedule before that date is as it was.
+ */
+export interface PlanAmendment {
+  id: string;
+  direction: AmendmentDirection;
+  /** YYYY-MM-DD as entered. A decrease dated mid-month takes effect the first of the next month. */
+  date: string;
+  /** The person said the care plan shows this date; until then the change is under review (AMEND-01). */
+  confirmed: boolean;
+  /** The tasks the change touches, by task id: minutes a day (0 = out of the week) and days a week. */
+  tasks: Record<string, { minPerDay: number; daysPerWeek: DaysPerWeek }>;
+  /** Fusion's units a month from the change on, when the care plan gives them. */
+  units: number | null;
+}
+
 /** APP-SPEC 5.6. `identity` lives in memory only and is never persisted. */
 export interface QuickState {
   source: "fusion" | "manual";
@@ -79,6 +97,8 @@ export interface QuickState {
   isExample: boolean;
   notes: ImportIssue[];
   rowsRead: number;
+  /** Care plan changes recorded on this service; absent in plans saved before them. */
+  amendments?: PlanAmendment[];
 }
 
 /** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */

@@ -57,6 +57,24 @@ function isNote(value: unknown): boolean {
   );
 }
 
+const DIRECTIONS = new Set(["increase", "decrease", "reduction-immediate"]);
+
+/** A recorded care plan change (Coverage Phase 3); a bad one drops the saved plan. */
+function isAmendment(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.direction === "string" &&
+    DIRECTIONS.has(value.direction) &&
+    typeof value.date === "string" &&
+    ISO_DATE.test(value.date) &&
+    typeof value.confirmed === "boolean" &&
+    (value.units === null || isInt(value.units, 0)) &&
+    isRecord(value.tasks) &&
+    Object.values(value.tasks).every((task) => isRecord(task) && isInt(task.minPerDay, 0, 1440) && isInt(task.daysPerWeek, 1, 7))
+  );
+}
+
 /**
  * Everything buildQuickModel relies on, so a stored copy from an older version (or one edited by
  * hand) falls back to the example instead of breaking the page. `id` (JOIN-03) is optional here so
@@ -97,7 +115,8 @@ function isStoredState(value: unknown): value is StoredState {
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
     typeof value.isExample === "boolean" &&
-    isInt(value.rowsRead, 0)
+    isInt(value.rowsRead, 0) &&
+    (value.amendments === undefined || (Array.isArray(value.amendments) && value.amendments.every(isAmendment)))
   );
 }
 

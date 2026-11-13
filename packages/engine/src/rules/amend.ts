@@ -1,15 +1,16 @@
 import type { AuthorizationChain, ValidationResult } from "../types.js";
 
 /**
- * A schedule that spans a care plan amendment is under review: the amendment's direction and
- * effective date are stored as recorded, and nothing confirms that date yet. One REVIEW for each
- * amendment, on its effective date. A plan with no amendment emits nothing.
+ * A care plan amendment is under review until its effective date is confirmed from the care plan
+ * (`dateConfirmed`): one REVIEW for each unconfirmed amendment, on its effective date. The
+ * Manual 4.20 behaviors set where an amendment takes effect (amendments/apply.ts); they never
+ * confirm the date. A plan with no amendment emits nothing.
  * @rule AMEND-01
  * @source HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)
  */
 export function ruleAMEND01EffectiveDates(chain: AuthorizationChain): ValidationResult[] {
   return chain.versions
-    .filter((version) => version.amendmentId !== null)
+    .filter((version) => version.amendmentId !== null && version.dateConfirmed !== true)
     .map((version) => ({
       ruleId: "AMEND-01",
       severity: "REVIEW" as const,

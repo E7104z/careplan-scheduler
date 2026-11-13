@@ -100,6 +100,8 @@ export interface AuthorizationVersion {
   effectiveFrom: string;          // YYYY-MM-DD, the first date this version is in effect
   effectiveTo?: string;           // the last date; absent = until the next version or the authorization's end
   recordedOn?: string;            // the date the amendment was made
+  requestedDate?: string;         // the date as entered, when the Manual 4.20 behavior moved it
+  dateConfirmed?: boolean;        // the effective date is on the care plan; absent = not confirmed
   authorization: ServiceAuthorization;
   template: ScheduleTemplate;
 }

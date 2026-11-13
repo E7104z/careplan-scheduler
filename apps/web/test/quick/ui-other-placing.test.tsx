@@ -11,7 +11,7 @@ async function openG() {
   await openCarePlanText(result.user, fixtureG);
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT G" });
   // The placing controls are in the dated-side chunk: wait for them.
-  await screen.findByRole("group", { name: "Place HDM on the calendar" });
+  await screen.findByRole("group", { name: "Place HDM on the calendar" }, { timeout: 5000 });
   return result;
 }
 

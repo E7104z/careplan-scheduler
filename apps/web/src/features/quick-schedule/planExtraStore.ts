@@ -1,4 +1,5 @@
 import type { RulePack } from "@careplan/engine";
+import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
 import type { CarePlan } from "./types.js";
 
@@ -12,7 +13,11 @@ export type PlanExtraAction =
   /** Place a dated event, or move or change one already placed (`event.id`). Refused with the limit. */
   | { type: "placeEvent"; event: EventRequest }
   /** Take a dated event off the plan. */
-  | { type: "removeEvent"; eventId: string };
+  | { type: "removeEvent"; eventId: string }
+  /** Record a care plan change on a service (its place in the plan). Refused with the reason. */
+  | { type: "recordAmendment"; service: number; amendment: AmendmentDraft }
+  /** Take a recorded change off a service. */
+  | { type: "removeAmendment"; service: number; amendmentId: string };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -21,7 +26,9 @@ export interface PlanExtraChange {
 
 export type PlanExtraReducer = (plan: CarePlan, action: PlanExtraAction, pack: RulePack) => PlanExtraChange;
 
-const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>(["placeEvent", "removeEvent"]);
+const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
+  "placeEvent", "removeEvent", "recordAmendment", "removeAmendment",
+]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {
   return EXTRA_TYPES.has(action.type);

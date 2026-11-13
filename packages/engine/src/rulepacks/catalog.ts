@@ -104,7 +104,7 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   },
   {
     id: "AMEND-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",
-    rule: "A schedule that spans a care plan amendment → REVIEW \"amendment effective date needs confirmation, Manual 4.20\", one for each amendment, on its effective date. The amendment's direction (increase, decrease, reduction-immediate) and effective date are stored as recorded; occurrences keep the version in effect on their date, so history is never rewritten.",
+    rule: "A care plan amendment whose effective date is not confirmed from the care plan → REVIEW \"amendment effective date needs confirmation, Manual 4.20\", one for each such amendment, on its effective date. A decrease takes effect on the first day of a month (one dated mid-month, on the first of the next month); an increase on its date, which may be mid-month; a participant-requested reduction on its date. Occurrences are recalculated from the effective date forward only and keep the version in effect on their date, so history is never rewritten.",
     source: "HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)",
   },
   {
