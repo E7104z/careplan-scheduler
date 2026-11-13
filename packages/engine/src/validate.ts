@@ -20,6 +20,7 @@ import {
   ruleSCH12PartialMonth,
   ruleSCH14VisitDates,
 } from "./rules/sch.js";
+import { ruleNUR01ApcFirstMonth } from "./rules/nur.js";
 import {
   ruleCON01SameServiceOverlap,
   ruleCON02DifferentServiceOverlap,
@@ -59,6 +60,12 @@ export interface ValidatePlanInput {
   template: ScheduleTemplate;
   exceptions: CalendarException[];
   months: string[];
+  /**
+   * An authorization's own first date, by its id, when the schedule being checked starts later
+   * (a schedule covers only care still to come). NUR-01 reads it to tell a first month from a
+   * later one.
+   */
+  authorizedStarts?: Record<string, string>;
 }
 
 export interface ValidateScheduleInput extends ValidatePlanInput {
@@ -108,7 +115,7 @@ function derivedMonthUnits(
 }
 
 /** Whole 15-minute units scheduled on each day of a month for the given task ids. */
-function dailyUnitsForMonth(
+export function dailyUnitsForMonth(
   template: ScheduleTemplate,
   exceptions: CalendarException[],
   month: string,
@@ -126,7 +133,7 @@ function dailyUnitsForMonth(
 }
 
 /** Sum of imported Fusion units for a program in a month, or undefined when none exist. */
-function importedUnitsForProgram(
+export function importedUnitsForProgram(
   authorizations: ServiceAuthorization[],
   monthlyAuthorizations: MonthlyAuthorization[],
   program: ProgramCode,
@@ -196,6 +203,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   results.push(...ruleSCH08CalendarCheck(authorizations, monthlyAuthorizations, template, exceptions, months));
   results.push(...ruleSCH11RepeatedExceptions(exceptions));
   results.push(...ruleSCH12PartialMonth(authorizations, monthlyAuthorizations));
+  results.push(...ruleNUR01ApcFirstMonth(authorizations, months, input.authorizedStarts));
   return results;
 }
 

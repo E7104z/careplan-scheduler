@@ -29,12 +29,12 @@ describe("Landing", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Paste a Fusion care plan. Get a schedule that follows Missouri's rules.",
+        name: "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules.",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Copy the care plan from Fusion or open its PDF. CarePlan Scheduler reads every " +
+        "Open the care plan PDF from Fusion. CarePlan Scheduler reads every " +
           "task, checks its total against Fusion's, builds the week, and won't let anyone " +
           "change it in a way that breaks a rule. Every check names the policy it comes from.",
       ),
@@ -48,7 +48,7 @@ describe("Landing", () => {
       "/sign-up",
     );
     expect(
-      screen.getByText("Quick Schedule needs no account. Nothing you paste is uploaded."),
+      screen.getByText("Quick Schedule needs no account. Nothing you open is uploaded."),
     ).toBeInTheDocument();
 
     // The four figures come from the engine and the import package, not hardcoded output.
@@ -154,7 +154,7 @@ describe("Privacy", () => {
     render(<Privacy />, { wrapper: MemoryRouter });
 
     expect(screen.getByRole("heading", { level: 1, name: "Privacy" })).toBeInTheDocument();
-    expect(screen.getByText(/Nothing you paste is uploaded/)).toBeInTheDocument();
+    expect(screen.getByText(/reads the care plan PDF you open, on your computer\. Nothing you open is uploaded\./)).toBeInTheDocument();
     expect(screen.getByText(/business associate agreement/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "support@thecdscloud.com" })).toHaveAttribute(
       "href",

@@ -205,12 +205,21 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   const trims: CalendarException[] =
     scheduled ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
+  // One-day changes (Coverage Phase 3): what a task has on one date instead of the pattern's
+  // minutes, as calendar exceptions applied after the trims. Changes for a task or a date no longer
+  // in the schedule are ignored.
+  const dayExceptions = dayChangeExceptions(state, template, trims, auth);
+
   // Step 9: validate. Quick Schedule has no visits, so the plan rules run, with CON-09 on the
   // expanded template (ENGINE-SPEC Amendment B): CON-13 would otherwise ask for a referral date
   // it has no first visit to check.
   const results: ScheduleValidationResult[] =
     scheduled
-      ? validatePlan({ pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: trims, months })
+      ? validatePlan({
+          pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: [...trims, ...dayExceptions], months,
+          // The plan's own first date: the schedule may start later, at this month (step 5).
+          authorizedStarts: { [auth.id]: state.plan.start },
+        })
       : [];
 
   return {
@@ -221,6 +230,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     auth,
     template,
     trims,
+    dayExceptions,
     allowance,
     months,
     monthlyAuthorizations,
@@ -228,6 +238,27 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     results,
     checksum,
   };
+}
+
+/** The person's one-day changes as engine exceptions: the difference from what that date holds after the trims. */
+function dayChangeExceptions(
+  state: QuickState,
+  template: ScheduleTemplate,
+  trims: CalendarException[],
+  auth: ServiceAuthorization,
+): CalendarException[] {
+  const exceptions: CalendarException[] = [];
+  for (const change of state.dayChanges ?? []) {
+    if (change.date < auth.start || change.date > auth.end || !auth.tasks.some((task) => task.id === change.taskId)) continue;
+    const [year, monthNumber] = change.date.split("-").map(Number);
+    const before = expandMonth(template, trims, year ?? 0, monthNumber ?? 1, auth.start, auth.end)[change.date]?.[change.taskId] ?? 0;
+    if (change.minutes === before) continue;
+    exceptions.push({
+      id: `day-${change.date}-${change.taskId}`, participantId: auth.participantId, date: change.date, taskId: change.taskId,
+      minutesDelta: change.minutes - before, reason: "One-day change", author: "", createdAt: "", kind: "change",
+    });
+  }
+  return exceptions;
 }
 
 /**
@@ -292,7 +323,7 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
   const [year, monthNumber] = month.split("-").map(Number);
   const y = year ?? 0;
   const m = monthNumber ?? 1;
-  const expanded = expandMonth(model.template, model.trims, y, m, model.auth.start, model.auth.end);
+  const expanded = expandMonth(model.template, [...model.trims, ...model.dayExceptions], y, m, model.auth.start, model.auth.end);
   const imported = model.monthlyAuthorizations.find((authorization) => authorization.month === month);
   const calculatedUnits = derivedServiceMonthUnits(model.auth, y, m);
   const authorizedUnits = imported ? imported.units : calculatedUnits;

@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { fixtureText, pasteCarePlan } from "./helpers";
+import { fixturePdf, fixtureText, openCarePlan, openCarePlanText } from "./helpers";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"];
 // Nov 20, 2025: every fixture's plan is current or still to come (B starts Dec 1, 2025; D runs
@@ -25,7 +25,7 @@ async function useTheme(page: Page, theme: "light" | "dark"): Promise<void> {
 // AC-18's public pages and the other public pages (APP-SPEC 4.4: every page). Each waits for its
 // h1, since the pages are lazy chunks and axe would otherwise check the empty shell.
 const PAGES = [
-  { name: "landing", path: "/", heading: "Paste a Fusion care plan. Get a schedule that follows Missouri's rules." },
+  { name: "landing", path: "/", heading: "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules." },
   { name: "rules", path: "/rules", heading: "Rules and sources" },
   { name: "privacy", path: "/privacy", heading: "Privacy" },
   { name: "sign in", path: "/sign-in", heading: "Sign in" },
@@ -54,15 +54,15 @@ for (const theme of ["light", "dark"] as const) {
   test(`axe: quick fixture D issue in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");
-    await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
-    await expect(page.getByText("This copy has 10 of the plan's 14 rows")).toBeVisible();
+    await openCarePlanText(page, fixtureText("D-page1-only-incomplete"));
+    await expect(page.getByText("This PDF has 10 of the plan's 14 rows")).toBeVisible();
     await analyze(page);
   });
 
   test(`axe: quick fixture F whole care plan in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");
-    await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+    await openCarePlanText(page, fixtureText("F-care-plan-report-multi"));
     await expect(page.getByRole("heading", { name: "The participant's week" })).toBeVisible();
     await analyze(page);
 
@@ -75,7 +75,7 @@ for (const theme of ["light", "dark"] as const) {
   test(`axe: quick fixture G other authorizations in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");
-    await pasteCarePlan(page, fixtureText("G-care-plan-report-kept"));
+    await openCarePlanText(page, fixtureText("G-care-plan-report-kept"));
     await expect(page.getByRole("heading", { name: "Other authorizations" })).toBeVisible();
     await analyze(page);
 
@@ -88,7 +88,7 @@ for (const theme of ["light", "dark"] as const) {
   test(`axe: quick fixture B built in ${theme}`, async ({ page }) => {
     await useTheme(page, theme);
     await page.goto("/quick");
-    await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+    await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
     await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
     await analyze(page);
 

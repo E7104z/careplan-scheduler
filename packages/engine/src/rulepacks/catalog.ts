@@ -102,26 +102,56 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: \"fit\"`, `reason: \"Units for the month run out\"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results.",
     source: "Product decision approved Oct 21, 2026 (schedules never exceed SCH-08)",
   },
+  {
+    id: "AMEND-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "A care plan amendment whose effective date is not confirmed from the care plan → REVIEW \"amendment effective date needs confirmation, Manual 4.20\", one for each such amendment, on its effective date. A decrease takes effect on the first day of a month (one dated mid-month, on the first of the next month); an increase on its date, which may be mid-month; a participant-requested reduction on its date. Occurrences are recalculated from the effective date forward only and keep the version in effect on their date, so history is never rewritten.",
+    source: "HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate)",
+  },
+  {
+    id: "EVT-01", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked.",
+    source: "The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026",
+  },
+  {
+    id: "EVT-02", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once.",
+    source: "Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits",
+  },
+  {
+    id: "EVT-03", area: "Schedule", severities: ["BLOCK"], status: "APPROVED",
+    rule: "A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity.",
+    source: "3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026)",
+  },
+  {
+    id: "NUR-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",
+    rule: "An Advanced Personal Care authorization (T1019TF, identified by its code) whose first month is in the schedule → REVIEW \"A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan.\" Never BLOCK or PASS, and nothing in later months. No visit is created or linked: the app offers a date only for a nurse visit Fusion authorized.",
+    source: "HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count",
+  },
+  {
+    id: "NUR-02", area: "Schedule", severities: ["WARN"], status: "APPROVED",
+    rule: "An authorized nurse visit month that has passed with no date placed → WARN \"No date was placed for this month's visit.\" It says nothing about whether the visit happened: the app schedules, it does not record delivery.",
+    source: "Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026",
+  },
 
   // Conflicts and eligibility (conflicts.ts)
   {
-    id: "CON-01", area: "Conflicts and eligibility", severities: ["BLOCK", "WARN"], status: "PARTIAL",
-    rule: "Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN.",
+    id: "CON-01", area: "Conflicts and eligibility", severities: ["BLOCK", "WARN", "REVIEW"], status: "PARTIAL",
+    rule: "Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. A scheduled service with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\"; it never passes on missing data.",
     source: "CDS policy clarification Q5",
   },
   {
     id: "CON-02", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "PARTIAL",
-    rule: "Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW.",
+    rule: "Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. With two or more services, one with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\".",
     source: "CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)",
   },
   {
-    id: "CON-03", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "VERIFIED",
-    rule: "Respite overlapping any other service → BLOCK.",
+    id: "CON-03", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
+    rule: "Respite overlapping any other service → BLOCK. With respite and another service in the plan, a service with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\".",
     source: "Policy 3.50 (rev. Jul 2026)",
   },
   {
     id: "CON-04", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "APPROVED",
-    rule: "Same caregiver, overlapping visits for different participants → BLOCK.",
+    rule: "Same caregiver, overlapping visits → BLOCK (across participants, or two different services for one participant).",
     source: "Product decision approved Oct 20, 2026",
   },
   {
@@ -163,6 +193,16 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     id: "CON-17", area: "Conflicts and eligibility", severities: ["REVIEW"], status: "PARTIAL",
     rule: "Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW.",
     source: "Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration)",
+  },
+  {
+    id: "SFC-01", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
+    rule: "SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked.",
+    source: "Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026)",
+  },
+  {
+    id: "SFC-02", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "More than one primary caregiver on an SFCW authorization → BLOCK.",
+    source: "Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026)",
   },
 
   // State parity (src/stateparity/rules.ts; Amendment C).

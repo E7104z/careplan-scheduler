@@ -106,7 +106,7 @@ describe("IMP-T28 a label we haven't seen is named by its procedure code", () =>
   });
 });
 
-describe("IMP-T29 fixture F pasted in two parts", () => {
+describe("IMP-T29 fixture F in two files", () => {
   const text = fixtureText(F);
   const cut = text.indexOf("Date Generated: 10/23/2026 | Page 4 of 7");
   const result = mergeFusionText([text.slice(0, cut), text.slice(cut)], PACK);

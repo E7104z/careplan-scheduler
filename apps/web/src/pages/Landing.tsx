@@ -54,10 +54,10 @@ export function Landing() {
             tabIndex={-1}
             className="text-[40px] font-bold leading-tight text-ink max-sm:text-[32px]"
           >
-            Paste a Fusion care plan. Get a schedule that follows Missouri's rules.
+            Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules.
           </h1>
           <p className="mt-4 max-w-[62ch] text-[17px] text-ink-2">
-            Copy the care plan from Fusion or open its PDF. CarePlan Scheduler reads every
+            Open the care plan PDF from Fusion. CarePlan Scheduler reads every
             task, checks its total against Fusion's, builds the week, and won't let anyone
             change it in a way that breaks a rule. Every check names the policy it comes
             from.
@@ -71,7 +71,7 @@ export function Landing() {
             </Link>
           </div>
           <p className="mt-3 text-sm text-ink-3">
-            Quick Schedule needs no account. Nothing you paste is uploaded.
+            Quick Schedule needs no account. Nothing you open is uploaded.
           </p>
         </div>
         <figure
@@ -93,9 +93,9 @@ export function Landing() {
 
       <section className="grid gap-10 py-12 md:grid-cols-2">
         <Section
-          heading="Reads Fusion the way you copy it"
-          lead="Paste a care plan or open its PDF."
-          detail="If Fusion splits the tasks across two pages, paste one page at a time and CarePlan Scheduler reads them together."
+          heading="Reads the care plan PDF from Fusion"
+          lead="Open the care plan PDF."
+          detail="Fusion's care plan PDFs are read in your browser, every page, and the plan stays on your computer."
           figure={
             <div className="rounded-md border border-line bg-surface p-4">
               <p className="text-ink">{matchLine}</p>

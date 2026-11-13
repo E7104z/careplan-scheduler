@@ -95,15 +95,15 @@ describe("DayToggle", () => {
   });
 });
 
-describe("Textarea paste", () => {
-  it("hands the box's text up once the browser has inserted the paste (APP-SPEC 4.2)", async () => {
+describe("Textarea", () => {
+  it("is a plain text box: typed text goes to onChange", async () => {
     const user = userEvent.setup();
-    const pasted: string[] = [];
-    render(<Textarea aria-label="Care plan" onPasteText={(text) => pasted.push(text)} />);
-    await user.click(screen.getByRole("textbox", { name: "Care plan" }));
-    await user.paste("455 units\tBathing\t45\t7");
-    await user.type(screen.getByRole("textbox", { name: "Care plan" }), "x");
-    expect(pasted).toEqual(["455 units\tBathing\t45\t7"]);
+    const values: string[] = [];
+    render(<Textarea aria-label="Notes" onChange={(event) => values.push(event.target.value)} />);
+    const box = screen.getByRole("textbox", { name: "Notes" });
+    expect(box).toHaveAttribute("spellcheck", "false");
+    await user.type(box, "ab");
+    expect(values).toEqual(["a", "ab"]);
   });
 });
 

@@ -2,6 +2,7 @@ import { MO_2026_07 } from "@careplan/engine";
 import type { SourceRef } from "@careplan/import";
 import { singlePlan } from "./carePlan.js";
 import { newId } from "./ids.js";
+import { authorizationExtrasValid, planExtrasValid, stateExtrasValid } from "./storedExtras.js";
 import type { CarePlan, QuickState } from "./types.js";
 
 /** APP-SPEC 5.8: the participant's whole care plan. */
@@ -97,7 +98,9 @@ function isStoredState(value: unknown): value is StoredState {
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
     typeof value.isExample === "boolean" &&
-    isInt(value.rowsRead, 0)
+    isInt(value.rowsRead, 0) &&
+    // Recorded changes, one-day changes, start times and caregivers (Coverage Phases 3 and 4).
+    stateExtrasValid(value)
   );
 }
 
@@ -105,14 +108,27 @@ function isStoredState(value: unknown): value is StoredState {
 type StoredState = Omit<QuickState, "id"> & { id?: string };
 /** A CarePlan as it may be stored, with services that may predate task UUIDs. */
 type StoredCarePlan = Omit<CarePlan, "services"> & { services: StoredState[] };
-
 /** JOIN-03: give a stored authorization without a UUID a fresh one so every authorization has one. */
 function migrateState(state: StoredState): QuickState {
   return { ...state, id: state.id ?? newId() };
 }
 
+/**
+ * Authorizations saved before Coverage Phase 3 get the UUID their dated events point at; an event
+ * whose authorization is no longer in the plan is dropped rather than left pointing at nothing.
+ */
 function migratePlan(plan: StoredCarePlan): CarePlan {
-  return { ...plan, services: plan.services.map(migrateState) };
+  const visits = plan.visits.map((visit) => ({ ...visit, id: visit.id ?? newId() }));
+  const others = plan.others?.map((other) => ({ ...other, id: other.id ?? newId() }));
+  const ids = new Set([...visits, ...(others ?? [])].map((authorization) => authorization.id));
+  const events = plan.events?.filter((event) => ids.has(event.authorizationId));
+  return {
+    ...plan,
+    services: plan.services.map(migrateState),
+    visits,
+    ...(others ? { others } : {}),
+    ...(events ? { events } : {}),
+  };
 }
 
 function isVisit(value: unknown): boolean {
@@ -128,7 +144,8 @@ function isVisit(value: unknown): boolean {
     typeof value.end === "string" &&
     ISO_DATE.test(value.end) &&
     isInt(value.units, 0) &&
-    isStringOrNull(value.pa)
+    isStringOrNull(value.pa) &&
+    authorizationExtrasValid(value)
   );
 }
 
@@ -153,7 +170,8 @@ function isOther(value: unknown): boolean {
         isInt(month.units, 0),
     ) &&
     Array.isArray(value.rows) &&
-    value.rows.every((row) => typeof row === "string")
+    value.rows.every((row) => typeof row === "string") &&
+    authorizationExtrasValid(value)
   );
 }
 
@@ -166,6 +184,8 @@ function isStoredCarePlan(value: unknown): value is StoredCarePlan {
     value.visits.every(isVisit) &&
     // Kept authorizations (IMP-19); plans saved before them have none.
     (value.others === undefined || (Array.isArray(value.others) && value.others.every(isOther))) &&
+    // Dated events and caregivers (Coverage Phases 3 and 4); plans saved before them have none.
+    planExtrasValid(value) &&
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
     ((value.view === "plan" && count > 1) || isInt(value.view, 0, count - 1))
@@ -177,10 +197,17 @@ function withoutIdentity(state: QuickState): Omit<QuickState, "identity"> {
   return rest;
 }
 
-/** Persist the whole care plan, every service without `identity` (APP-SPEC 5.6, 5.8). Never throws. */
+/**
+ * Persist the whole care plan, every service without `identity` and every caregiver without a
+ * name (APP-SPEC 5.6, 5.8): names live in memory only. Never throws.
+ */
 export function savePlan(plan: CarePlan): void {
   try {
-    sessionStorage.setItem(PLAN_KEY, JSON.stringify({ ...plan, services: plan.services.map(withoutIdentity) }));
+    const caregivers = plan.caregivers?.map(({ name: _name, ...rest }) => rest);
+    sessionStorage.setItem(
+      PLAN_KEY,
+      JSON.stringify({ ...plan, services: plan.services.map(withoutIdentity), ...(caregivers ? { caregivers } : {}) }),
+    );
   } catch {
     // Storage can be unavailable (private mode, quota). Quick Schedule keeps working.
   }

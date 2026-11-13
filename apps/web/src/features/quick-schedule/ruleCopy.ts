@@ -94,6 +94,36 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     title: "Future authorization",
     whatToDo: "Visits for this authorization are drafts until it starts.",
   },
+  "AMEND-01/REVIEW": {
+    title: "A care plan change needs its start date checked",
+    whatToDo:
+      "The schedule crosses a care plan change. Check the date the change takes effect against the care plan in Fusion.",
+  },
+  "EVT-01/BLOCK": {
+    title: "That date is outside the authorization",
+    whatToDo:
+      "Pick a date inside the dates and months the care plan authorizes for this service.",
+  },
+  "EVT-02/BLOCK": {
+    title: "That is more than the care plan authorizes this month",
+    whatToDo:
+      "The care plan's count for the month is the limit. Remove a date first, or choose another month.",
+  },
+  "EVT-03/BLOCK": {
+    title: "This authorization has no caregiver time",
+    whatToDo:
+      "Only a reminder can go on this authorization. It is never a visit and is never billed.",
+  },
+  "NUR-01/REVIEW": {
+    title: "Advanced Personal Care: check the first month's nurse visits",
+    whatToDo:
+      "A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan. DHSS hasn't confirmed the first-month visit count, so this stays under review.",
+  },
+  "NUR-02/WARN": {
+    title: "No date was placed for this month's visit",
+    whatToDo:
+      "Pick a date for the visit in the month it was authorized. This doesn't say whether the visit happened.",
+  },
 };
 
 
@@ -107,6 +137,10 @@ const CON_COPY: Record<string, RuleCopy> = {
     title: "Two agency visits for the same service overlap",
     whatToDo: "Check the times; overlapping agency visits are usually a mistake.",
   },
+  "CON-01/REVIEW": {
+    title: "Overlaps can't be checked without clock times",
+    whatToDo: "Add a start time for each care day of this service, so its visits can be checked against each other.",
+  },
   "CON-02/BLOCK": {
     title: "These two services can't overlap",
     whatToDo: "Change one visit's time.",
@@ -118,6 +152,10 @@ const CON_COPY: Record<string, RuleCopy> = {
   "CON-03/BLOCK": {
     title: "Respite overlaps another service",
     whatToDo: "Respite can't happen at the same time as any other service.",
+  },
+  "CON-03/REVIEW": {
+    title: "Respite overlap can't be checked without clock times",
+    whatToDo: "Add a start time for each care day, so respite can be checked against the other services.",
   },
   "CON-04/BLOCK": {
     title: "A caregiver is booked in two places at once",
@@ -175,6 +213,19 @@ const CON_COPY: Record<string, RuleCopy> = {
     title: "Caregiver details are missing",
     whatToDo:
       "Add the caregiver's relationship and qualifications so we can check eligibility.",
+  },
+  "SFC-01/BLOCK": {
+    title: "This service overlaps the family caregiver authorization",
+    whatToDo:
+      "A participant can't get the structured family caregiver waiver and another HCBS service at the same time. End one authorization before the other starts.",
+  },
+  "SFC-01/REVIEW": {
+    title: "This authorization can't be checked against family caregiving",
+    whatToDo: "Its dates or classification are missing. Check them against the care plan.",
+  },
+  "SFC-02/BLOCK": {
+    title: "More than one primary family caregiver",
+    whatToDo: "Structured family caregiving takes one live-in primary caregiver and a qualified substitute.",
   },
 };
 

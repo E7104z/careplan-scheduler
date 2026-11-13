@@ -89,7 +89,7 @@ describe("readPdf", () => {
     expect(await readPdf(pdf())).toEqual({
       kind: "error",
       title: "This PDF has no readable text",
-      detail: "It may be a scan or a photo. Paste the care plan from Fusion instead.",
+      detail: "It may be a scan or a photo. Download the care plan PDF from Fusion again.",
     });
     expect(destroy).toHaveBeenCalled();
   });
@@ -99,8 +99,7 @@ describe("readPdf", () => {
     expect(await readPdf(pdf())).toEqual({
       kind: "error",
       title: "We couldn't read that PDF",
-      detail:
-        "Check that it's the care plan PDF from Fusion and not password-protected. You can also paste the care plan instead.",
+      detail: "Check that it's the care plan PDF from Fusion and not password-protected.",
     });
   });
 });

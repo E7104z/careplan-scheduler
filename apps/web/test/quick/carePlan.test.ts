@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { addPage, emptyImportFlow, next } from "../../src/features/import/importFlow";
+import { balanceRows, ilwSwitchProjection } from "../../src/features/quick-schedule/balances";
 import { activeIndex, isUpcoming, maxServiceDays, planWeek, serviceDayWarning, serviceDays, singlePlan, weekMinutes } from "../../src/features/quick-schedule/carePlan";
 import { buildQuickModel } from "../../src/features/quick-schedule/model";
-import { exampleStateA, exampleStateB } from "../../src/features/quick-schedule/state";
-import type { CarePlan } from "../../src/features/quick-schedule/types";
+import { exampleStateA, exampleStateB, manualState, reduce } from "../../src/features/quick-schedule/state";
+import type { CarePlan, QuickState } from "../../src/features/quick-schedule/types";
 import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
 import fixtureP from "@fixtures/fusion/P-TEST-APC-PC-4DAY.txt?raw";
 
@@ -25,6 +26,22 @@ function planP(today = TODAY): CarePlan {
   const outcome = next(addPage(emptyImportFlow(), fixtureP), PACK, today);
   if (outcome.kind !== "ready") throw new Error(`Expected a ready outcome, got ${JSON.stringify(outcome.issues)}`);
   return outcome.plan;
+}
+
+// CP4-5: CDS and ILW share one 7-day task pool with two unit ledgers.
+function cdsIlwPlan(): CarePlan {
+  const cds: QuickState = {
+    ...manualState(TODAY),
+    tasks: [{ id: "cds-bathing", taskCode: null, name: "Bathing", minPerDay: 420, daysPerWeek: 7, pinned: null, locked: false }],
+    fusion: { "2026-11": 500 },
+  };
+  const ilw: QuickState = {
+    ...manualState(TODAY),
+    serviceCode: "T1019U6",
+    tasks: [{ id: "ilw-bathing", taskCode: null, name: "Bathing", minPerDay: 420, daysPerWeek: 7, pinned: null, locked: false }],
+    fusion: { "2026-11": 368 },
+  };
+  return { services: [cds, ilw], visits: [], notes: [], view: "plan" };
 }
 
 describe("AC-28 fixture F: one schedule for the participant", () => {
@@ -118,7 +135,7 @@ describe("AC-28 fixture F: one schedule for the participant", () => {
 describe("a service that ended earlier is left out of the plan", () => {
   // Homemaker authorized February to June only.
   const text = fixtureF.replace(
-    /(HC\tN\/A[\s\S]*?)(07\/01\/2026\t07\/31\/2026\tS5130\t5\n08[\s\S]*?10\/31\/2026\tS5130\t5\n)/,
+    /(HC\tN\/A[\s\S]*?)(07\/01\/2026\t07\/31\/2026\tS5130\t5\r?\n08[\s\S]*?10\/31\/2026\tS5130\t5\r?\n)/,
     "$1",
   );
   const outcome = next(addPage(emptyImportFlow(), text), PACK, TODAY);
@@ -208,3 +225,35 @@ describe("service day warning", () => {
     );
   });
 });
+
+describe("CP4-5: CDS and ILW share one task pool with two ledgers", () => {
+  it("shows the shared task once a day, always under the CDS authorization", () => {
+    const plan = cdsIlwPlan();
+    const models = plan.services.map((state) => buildQuickModel(state, PACK));
+    const week = planWeek(plan, models);
+    const bathing = week.flatMap((day) => day.items.filter((item) => item.name === "Bathing"));
+    expect(bathing).toHaveLength(7);
+    expect(bathing.every((item) => item.service === 0)).toBe(true);
+    expect(week.every((day) => day.items.filter((item) => item.name === "Bathing").length === 1)).toBe(true);
+  });
+
+  it("keeps the CDS and ILW unit ledgers separate", () => {
+    const plan = cdsIlwPlan();
+    const models = plan.services.map((state) => buildQuickModel(state, PACK));
+    const rows = balanceRows(plan, models, "2026-11");
+    expect(rows.map((row) => row.authorized)).toEqual(["500 units", "368 units"]);
+  });
+
+  it("projects the ILW switch only when both are imported", () => {
+    const plan = cdsIlwPlan();
+    const models = plan.services.map((state) => buildQuickModel(state, PACK));
+    expect(ilwSwitchProjection(models, "2026-11")).toBe("Projected: ILW units begin about Nov 9, 2026");
+
+    // With only the CDS authorization there is nothing to switch to.
+    expect(ilwSwitchProjection([models[0]!], "2026-11")).toBeNull();
+    // And with no ILW import figure there is nothing to project.
+    const noIlwFigure: CarePlan = { ...plan, services: [plan.services[0]!, { ...plan.services[1]!, fusion: {} }] };
+    expect(ilwSwitchProjection(noIlwFigure.services.map((state) => buildQuickModel(state, PACK)), "2026-11")).toBeNull();
+  });
+});
+

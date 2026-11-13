@@ -10,6 +10,7 @@ import {
 import { daysInMonth, type RulePack, type ServiceCode } from "@careplan/engine";
 import { niceDate } from "../../lib/format";
 import { dayLoad } from "../quick-schedule/carePlan.js";
+import { newId } from "../quick-schedule/ids.js";
 import { localMonth, MONDAY_FIRST } from "../quick-schedule/model.js";
 import { fromFusion, serviceDates } from "./fromFusion.js";
 import type { CarePlan, Plan, PlanOther, PlanVisit, QuickState } from "../quick-schedule/types.js";
@@ -106,7 +107,7 @@ function concerns(issue: ImportIssue, service: ImportedService): boolean {
 function planVisit(visit: ImportedVisit, pack: RulePack): PlanVisit {
   const name = visit.name ?? pack.services.find((service) => service.code === visit.serviceCode)?.name ?? visit.serviceCode;
   return {
-    label: visit.label, serviceCode: visit.serviceCode, name, provider: visit.provider,
+    id: newId(), label: visit.label, serviceCode: visit.serviceCode, name, provider: visit.provider,
     start: visit.start, end: visit.end, units: visit.units, pa: visit.pa,
   };
 }
@@ -121,7 +122,7 @@ function keptRows(service: ImportedService): string[] {
 }
 
 /**
- * Parse the pasted pages, then either report the hard stops still open or build the participant's
+ * Parse what the PDFs read as, then either report the hard stops still open or build the participant's
  * whole care plan (APP-SPEC 5.8): one schedule state per authorization, in Fusion's order, each
  * with its own dates, units and checks, and the visits by month. A service whose authorization
  * ended before this month is left out with a note; when all have ended, the plan has ended.
@@ -191,7 +192,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
   const resolved = structuredClone(parsed);
   if (enteredOk) resolved.plan = entered;
   const services: QuickState[] = [];
-  const others: PlanOther[] = parsed.others.map((other) => ({ ...other, monthly: [...other.monthly], rows: [...other.rows] }));
+  const others: PlanOther[] = parsed.others.map((other) => ({ ...other, id: newId(), monthly: [...other.monthly], rows: [...other.rows] }));
   const notes: ImportIssue[] = parsed.issues.filter(
     (issue) => !SERVICE_NOTES.includes(issue.code) && (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete"),
   );
@@ -215,7 +216,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     if (keptByChoice(service)) {
       const dates = datesOf(service);
       others.push({
-        label: service.label, code: null, registryId: null, provider: service.provider, pa: service.pa,
+        id: newId(), label: service.label, code: null, registryId: null, provider: service.provider, pa: service.pa,
         start: dates?.start ?? null, end: dates?.end ?? null, monthly: service.monthly ?? [], rows: keptRows(service),
       });
       notes.push({
@@ -244,7 +245,7 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
 
 /**
  * IMP-12: combine the pages. A page for a different participant (another DCN) is refused: it is
- * left out, and reported while it is the latest page, so pasting the right page carries on.
+ * left out, and reported while it is the latest page, so opening the right PDF carries on.
  * A task already read is dropped, keeping the first.
  */
 function readPages(flow: ImportFlow, pack: RulePack): { parsed: ImportResult; refusedPage: number | null } {

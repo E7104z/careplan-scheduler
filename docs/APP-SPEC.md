@@ -1,7 +1,7 @@
 # CarePlan Scheduler — App Specification (Phase 2)
 
 Phase 2 puts the Phase 1 rules engine in front of people: a public site, sign-in, agency
-accounts, and **Quick Schedule**: paste a care plan from Fusion (or open its PDF) and get a
+accounts, and **Quick Schedule**: open a care plan PDF from Fusion and get a
 ready schedule that can't be edited outside Missouri's rules. Nothing about a participant is
 stored in Phase 2.
 
@@ -14,7 +14,7 @@ Visual and behavioral target: `docs/design/quick-schedule-prototype.html` (open 
 browser; it runs the real engine). Tokens: `docs/design/tokens.css`.
 
 **Done when:** the Vercel preview of the `phase-2-app` pull request works end to end: a
-visitor pastes a Fusion care plan into Quick Schedule without an account and gets a ready
+visitor opens a Fusion care plan PDF in Quick Schedule without an account and gets a ready
 schedule; an agency owner signs up,
 verifies their email, creates the agency, invites a scheduler, and the scheduler joins; every
 acceptance check in section 11 passes.
@@ -37,10 +37,10 @@ acceptance check in section 11 passes.
 | D-10 | Signed-in sessions end after 30 minutes without activity, with a 2-minute warning. | Expected by agencies and the state for any system that will hold participant data. |
 | D-11 | Deployed on Vercel from the repo root (`vercel.json`), with strict security headers. Firebase is used only for Auth and Firestore, not Hosting. | Every pull request gets a preview link. |
 | D-12 | The engine gains one export, `RULE_CATALOG` (rule ID, area, rule text, severities, status, source), tested against ENGINE-SPEC section 5. | The public "Rules and sources" page and the check copy are generated from the engine, not retyped. |
-| D-13 | **Import is the front door.** Quick Schedule opens on "Paste the care plan from Fusion" and "Open the care plan PDF"; building by hand is the fallback. Reading Fusion text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
+| D-13 | **Import is the front door.** Quick Schedule opens on "Open the care plan PDF from Fusion"; building by hand is the fallback. **Nov 13, 2026: paste removed, PDF only** (the owner's decision; the paste box, its "Build schedule" button and every paste message are gone, and the care plan PDF is the only way a plan comes in). Reading the PDF's text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
 | D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
 | D-15 | PDFs are read in the browser with `pdfjs-dist` 4.10.38, loaded only when a PDF is opened (its own chunk and worker file). Nothing is uploaded. | Keeps public pages fast; keeps participant data on the person's computer. |
-| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are pasted into it. |
+| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are opened in it. |
 | D-17 | **The printout is a one-page PDF** (US Letter landscape), drawn in the browser with `pdf-lib` 1.17.1 and `@pdf-lib/fontkit` 1.1.1 in Public Sans (`@fontsource/public-sans` 5.3.0, static weights), loaded only when someone prints (5.4). Nothing is uploaded. | Decided Oct 26, 2026, at the user's request: the page sent to the print dialog came out on several pages, and each browser and the Windows app split, turned and captioned it its own way. A PDF is the same one page everywhere. |
 
 ### Pinned versions (verified to install, typecheck, test and build together on Node 22)
@@ -206,8 +206,8 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Toast | Radix Toast, bottom-right (bottom-center on phones), 5s; the message has `role="status"` (on the message, not the list item, so the viewport stays a valid list; decided Oct 25, 2026). Message names the result of the action ("Invite link copied"). |
 | Menu | Radix DropdownMenu for the account menu and agency switcher. Not for site navigation: the public header's phone navigation is a disclosure (a button with `aria-expanded` showing a `nav` of plain links). |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
-| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPasteText` hands the box's text up after the browser inserts a paste (the `input` event with `inputType` "insertFromPaste"). |
-| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
+| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px. A plain text box: it reads nothing from the clipboard (the paste import was removed Nov 13, 2026). |
+| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. An optional `id` goes on the file input, so a page can put focus on the chooser. |
 | SkipLink | First focusable element: "Skip to main content". |
 | Logo | The four-square mark from the prototype (three filled squares, one outlined) + "CarePlan Scheduler". The outlined square is the unit still to be scheduled. |
 
@@ -243,25 +243,26 @@ React with the components above. Its reference logic is `docs/design/reference/`
 layout, copy and behavior unless this section says otherwise; this section wins.
 
 Two ways in, one schedule:
-- **From Fusion** (the default): paste the care plan or open its PDF (IMPORT-SPEC). Minutes per
+- **From Fusion** (the default): open the care plan PDF (IMPORT-SPEC). Minutes per
   day and days per week come from Fusion and are locked.
 - **By hand** (fallback): enter service, dates and tasks (QS-01 to QS-09).
 
 ### 5.1 Layout
-- Page intro: `h1` "Quick Schedule"; "Paste a care plan from Fusion or open its PDF. You get a
-  ready schedule that follows Missouri's rules, and you can change it within them."; actions
-  "New care plan" (only while a pasted plan is showing), "Print schedule" and "Save as PDF"
+- Page intro: `h1` "Quick Schedule"; "Open a care plan PDF from Fusion. You get a ready
+  schedule that follows Missouri's rules, and you can change it within them."; actions
+  "New care plan" (only while a plan the person opened or built is showing), "Print schedule" and "Save as PDF"
   (5.4 Print).
 - **Import panel** (shown until a real plan is built, and again after "New care plan"), two
   columns at ≥ 860px:
-  - Left: `h2` "Paste the care plan from Fusion"; numbered steps (a real sequence): "In
-    Fusion, open the participant's care plan." / "Select from the participant's name down to
-    the last task, and copy." / "Paste it here. If Fusion shows the tasks on two pages, paste
-    one page at a time."; a textarea (no spellcheck); button "Build schedule"; "Examples:
-    5-day plan · 7-day plan" (fixtures A and B).
-  - Right: `h2` "Or open the care plan PDF"; a drop zone "Choose the PDF / or drop it here"
-    (a `<label>` around a hidden file input, `accept="application/pdf,.pdf"`); "The PDF is read
-    on this computer. It isn't uploaded."; "No care plan handy? Build a schedule by hand".
+  - Left: `h2` "Open the care plan PDF from Fusion"; numbered steps (a real sequence): "In
+    Fusion, open the participant's care plan." / "Download it as a PDF." / "Choose the PDF here
+    or drop it on the box."; a drop zone "Choose the PDF / or drop it here" (a `<label>` around
+    a hidden file input, `id="qs-pdf"`, `accept="application/pdf,.pdf"`); "The PDF is read on
+    this computer. It isn't uploaded." There is no text box and no "Build schedule" button.
+  - Right: "Examples: 5-day plan · 7-day plan" (fixtures A and B); "No care plan handy? Build
+    a schedule by hand".
+  - A PDF chosen after an incomplete one is added to it (IMP-12). After "New care plan", focus
+    goes to the PDF chooser.
   - Below both: the import issues (IMPORT-SPEC 3.1), `aria-live="polite"`.
 - **Read summary** (after a plan is built from Fusion): participant name as `h2` (focused
   after import), "Read from Fusion · DCN <dcn>"; facts: Service, Plan, Fusion units, Tasks,
@@ -272,9 +273,9 @@ Two ways in, one schedule:
   schedule against."; then warnings (unread rows, unknown tasks, odd minutes, "Built from 10
   of the plan's 14 rows"); buttons "Review what we read" (a table: task, minutes a day, days
   a week, units in the viewed month, plus transportation) and "New care plan". For the
-  example the title is "Example care plan" with "This is what a pasted Fusion plan looks
-  like. Paste one above to make your own."
-- Notice (info style): "Nothing you paste or open is uploaded or saved to our servers. It
+  example the title is "Example care plan" with "This is what a Fusion plan looks like. Open
+  a PDF above to make your own."
+- Notice (info style): "Nothing you open is uploaded or saved to our servers. It
   stays in this browser tab, and the participant's name and DCN are gone when you close it."
 - Two panes at ≥ 1060px: Care plan (360–400px) left, Schedule right; one column below. In one
   column a link "Skip to the schedule" sits above the Care plan pane and goes to the Schedule
@@ -314,7 +315,7 @@ Both modes:
 | QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. Unselecting a task's last day leaves it pinned with no days (off the week, SCH-02 "fewer days"), so the next day selected is where it goes; this is how a 1-day task moves. A care day turned off that empties a pinned set returns the task to our days. A refused change (5.7) shows its sentence in the same place. |
 | QS-08 | Care days | DayToggle, default from the import (IMPORT-SPEC 4) or all seven by hand. Turning a day off removes it from every pinned set and clears minute changes. None selected: "Choose at least one care day." |
 | QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes, and a change whose task moves off that day (another task's pins, transportation day, adding or removing a task) is dropped, so it can't come back later. |
-| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples), moved to start this month with their length kept: the fixtures are real plans from 2025, and a schedule covers only months still to come. "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
+| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if opened from a PDF (marked as examples), moved to start this month with their length kept: the fixtures are real plans from 2025, and a schedule covers only months still to come. "New care plan" reopens the import panel, with focus on the PDF chooser, and keeps the current schedule underneath until the next plan is built. |
 
 ### 5.3 Model (`features/quick-schedule/model.ts`, pure; reference `quick-model.js`)
 `buildQuickModel(state, pack): QuickModel`:
@@ -340,8 +341,11 @@ Both modes:
    person's changes are never silently cut.
 9. `results = validatePlan({ pack, authorizations: [auth], monthlyAuthorizations,
    template (with entries), exceptions: trims, months })`, or `[]` with no valid tasks.
-   Quick Schedule doesn't schedule visits, so it runs the plan rules (ENGINE-SPEC Amendment B)
-   and CON-09 on the expanded template, never the visit rules (SCH-14, the other CON rules).
+   The plan rules and CON-09 on the expanded template run here (ENGINE-SPEC Amendment B). The
+   visit rules (CON-01 to CON-04, CON-06, CON-07, CON-16 and CON-17) run at the plan level on the
+   visits the start times give and the caregivers, under Visit checks (5.8), not per service.
+   CON-05 (a caregiver over 40 hours in a workweek) needs the agency's workweek start and arrives
+   with agency mode (CP4-9).
 10. `checksum` (from Fusion): IMP-15, over the full months of Fusion's plan (computed before
    step 7, which uses it).
 11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
@@ -442,9 +446,11 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   mo-2026-07". A card about a task has "Show in week" (scroll to and highlight the row 2 s).
 - SCH-08 results with `refs.taskId` use the copy key `SCH-08/task`.
 - No "No problems found" while any Needs review group exists.
-- Quick Schedule runs the plan rules and CON-09 on its weekly pattern (5.3 step 9). The SCH-14
-  and other CON rows below are for schedules with visits (Phase 3), so "Referral date is
-  missing" (CON-13) never shows here.
+- Quick Schedule runs the plan rules and CON-09 on its weekly pattern (5.3 step 9). Once a
+  service has a visit start time (5.8 Visit checks), the visit rules CON-01 to CON-04, CON-06,
+  CON-07, CON-16 and CON-17 run on the built visits and caregivers (CON-05, over 40 hours, needs
+  the agency's workweek start and arrives with CP4-9). CON-13 (a referral date) still never shows,
+  since Quick Schedule has no referral date.
 
 Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity in
 `RULE_CATALOG` has an entry (AUTH-13, SCH-15 and SCH-17 emit nothing and are exempt).
@@ -580,6 +586,204 @@ service on its own, but the participant lives one week. So:
   service or several, names the nurse visits by month and each kept authorization (IMP-19).
 - **Storage**: the whole plan under `cps.quick.v3` without any `identity` (5.6); a single
   service saved under `cps.quick.v2` by the version before still opens.
+- **Nurse visits on dates** (Coverage Phase 3, Nov 13, 2026; `NurseVisits.tsx`, `planEvents.ts`).
+  The Nurse visits panel reads "By date, in the month authorized". Each visit Fusion authorized
+  is listed in its month with "No date yet" and a native date input "Pick a date", limited to
+  that authorization's month. Picking a date places one nurse visit event (`CarePlan.events`,
+  optional in storage, no name or DCN); the row then shows "Visit date", the date ("May 12,
+  2026") and "Remove date". The app never creates a visit Fusion did not authorize and never
+  places one by itself. Every placement goes through the engine's `placeEvent` (5.7): a date
+  outside the month, a visit past the month's count, a second nurse visit that day, or a 27th
+  in six months is refused beside the visit (`role="alert"`) and nothing changes: "Not placed.
+  Jun 2, 2026 is outside May 2026, the month this is authorized for. Pick a date in that month."
+  A general health evaluation placed on the date of another authorized nurse visit is one visit
+  that day ("Done at the nurse visit that day: one visit.") and counts once against the
+  one-a-day limit. A placed evaluation gets a reminder on the 15th of the next month,
+  "Reminder, not a visit · Jun 15, 2026 · Upload the evaluation (HCBS 08-26-01)": not billable,
+  never counted as a visit, and removed with its visit. A month that has passed with no date
+  shows "No date was placed for this month's visit. Pick a date above if one was arranged."
+  (rule NUR-02, WARN); it says nothing about whether the visit happened. No visit month is ever
+  derived: a plan shows only the months Fusion authorized (RN-01).
+- **Services arranged by date** (Coverage Phase 3; `OtherPlacing.tsx`, `eventText.ts`). In Other
+  authorizations, a kept authorization whose Appendix 1 class is APPOINTMENT gets a group "Place
+  on the calendar" (`role="group"`, named "Place <label> on the calendar"). It stays in
+  `others`; its events point at it by its id. One line says what it holds, then the fields and
+  one button:
+  - Adult day care (`S5100HC`, `S5100HB`): "Attendance, in 15-minute steps. It is never
+    caregiver time."; Date, "Minutes attended", "Transportation minutes" (its own entry, counted
+    toward its own 120 minutes a day); button "Add day care day".
+  - Home delivered meals (`S5170`): "Counted as meals, never as time. No more than 2 a day.";
+    Date, "Meals"; button "Add delivery".
+  - Structured family caregiver (`S5126HB`): "A covered day is one day, never 15-minute
+    units."; Date; button "Mark covered day".
+  - An RCF/ALF nurse visit (`T1001U3`): "One visit a day, in a month the care plan
+    authorizes."; Date; button "Add visit".
+  A missing value is said before anything is sent: "Pick a date first.", "Enter the minutes as a
+  whole number.", "Enter the number of meals.", "Enter the transportation minutes as a whole
+  number." Every placement goes through `placeEvent` (5.7); the caps are the engine's own rules
+  (adult day care 600 minutes a day in 15-minute steps, 5 days a week, 120 transportation
+  minutes a day; 2 meals a day; one covered day a day; the month's authorized quantity) and a
+  refusal is shown in the group (`role="alert"`): "Not placed. Home delivered meals are limited
+  to 2 a day. Enter 2 or fewer for Nov 3, 2026." Placed dates are listed, each with "Remove"
+  ("Nov 3, 2026 · 2 meals", "Nov 2, 2026 · 8 h · 60 min transportation"), and each month with
+  something placed shows its balance in the service's own unit: "62 meals in November 2026, 10
+  placed, 52 left", "100 h in November 2026, 8 h placed, 92 h left", "2 covered days of 30
+  authorized in November 2026". The reason line keeps "Arranged by date" and adds the count:
+  "Arranged by date · 5 dates placed". Nothing placed here enters the week, a caregiver's time
+  or any 15-minute unit total.
+- **Reminders on context authorizations** (Coverage Phase 3). A kept authorization of class
+  CONTEXT never has caregiver time. ILW case management (`T2024U6`) and ILW equipment, supplies
+  and environmental adaptations (`T2029U6`, `T2028U6`, `S5165U6`) may hold a dated reminder,
+  only if the person adds one: "A reminder is a note on a date. It is never a visit and is never
+  billed."; Date, "Note (optional)" (200 characters at most); button "Add reminder". It is
+  listed as "Nov 10, 2026 · Reminder, not a visit · <note>". A reminder is not billable, has no
+  quantity, is never a caregiver shift, is in no unit total and no balance, and does not change
+  the reason line ("No caregiver time"). ILW financial management (`T2040U6`) is authorization
+  context only: it shows its authorization and "Nothing to place: this is authorization context
+  only." Any other event on a context authorization is refused by the engine (EVT-03): "Not
+  placed. This authorization has no caregiver time, so only a reminder can go on it." The
+  scheduler holds no costs; these authorizations have no cost field.
+- **Care plan changes** (Coverage Phase 3, Manual 4.20; `AmendmentsPanel.tsx`,
+  `amendments.ts`). With a service open in detail (not the example), a panel "Care plan
+  changes" (meta "None recorded" or "N recorded") says: "If the care plan changes partway
+  through, record the change here. The schedule follows it from the date it takes effect;
+  nothing before that date moves, and Fusion's figures are kept as read." The form "Record a
+  care plan change" (`role="group"`) has: "Kind of change" (Increase / Decrease / Reduction
+  asked for by the participant); "Effective date" (a date in the schedule's dates); "New units
+  a month (optional)"; a table of every task with "Minutes a day" and "Days a week", prefilled
+  ("Enter 0 minutes to take a task out of the week from the change on."); a checkbox "The care
+  plan shows this date"; button "Record change". For a decrease it says: "A decrease starts on
+  the first of a month. One dated later in a month starts the first of the next month."
+  - The engine sets where the change takes effect (`amendmentEffectiveDate`): an increase and a
+    participant-requested reduction on their date, a decrease on the first of a month. The app
+    never picks a date for the person, and a change is "Needs review: check the date this change
+    takes effect against the care plan (Manual 4.20)." (AMEND-01) until the box is ticked ("You
+    said the care plan shows this date.").
+  - A change is stored on its service as a version (`QuickState.amendments`, optional in
+    storage). It never edits the imported tasks, units or monthly figures. Occurrences are
+    recalculated from the effective date forward only (`serviceChain`, `expandChainMonth`).
+  - Recording goes through the guard (5.7) and is refused beside the form (`role="alert"`),
+    with the plan unchanged: "Not recorded. Change a task's minutes or days, or enter the new
+    units a month."; "Not recorded. A change takes effect after Dec 1, 2025 and no later than
+    Oct 31, 2026; this one would take effect on <date>." (also for a change that would take
+    effect before one already recorded: history is not rewritten); or the sentence of the
+    Must-fix rule the changed plan would break. Changes are kept in the order recorded.
+  - Recorded changes are listed: "Increase · Takes effect Jan 15, 2026", then each task's
+    "Bathing: 45 min a day, 7 days a week → 60 min a day, 7 days a week" and "480 units a month
+    from the change on", with "Remove change". A decrease that was moved reads "Decrease ·
+    Takes effect Feb 1, 2026 (entered Jan 15, 2026; a decrease starts on the first of a month)".
+  - The weekly grid, month view and one-service printout show the plan before any change. The
+    participant calendar (below) shows the version in effect on each date.
+- **The participant calendar** (Coverage Phase 3; `ParticipantCalendar.tsx`,
+  `normalizeEvents.ts`, `calendarView.ts`, `balances.ts`, `DayChangeForm.tsx`, `dayChanges.ts`).
+  - **One list.** `normalizeEvents(plan, models, pack, onlyMonths?)` is one list of every
+    occurrence in the plan, each with its date, service, authorization, kind, minutes or
+    quantity and unit: each service's weekly pattern expanded to real dates by the engine (trims,
+    one-day changes and recorded care plan changes applied, each occurrence on the version in
+    effect that day), transportation on its day, and every dated event. Two authorizations are
+    never merged. **It is the only source the calendar, the list view and the whole-plan PDF read
+    from.** The screen asks for the month on view; the PDF for all of them.
+  - **The Month tab.** For a plan the person opened or built (not the example), once it has a
+    schedule. On the whole care plan: a nav "Week or month" with toggle buttons "Week" (the
+    default, the participant's week) and "Month" (the calendar in its place). On a plan of one
+    service: a button "Show the month calendar" / "Hide the month calendar" (`aria-expanded`).
+    The calendar and its code are in the dated-side chunk and load when it is first opened.
+  - **The panel** "The participant's month": previous and next ("Previous month on the
+    calendar", "Next month on the calendar") over every scheduled month and any month with an
+    event, opening on this month; toggle buttons "Calendar" and "Month as a list".
+  - **Calendar**: `role="grid"` named "<Month Year>, by date", Sunday to Saturday, one
+    `gridcell` per date. Each cell shows a band for each service with its minutes that day,
+    labeled by name and not only by color ("PC - Agency 150"), and a mark for each event:
+    "Visit", "Day care", "Meals", "Day" (a covered day), "Reminder", and "Change" where a care
+    plan change takes effect. Dates outside the plan and days without care are dashed. Each
+    cell's accessible name reads its date and contents ("Tuesday, May 12, 2026: PC - Agency 150
+    minutes; GHE, Nurse visit, 1 visit"; "Sunday, May 3, 2026: no care"; "... outside the
+    plan"). One cell is in the tab order; arrow keys move a day or a week, Home and End go to
+    the week's ends, the focus is visible, and Enter or Space chooses the date.
+  - **Month as a list**: the accessible alternative and the default below 860 px. A table
+    "<Month Year> as a list" with Date, Service, What, How much. A service's tasks on a date are
+    one row (their names, their minutes added up); transportation and each event have their
+    own. The grid's cells and the list's rows are the same items (a test compares them).
+  - **Authorization balances** beside it: each authorization with a figure for the month, in
+    its own unit: "226 units in May 2026 · 224 units scheduled · 2 units left", "62 meals in
+    November 2026 · 2 meals placed · 60 meals left". Then "Next nurse visit to place: General
+    Health Evaluation, May 2026" while one is waiting, and the shared respite figure when the
+    plan holds both respite lines (AUTH-09's own combined figure).
+  - **Change this day**: choosing a date shows a group "Change this day: <weekday>, <date>"
+    with each task scheduled that day and its minutes, and "Save this day". "This changes only
+    <date>. The weekly pattern and the authorization stay as they are. Enter 0 to take a task
+    off this day." It records a one-day change (`QuickState.dayChanges`, optional in storage),
+    which the engine reads as a calendar exception (SCH-11). It goes through the guard (5.7): a
+    change that would put the month over its units is refused there, "Not changed. That would
+    put <task> over its N units in <Month>." Setting the pattern's own minutes back removes the
+    change.
+- **Checks added in Coverage Phase 3** (copy in `ruleCopy.ts`, shown as in 5.5; the refusal
+  sentences above are what a person sees when a placement is refused):
+
+  | Rule | Severity | Title | What to do |
+  |---|---|---|---|
+  | AMEND-01 | REVIEW | A care plan change needs its start date checked | The schedule crosses a care plan change. Check the date the change takes effect against the care plan in Fusion. |
+  | EVT-01 | BLOCK | That date is outside the authorization | Pick a date inside the dates and months the care plan authorizes for this service. |
+  | EVT-02 | BLOCK | That is more than the care plan authorizes this month | The care plan's count for the month is the limit. Remove a date first, or choose another month. |
+  | EVT-03 | BLOCK | This authorization has no caregiver time | Only a reminder can go on this authorization. It is never a visit and is never billed. |
+  | NUR-01 | REVIEW | Advanced Personal Care: check the first month's nurse visits | A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan. DHSS hasn't confirmed the first-month visit count, so this stays under review. |
+  | NUR-02 | WARN | No date was placed for this month's visit | Pick a date for the visit in the month it was authorized. This doesn't say whether the visit happened. |
+- **Visit start times and visit checks** (Coverage Phase 4, CP4-1; `VisitTimes.tsx`,
+  `visits.ts`, `PlanChecks.tsx`, `extrasSlots.tsx`). For a plan the person opened or built.
+  - **Start times.** With a service open in detail, a panel "Visit start times" (meta "None
+    set" or "N of M set"): "Optional. Add a start time to check overlaps with other services."
+    One native time input for each care day, "<Weekday> start time", stored with the service
+    (`QuickState.startTimes`, optional in storage, "HH:mm" in America/Chicago). Under each: "Visit
+    length 2 h", and with a time set "Visit length 2 h, ends 11:00 AM" or "... ends 1:00 AM the
+    next day". The visit's length is the day's total already shown as its visit length; the end
+    is the engine's `addMinutesLocal`, so a visit past midnight and a clock-change day are right.
+    The daily task list shows "Starts 9:00 AM" on that day, and the one-service printout's visit
+    row reads "9:00 AM, 2 h".
+  - **Visits.** `buildVisits(plan, models, pack)` turns services with start times into engine
+    `Visit` objects for the dates of the plan, from the one occurrence list. A service or a day
+    with no start time produces none.
+  - **Visit checks.** A panel "Visit checks" on the whole care plan (and under a one-service
+    plan) lists the rules that read visits, grouped as in 5.5. Where start times are missing the
+    overlap rules don't pass: each is "Needs review" with the engine's sentence, said once with
+    the services and rules it covers: "No clock times yet, so overlaps can't be checked" · "PC -
+    Agency, PC - CDS, HC · CON-01, CON-02". With nothing to raise it reads "Every visit rule we
+    can check from this schedule's times is met."
+  - **Guard.** Setting a time goes through the guard (5.7): a time that would break an overlap
+    rule is refused in the panel (`role="alert"`) with the rule's copy, "Not changed. Two visits
+    for the same service overlap. A participant can't get the same CDS or ILW service twice at
+    once. Change one visit's time."; a value that isn't a time: "Not changed. Enter the time as
+    hours and minutes, like 9:00 AM."
+- **Caregivers** (Coverage Phase 4, CP4-2; `CaregiversPanel.tsx`, `caregivers.ts`). A panel
+  "Caregivers" (meta "None added" or "N added"), for a plan the person opened or built:
+  "Optional. Add the people who give the care to check who can serve this participant and
+  whether anyone is booked twice. Enter what you know about each; nothing is guessed. Names stay
+  in this tab and are never saved." Button "Add a caregiver".
+  - **What is entered.** For each caregiver: "Name of Caregiver 1 (kept in this tab only, never
+    saved)"; "Relationship of Caregiver 1 to the participant" (Not entered / Not related /
+    Spouse / Legal guardian / Parent / Sibling / Child / Stepchild / Grandparent / Grandchild /
+    Other family); and three questions, each Not entered / Yes / No: "Agency employee", "Nurse
+    license", "On the Family Care Safety Registry". Every answer starts at "Not entered".
+    Qualifications are entered, never guessed from a name or a role word (CON-17).
+  - **Names are memory-only**, exactly like the participant's: kept in React state, never
+    written to `sessionStorage`, Firestore, the URL or logs. `savePlan` drops them, and a stored
+    caregiver that carries a name is refused on load. After a reload a caregiver is "Caregiver
+    1", by their place in the plan; the printout always uses that label.
+  - **Assignment.** "Services Caregiver 1 is assigned to": a checkbox for each service. A
+    service can have several caregivers; each visit takes the first. For a structured family
+    caregiver authorization: "<label> covered days: Caregiver 1 is" Not the caregiver / The
+    primary caregiver / The backup caregiver (one person can't be both). Stored as optional
+    `CarePlan.caregivers`, `QuickState.caregiverIds` and `PlanOther.sfcCaregivers`.
+  - **Checks.** An assigned caregiver is checked by the engine's own rules, called as they are:
+    CON-06 (a spouse or legal guardian as the paid CDS attendant), CON-07 (a close family member
+    or a non-employee as an agency aide) and CON-17. Missing data is never a pass and never a
+    block: Visit checks shows "Caregiver details are missing" under "Needs review" until the
+    relationship and, for an agency service, the employment are entered. (An unanswered
+    employment question used to read as "not an employee" in the engine; it is now CON-17's
+    REVIEW, and only a stated No is CON-07's BLOCK.)
+  - **Guard.** What is entered and who is assigned go through the guard (5.7). A change that
+    would add a Must-fix result is refused in the panel (`role="alert"`) and nothing changes:
+    "Not changed. This attendant can't be paid for this participant. A spouse or legal guardian
+    can't be the CDS attendant."
 
 ## 6. Accounts
 
@@ -943,8 +1147,8 @@ percentages, meter widths). No inline scripts are allowed.
   files of about 18 KB each, all same-origin and cached for a year. It is never in a page's
   static imports, so it counts toward no page budget.
 - Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
-  times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
-  pasted plan takes under 20 ms.
+  times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading the
+  text of a plan's PDF takes under 20 ms.
 - Fonts: one variable font file (latin subset) preloaded (`vite.config.ts` adds the
   `<link rel="preload">` for the hashed file at build time and fails the build if it's missing).
 
@@ -958,14 +1162,14 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | ID | Check | How |
 |---|---|---|
 | AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon..Fri `290, 285, 275, 270, 195`, "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
-| AC-02 | On Nov 20, 2025 (before B's plan starts), pasting fixture B into the box builds the schedule with no button press: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
+| AC-02 | On Nov 20, 2025 (before B's plan starts), opening fixture B's PDF (`fusion-table-with-banner.pdf`) builds the schedule: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
 | AC-03 | B with Fusion's figure at 440, in December 2025: "the schedule stops 320 minutes early, starting Dec 30, 2025", the line "Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min", and the Dec 31 cell shows "−195 min". | Playwright |
 | AC-04 | With B: changing Monday's Bathing to 60 is refused: "Not changed. That would put Bathing over its 93 units in October 2026." and "Bathing can't have more than 45 minutes on Monday."; the week is unchanged. | Playwright |
 | AC-05 | With B: Monday's Bathing 45 → 30 is accepted (SCH-03 not involved); Tuesday's 45 → 60 is refused with "The most Bathing can have on Tuesday is 55 minutes."; "Use 55 minutes" applies 55 and the status stays "Ready to use". | Playwright |
-| AC-06 | Fixture D shows "This copy has 10 of the plan's 14 rows"; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
-| AC-07 | Pasting B-page1 then B-page2 builds one plan with 15 tasks and the 455 match line. | Playwright |
+| AC-06 | Fixture D, opened as a PDF, shows "This PDF has 10 of the plan's 14 rows" and "Open the PDF that has every page of the care plan, or build with the 10 rows we have."; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
+| AC-07 | Opening a PDF of B-page1 ("This PDF has 10 of the plan's 16 rows"), then a second PDF of B-page2, builds one plan with 15 tasks and the 455 match line. | Playwright |
 | AC-08 | Opening `fusion-table-with-banner.pdf` with the file input gives the same result as AC-02. Opening `fusion-table-only.pdf` asks for the plan dates; entering 2026-01-01 and 2026-12-31 builds it. | Playwright |
-| AC-09 | Pasting text with no care plan shows "We couldn't find care plan tasks in that text". | Playwright |
+| AC-09 | A PDF with no care plan in it shows "We couldn't find care plan tasks in that PDF" and "Open the participant's care plan PDF from Fusion." The chooser's file input accepts only `application/pdf,.pdf`; a text file that reaches it anyway shows "That isn't a PDF" and builds nothing. The import panel has no text box. | Playwright |
 | AC-10 | Selecting a second day for Clean Bath (1 day a week) shows "Clean Bath is authorized for 1 day a week. Unselect a day first." and changes nothing. | component test |
 | AC-11 | Reloading keeps the plan, but the summary title becomes "Care plan from Fusion" and the DCN is gone. A new tab starts with the example. | Playwright |
 | AC-12 | By hand: "Build a schedule by hand" opens the inputs; keyboard-only "dress" + Enter adds Dressing/Grooming and focuses its minutes; 60-minute transportation once a week shows "300 minutes a month = 20 units"; switching to Homemaker (ADW) removes tasks with the toast. | Playwright |
@@ -993,12 +1197,12 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 ## 12. Landing, Rules and Privacy pages
 
 **Landing (`/`)** for agency owners and state reviewers. Left-aligned, no stock photos.
-- Headline (40px, 700): "Paste a Fusion care plan. Get a schedule that follows Missouri's rules."
-- Lead (17px, ink-2, ≤ 60ch): "Copy the care plan from Fusion or open its PDF. CarePlan
+- Headline (40px, 700): "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules."
+- Lead (17px, ink-2, ≤ 60ch): "Open the care plan PDF from Fusion. CarePlan
   Scheduler reads every task, checks its total against Fusion's, builds the week, and won't let
   anyone change it in a way that breaks a rule. Every check names the policy it comes from."
 - Actions: primary "Try Quick Schedule" (`/quick`), secondary "Create agency account".
-  Small line: "Quick Schedule needs no account. Nothing you paste is uploaded."
+  Small line: "Quick Schedule needs no account. Nothing you open is uploaded."
 - Live figure beside the headline (stacks below on phones): the example plan's Day total row
   with unit tiles and "Ready to use", computed by the engine on the page (no screenshot).
   This is the page's one memorable element. The example plan is fixture A built by the Quick
@@ -1009,7 +1213,9 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   and 4 are computed on the page by the engine and the import package (fixture A, TC-01,
   RULE_CATALOG); figure 3 is a static example of the refusal box, styled exactly like the
   real one:
-  1. "Reads Fusion the way you copy it" — paste or PDF, one page or two; figure: the match
+  1. "Reads the care plan PDF from Fusion" — lead "Open the care plan PDF." and detail
+     "Fusion's care plan PDFs are read in your browser, every page, and the plan stays on your
+     computer."; figure: the match
      line "Every task read. Our total from these tasks matches Fusion's 466 units a month."
   2. "Built from tasks, not averages" — monthly units are never spread evenly across days;
      figure: the TC-01 week `70, 90, 90, 90, 90, 90, 70`.
@@ -1037,8 +1243,8 @@ Then "Services and monthly limits" from `MO_2026_07.services` (code, name, unit,
 ceiling or "—", weekly hour limit, source) and "Days-per-month factors" from
 `daysPerMonthFactor` (1 → 5 … 7 → 31).
 
-**Privacy (`/privacy`)**: plain-language page: Quick Schedule reads pasted text and PDFs in
-the browser and keeps everything in that tab (the participant's name and DCN only until the
+**Privacy (`/privacy`)**: plain-language page: Quick Schedule "reads the care plan PDF you
+open, on your computer. Nothing you open is uploaded." and keeps everything in that tab (the participant's name and DCN only until the
 page is reloaded or closed); accounts store name, email and agency details in Google Firebase (United States); no
 advertising or analytics trackers; participant data arrives in a later release and will be
 covered by a business associate agreement before any agency enters it; contact email.

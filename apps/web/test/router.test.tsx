@@ -60,7 +60,7 @@ describe("public routing", () => {
     await expectPage("Rules and sources | CarePlan Scheduler", "Rules and sources");
 
     await user.click(screen.getByRole("link", { name: "CarePlan Scheduler home" }));
-    await expectPage("CarePlan Scheduler", "Paste a Fusion care plan. Get a schedule that follows Missouri's rules.");
+    await expectPage("CarePlan Scheduler", "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules.");
   });
 
   it("an unknown path renders Not found right away (it isn't a lazy page)", async () => {

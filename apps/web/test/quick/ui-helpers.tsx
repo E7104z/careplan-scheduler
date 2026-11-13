@@ -2,7 +2,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, vi } from "vitest";
+import { readPdf } from "../../src/features/import/readPdf";
 import { QuickSchedule } from "../../src/features/quick-schedule/QuickSchedule";
+
+// readPdf loads pdf.js; the screens only need what it returns (the e2e suite opens real PDFs).
+vi.mock("../../src/features/import/readPdf", () => ({ readPdf: vi.fn() }));
 
 export const TODAY = new Date("2026-10-21T12:00:00-05:00");
 
@@ -36,14 +40,21 @@ export function renderQuick(): { user: UserEvent; unmount: () => void } {
   return { user, unmount: view.unmount };
 }
 
-export function pasteBox(): HTMLElement {
-  return screen.getByRole("textbox", { name: /^Care plan text/ });
+/** The stand-in for the PDF reader, for tests that say what a PDF reads as. */
+export const readPdfMock = vi.mocked(readPdf);
+
+/** The PDF chooser's file input: the one way a care plan comes in. */
+export function pdfChooser(): HTMLInputElement {
+  return screen.getByLabelText<HTMLInputElement>(/^Choose the PDF/);
 }
 
-/** Paste into the import box the way a person does: click, then paste (no button press). */
-export async function pasteText(user: UserEvent, text: string): Promise<void> {
-  await user.click(pasteBox());
-  await user.paste(text);
+/**
+ * Open a care plan the way a person does: choose its PDF. The reader is stood in for, so `text`
+ * is what the PDF's pages read as; the text fixtures reach the screen through the PDF's door.
+ */
+export async function openCarePlanText(user: UserEvent, text: string): Promise<void> {
+  readPdfMock.mockResolvedValueOnce({ kind: "text", text });
+  await user.upload(pdfChooser(), new File(["%PDF-1.7"], "care-plan.pdf", { type: "application/pdf" }));
 }
 
 export function statusPanel(): HTMLElement {

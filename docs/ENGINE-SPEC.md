@@ -15,6 +15,13 @@ figure on its derived units, as WARN (a plan built by hand had no ceiling check 
 `validatePlan` checks CON-09's Sunday–Saturday weeks on the expanded template (no visits needed).
 No formula or expected value changed.
 
+**Amendment D (Nov 13, 2026, Coverage Phase 2 prompt CP2-7):** the effective-dated
+authorization model: `AmendmentDirection`, `AuthorizationVersion`, `AuthorizationChain` and
+`VersionedOccurrence` (section 2), the functions `chainOf`, `addVersion`, `versionOn` and
+`expandChainMonth` (`src/amendments/versions.ts`), and rule AMEND-01. A plan with no amendment is a
+chain of one version and behaves exactly as before. The Manual 4.20 effective-date behaviors
+are not applied here; they are Coverage Phase 3 (CP3-6). No formula or expected value changed.
+
 ---
 
 ## 1. Principles (apply to every module)
@@ -114,6 +121,52 @@ export interface ValidationResult {
 }
 ```
 
+Amendment D adds the effective-dated model (AMEND-01):
+
+```ts
+/** How a care plan amendment changes the authorization (Manual 4.20). Stored, never inferred. */
+export type AmendmentDirection = "increase" | "decrease" | "reduction-immediate";
+/**
+ * One effective-dated version of an authorization and its weekly pattern (AMEND-01). The first
+ * version of a chain is the authorization as imported (`amendmentId` and `direction` null).
+ */
+export interface AuthorizationVersion {
+  amendmentId: string | null;
+  direction: AmendmentDirection | null;
+  effectiveFrom: string;          // YYYY-MM-DD, the first date this version is in effect
+  effectiveTo?: string;           // the last date; absent = until the next version or the authorization's end
+  recordedOn?: string;            // the date the amendment was made
+  requestedDate?: string;         // the date as entered, when the Manual 4.20 behavior moved it
+  dateConfirmed?: boolean;        // the effective date is on the care plan; absent = not confirmed
+  authorization: ServiceAuthorization;
+  template: ScheduleTemplate;
+}
+/** An authorization's versions, oldest first. A plan with no amendment has one. */
+export interface AuthorizationChain { serviceAuthId: string; versions: AuthorizationVersion[]; }
+/** A scheduled occurrence and the version in effect on its date (null = the original). */
+export interface VersionedOccurrence {
+  date: string; taskId: string; minutes: number;
+  amendmentId: string | null; serviceAuthId: string;
+}
+```
+
+`chainOf(authorization, template)` makes the one-version chain. `addVersion(chain, version)`
+returns a new chain and refuses a version that reuses an amendment id, takes effect on or before
+the version before it, or falls outside the authorization's dates. `versionOn(chain, date)` is
+the latest version that has taken effect (null outside the authorization, and null after a
+version's `effectiveTo` until the next one starts). `expandChainMonth(chain, exceptions, year,
+month)` expands each version over its own dates only and tags every occurrence with its
+`amendmentId`, so a later amendment never changes an occurrence before its effective date.
+
+Coverage Phase 3 (CP3-6, Nov 13, 2026) wires the Manual 4.20 behaviors onto the model
+(`src/amendments/apply.ts`). `amendmentEffectiveDate(direction, date)`: an increase and a
+participant-requested reduction take effect on their date; a decrease on the first day of a
+month, so one dated mid-month takes effect on the first of the next month and one dated the 1st
+takes effect that day. `applyAmendment(chain, request)` resolves the date, keeps the date as
+entered in `requestedDate` when it moved, and adds the version with `addVersion`. AMEND-01 stays
+REVIEW for an amendment until its effective date is confirmed from the care plan
+(`dateConfirmed`); the engine never picks or confirms a date for the person.
+
 ---
 
 ## 3. Rule pack `mo-2026-07` (`src/rulepacks/mo-2026-07.ts`)
@@ -189,7 +242,8 @@ Entry points (`src/validate.ts`): `validateSchedule(input)` runs every rule belo
 result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN, INFO.
 `validatePlan(input)` (Amendment B) takes the same input without `visits`, `caregivers`,
 `enrollments` and `tenantWorkweekStart`, and runs the rules that read the plan: AUTH-03 to
-AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, plus CON-09 on the expanded template: each
+AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, NUR-01 (with the optional
+`authorizedStarts`: each authorization's own first date, when the schedule starts later), plus CON-09 on the expanded template: each
 ILW or Respite authorization's task minutes on each date (template plus exceptions), checked as
 visits would be, keeping only the Sunday–Saturday week results (REVIEW; a repeating week makes
 every rolling 7-day window equal its week or less), with `refs.month` the week's first month.
@@ -225,15 +279,21 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-17 | Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: "fit"`, `reason: "Units for the month run out"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results. | — | APPROVED | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
+| AMEND-01 | A care plan amendment whose effective date is not confirmed from the care plan → REVIEW "amendment effective date needs confirmation, Manual 4.20", one for each such amendment, on its effective date. A decrease takes effect on the first day of a month (one dated mid-month, on the first of the next month); an increase on its date, which may be mid-month; a participant-requested reduction on its date. Occurrences are recalculated from the effective date forward only and keep the version in effect on their date, so history is never rewritten. | REVIEW | PARTIAL | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
+| EVT-01 | A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked. | BLOCK | APPROVED | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
+| EVT-02 | Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once. | BLOCK | APPROVED | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
+| EVT-03 | A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity. | BLOCK | APPROVED | 3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026) |
+| NUR-01 | An Advanced Personal Care authorization (T1019TF, identified by its code) whose first month is in the schedule → REVIEW "A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan." Never BLOCK or PASS, and nothing in later months. No visit is created or linked: the app offers a date only for a nurse visit Fusion authorized. | REVIEW | PARTIAL | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count |
+| NUR-02 | An authorized nurse visit month that has passed with no date placed → WARN "No date was placed for this month's visit." It says nothing about whether the visit happened: the app schedules, it does not record delivery. | WARN | APPROVED | Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026 |
 
 ### Conflicts and eligibility (`con.ts`)
 
 | ID | Rule | Severity | Status | Source |
 |---|---|---|---|---|
-| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. | BLOCK / WARN | PARTIAL | CDS policy clarification Q5 |
-| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
-| CON-03 | Respite overlapping any other service → BLOCK. | BLOCK | VERIFIED | Policy 3.50 (rev. Jul 2026) |
-| CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
+| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. A scheduled service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked"; it never passes on missing data. | BLOCK / WARN / REVIEW | PARTIAL | CDS policy clarification Q5 |
+| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. With two or more services, one with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
+| CON-03 | Respite overlapping any other service → BLOCK. With respite and another service in the plan, a service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | BLOCK / REVIEW | VERIFIED | Policy 3.50 (rev. Jul 2026) |
+| CON-04 | Same caregiver, overlapping visits → BLOCK (across participants, or two different services for one participant). | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
 | CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |
 | CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. RCF_PC, RCF_APC → REVIEW (Policy 3.20 doesn't restate 3.05's aide restrictions; DSDS question 14). | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
@@ -242,6 +302,8 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25) |
 | CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
+| SFC-01 | SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked. | BLOCK / REVIEW | VERIFIED | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
+| SFC-02 | More than one primary caregiver on an SFCW authorization → BLOCK. | BLOCK | VERIFIED | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
 
 ---
 
@@ -298,6 +360,7 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-31 | CDS "Bathing" and AGENCY_PC "Bathing"; override only the CDS task id | agency Bathing unchanged |
 | TC-32 | caregiver A: P-1 09:00–11:00, P-2 10:00–12:00 same date | BLOCK CON-04 |
 | TC-33 | caregiver 42 h in workweek | WARN CON-05 only |
+| TC-34 | caregiver A: two services for P-1, 09:00–11:00 and 10:00–12:00 same date | BLOCK CON-04 |
 | TC-35 | ILW attendant `fcsrRegistered` undefined | REVIEW CON-17 |
 | TC-37 | 7-day task, 61 weekly minutes (10×6 + 1) | F-2b 18; F-2a 19; REVIEW AUTH-03 |
 

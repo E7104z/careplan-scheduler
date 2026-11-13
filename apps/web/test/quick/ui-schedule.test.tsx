@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { BEFORE_B, pasteText, renderQuick, setUpQuickTests } from "./ui-helpers";
+import { BEFORE_B, openCarePlanText, renderQuick, setUpQuickTests } from "./ui-helpers";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 
 // Fixture B's whole plan (Dec 2025 to Oct 2026) is still to come, so every month is scheduled.
@@ -11,7 +11,7 @@ setUpQuickTests(BEFORE_B);
 const B_AT_440 = fixtureB.replaceAll("455 units", "440 units");
 
 async function buildB(user: UserEvent, text: string = fixtureB): Promise<void> {
-  await pasteText(user, text);
+  await openCarePlanText(user, text);
   await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT B" });
 }
 

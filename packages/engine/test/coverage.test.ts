@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   combinedRespiteUnits,
   coverageBlockUnits,
+  elapsedMinutes,
   ruleAUTH09Ceiling,
+  splitByDate,
   type CoverageBlock,
   type MonthlyAuthorization,
   type ServiceAuthorization,
@@ -70,6 +72,22 @@ describe("coverageBlockUnits (respite coverage blocks)", () => {
 
   it("floors to whole units, so a block under 15 minutes is 0 units", () => {
     expect(coverageBlockUnits(block("b3", "2026-11-05T08:00", "2026-11-05T08:10"))).toBe(0);
+  });
+
+  it("CP4-4: a six-hour shift is 24 units, and an eight-hour overnight shift is 32", () => {
+    expect(coverageBlockUnits(block("b4", "2026-11-05T10:00", "2026-11-05T16:00"))).toBe(24);
+    expect(coverageBlockUnits(block("b5", "2026-11-05T22:00", "2026-11-06T06:00"))).toBe(32);
+  });
+
+  it("CP4-4: partial minutes are kept rather than silently discarded", () => {
+    // 6 h 10 m = 370 minutes: 24 whole units, 10 minutes left over.
+    expect(elapsedMinutes("2026-11-05T10:00", "2026-11-05T16:10")).toBe(370);
+    expect(coverageBlockUnits(block("b6", "2026-11-05T10:00", "2026-11-05T16:10"))).toBe(24);
+  });
+
+  it("CP4-4: a block crossing two months allocates its minutes to the right dates", () => {
+    expect(elapsedMinutes("2026-07-31T22:00", "2026-08-01T06:00")).toBe(480);
+    expect(splitByDate("2026-07-31T22:00", "2026-08-01T06:00")).toEqual({ "2026-07-31": 120, "2026-08-01": 360 });
   });
 });
 

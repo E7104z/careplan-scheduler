@@ -111,26 +111,26 @@ APPOINTMENT = needs dates someone chooses; CONTEXT = an authorization with no ca
 | ID | Service | Code | Unit | Class | Before | Now |
 |---|---|---|---|---|---|---|
 | MO_PC_AGENCY | Basic Personal Care – Agency | T1019 | 15 min | AUTO | Supported (label `PC - Agency`) | Supported |
-| MO_APC_AGENCY | Advanced Personal Care | T1019TF | 15 min | AUTO | Partial: schedules; identified by code (label not yet seen); no link to its monthly RN evaluation | Partial (unchanged) |
-| MO_RN_AGENCY | Authorized Nurse Visits | T1001 | visit | APPOINTMENT | Partial: GHE and other visits listed by month; not placed on a date; 1/day and 26/6 months exist in the engine (CON-10) only | Partial (now also printed on one-service plans) |
-| MO_PC_RCF | Basic Personal Care – RCF/ALF | T1019U3 | 15 min | AUTO (facility) | **Missing**: import stopped | Recognized, kept |
-| MO_APC_RCF | Advanced Personal Care – RCF/ALF | T1019U3 TF | 15 min | AUTO (facility) | **Missing** | Recognized, kept |
-| MO_RN_RCF | Authorized Nurse Visits – RCF/ALF | T1001U3 | visit | APPOINTMENT | **Missing** | Recognized, kept |
+| MO_APC_AGENCY | Advanced Personal Care | T1019TF | 15 min | AUTO | Partial: schedules; identified by code (label not yet seen); no link to its monthly RN evaluation | Partial: scheduled; identified by code; its first-month nurse visits are under review (NUR-01) until DHSS confirms the count |
+| MO_RN_AGENCY | Authorized Nurse Visits | T1001 | visit | APPOINTMENT | Partial: GHE and other visits listed by month; not placed on a date; 1/day and 26/6 months exist in the engine (CON-10) only | Supported by date (Phase 3): each authorized visit is placed on a date in its month; 1 a day and 26 in six months enforced (CON-10); a GHE at a regular visit is one visit; missed-month follow-up and the upload reminder |
+| MO_PC_RCF | Basic Personal Care – RCF/ALF | T1019U3 | 15 min | AUTO (facility) | **Missing**: import stopped | Supported as a facility service (Phase 2, CP2-5): scheduled, kept separate from the home code |
+| MO_APC_RCF | Advanced Personal Care – RCF/ALF | T1019U3 TF | 15 min | AUTO (facility) | **Missing** | Supported as a facility service (Phase 2, CP2-5): scheduled, kept separate from the home code |
+| MO_RN_RCF | Authorized Nurse Visits – RCF/ALF | T1001U3 | visit | APPOINTMENT | **Missing** | Kept, and placed by date (Phase 3): a visit a day in an authorized month |
 | MO_CDS | Personal Care Assistance – CDS | T1019U2 | 15 min | AUTO | Supported (label `PC - CDS`, shown as T1019 by Fusion), transportation included | Supported |
-| MO_ADW_ADC | Adult Day Care (ADW) | S5100HC | 15 min | APPOINTMENT | **Missing** (worksheet math WS-R08 only) | Recognized, kept |
+| MO_ADW_ADC | Adult Day Care (ADW) | S5100HC | 15 min | APPOINTMENT | **Missing** (worksheet math WS-R08 only) | Supported by date (Phase 3): attendance in minutes with its transportation, caps enforced; never caregiver time |
 | MO_ADW_HC | Homemaker | S5130 | 15 min | AUTO | Supported (label `HC`) | Supported |
-| MO_ADW_CHORE | Chore | S5120 | 15 min | AUTO (one-time) | Partial: scheduled as a weekly pattern, not one-time work | Partial (unchanged) |
-| MO_ADW_HDM | Home Delivered Meals | S5170 | meal | APPOINTMENT | **Missing** (worksheet WS-R09 only) | Recognized, kept; never hours |
-| MO_ADW_RESP_BASIC | Respite – Basic | S5150 | 15 min | AUTO (coverage) | Partial: schedules as tasks; combined 868 BLOCK and overlap BLOCK in the engine | Partial (unchanged) |
-| MO_ADW_RESP_ADV | Respite – Advanced | S5150TF | 15 min | AUTO (coverage) | Partial, as Basic | Partial (unchanged) |
+| MO_ADW_CHORE | Chore | S5120 | 15 min | AUTO (one-time) | Partial: scheduled as a weekly pattern, not one-time work | Partial: the engine places one-time and intermittent occurrences (Phase 2, CP2-1); Quick Schedule still shows a weekly pattern |
+| MO_ADW_HDM | Home Delivered Meals | S5170 | meal | APPOINTMENT | **Missing** (worksheet WS-R09 only) | Supported by date (Phase 3): deliveries counted as meals, 2 a day; never hours |
+| MO_ADW_RESP_BASIC | Respite – Basic | S5150 | 15 min | AUTO (coverage) | Partial: schedules as tasks; combined 868 BLOCK and overlap BLOCK in the engine | Partial: scheduled as tasks; coverage blocks and the combined 868 figure are in the engine and shown on both lines (Phase 2, CP2-3); overlap on the schedule is Phase 4 |
+| MO_ADW_RESP_ADV | Respite – Advanced | S5150TF | 15 min | AUTO (coverage) | Partial, as Basic | Partial, as Basic |
 | MO_ILW_PCA | Personal Care Assistance – ILW | T1019U6 | 15 min | AUTO | Supported; 49-hour checks CON-09; pending-approval BLOCK | Supported |
-| MO_ILW_CM | Case Management – ILW | T2024U6 | month | CONTEXT | **Missing** (3c amount only) | Recognized, kept |
-| MO_ILW_FMS | Financial Management Service – ILW | T2040U6 | month | CONTEXT | **Missing** | Recognized, kept |
-| MO_ILW_SME | Specialized Medical Equipment – ILW | T2029U6 | actual cost | CONTEXT | **Missing** | Recognized, kept |
-| MO_ILW_SMS | Specialized Medical Supplies – ILW | T2028U6 | actual cost | CONTEXT | **Missing** | Recognized, kept |
-| MO_ILW_EAA | Env. Accessibility Adaptations – ILW | S5165U6 | actual cost | CONTEXT | **Missing** | Recognized, kept |
-| MO_ADCW_ADC | Adult Day Care (ADCW) | S5100HB | 15 min | APPOINTMENT | **Missing** (worksheet WS-R08 only) | Recognized, kept |
-| MO_SFC | Structured Family Caregiver | S5126HB | day | APPOINTMENT (covered days) | **Missing** | Recognized, kept; never 96 units |
+| MO_ILW_CM | Case Management – ILW | T2024U6 | month | CONTEXT | **Missing** (3c amount only) | Kept; an optional dated reminder, never a shift (Phase 3) |
+| MO_ILW_FMS | Financial Management Service – ILW | T2040U6 | month | CONTEXT | **Missing** | Kept; authorization context only, nothing to place (Phase 3) |
+| MO_ILW_SME | Specialized Medical Equipment – ILW | T2029U6 | actual cost | CONTEXT | **Missing** | Kept; an optional dated reminder, never a shift (Phase 3) |
+| MO_ILW_SMS | Specialized Medical Supplies – ILW | T2028U6 | actual cost | CONTEXT | **Missing** | Kept; an optional dated reminder, never a shift (Phase 3) |
+| MO_ILW_EAA | Env. Accessibility Adaptations – ILW | S5165U6 | actual cost | CONTEXT | **Missing** | Kept; an optional dated reminder, never a shift (Phase 3) |
+| MO_ADCW_ADC | Adult Day Care (ADCW) | S5100HB | 15 min | APPOINTMENT | **Missing** (worksheet WS-R08 only) | Supported by date (Phase 3), as the ADW service |
+| MO_SFC | Structured Family Caregiver | S5126HB | day | APPOINTMENT (covered days) | **Missing** | Covered days placed by date, a day a day, never 96 units (Phase 3); no concurrent HCBS is Phase 4 |
 
 Totals: **before** 4 supported, 5 partial, 12 missing; **now** 21 recognized, of which 4
 supported, 5 partial, 12 recognized and kept (none dropped, none mislabeled).
@@ -241,7 +241,11 @@ cover most of it today).
 - Source page and line for each field read; an expandable raw view in the read summary.
 - **Evidence:** 3a `N115` intent (E-18); the 3c ILW case-management amount (section 4).
 
-### Phase 3: the participant calendar with dated events
+### Phase 3: the participant calendar with dated events (done Nov 13, 2026, branch `coverage-phase-3`)
+Built as prompts CP3-1 to CP3-8 of `docs/CLINE-PROMPTS-PDF-ONLY-AND-COVERAGE-3-5.md`. The matrix in
+section 8 names the test for each row it proves. Two items carry over: chore and respite still
+show as weekly patterns in Quick Schedule (their Phase 2 engine pieces are not wired into the
+app), and clock times arrive with Phase 4.
 - Place nurse visits (GHE, APC evaluation, training) on a date the person picks within the
   authorized month; enforce 1 a day and 26 in six months (CON-10) on the schedule; never
   create a visit Fusion didn't authorize; a GHE done at a regular visit is one visit.
@@ -308,21 +312,21 @@ Fusion material).
 | CALC-08 | Minutes and units shown separately | PASS | `scheduleSheet.test.ts` ("461 + 5 min" scheduled) |
 | JOIN-01 | Fixture F: 5 authorizations, one schedule | PASS | section 6 |
 | JOIN-02 | Providers and caregivers stay distinct | PARTIAL: providers per authorization; no caregivers yet | Phase 4 |
-| JOIN-03 | Same label in two authorizations, two IDs | PARTIAL: unique within an authorization | Phase 2 |
+| JOIN-03 | Same label in two authorizations, two IDs | PASS | `apps/web/test/quick/provenance.test.ts` ("JOIN-03: the same task label in two authorizations gets two distinct UUIDs"), `persistence.test.ts` |
 | JOIN-04 | Nurse/CDS overlap allowed; respite overlap BLOCK; unknown REVIEW | PASS in the engine; the schedule has no clock times yet | `rules-con.test.ts`; Phase 4 |
-| RN-01 | GHE months; none for RCF/CDS/ILW/ADW/ADCW/SFC only | PARTIAL: imported months shown; nothing derived | Phase 3 |
-| RN-02 | Visits counted by visit; 1 a day, 26 in six months | PASS in the engine (CON-10); not on the schedule | Phase 3 |
-| RN-03 | APC evaluation and training visits | PARTIAL: worksheet WS-R05 | Phase 3 |
-| RN-04 | Missed GHE follow-up | TO BUILD | Phase 3 |
+| RN-01 | GHE months; none for RCF/CDS/ILW/ADW/ADCW/SFC only | PASS: only the months Fusion authorized are shown; no visit month is derived and no visit is placed by the app | `apps/web/test/quick/planEvents.test.ts` ("RN-01: only the visits Fusion authorized, and nothing placed by the app") |
+| RN-02 | Visits counted by visit; 1 a day, 26 in six months | PASS on the schedule: dated in the authorized month, 1 a day and 26 in six months through CON-10; a GHE at a regular visit is one visit | `engine/test/events.test.ts`; `planEvents.test.ts` ("RN-02"); e2e `calendar.spec.ts` |
+| RN-03 | APC evaluation and training visits | PARTIAL by design: NUR-01 is REVIEW in the authorization's first month, never BLOCK or PASS; no visit is created. EVIDENCE: DHSS has not confirmed the first-month visit count | `engine/test/nur.test.ts`; `apps/web/test/quick/apcReview.test.ts` |
+| RN-04 | Missed GHE follow-up | PASS: a passed visit month with no date placed raises NUR-02 (WARN); it says nothing about delivery. The evaluation upload is a reminder on the 15th of the next month, never a visit | `engine/test/events.test.ts` ("NUR-02"); `planEvents.test.ts` ("RN-04"); `ui-visits.test.tsx` |
 | ADW-01 | Respite 500 + 500 > 868 → BLOCK | PASS | AUTH-09 tests |
 | ADW-02 | Respite overlap BLOCK; same day earlier is fine | PASS in the engine | CON-03 tests; Phase 4 |
-| ADW-03 | ADC 40 units/day, 5 days/week, transport ≤ 120 min | PARTIAL: worksheet WS-R08 | Phase 2 |
-| ADW-04 | HDM ≤ 2 a day; meals never minutes | PARTIAL: never minutes PASS (IMP-T30); 2 a day on the worksheet (WS-R09) | Phase 2 |
-| ADW-05 | Chore one-time, no weekly template | TO BUILD | Phase 2 |
-| SFC-01 | A day is a day, not 96 units; no concurrent HCBS | PARTIAL: never 15-minute units PASS (INV-01 test) | Phase 3, 4 |
+| ADW-03 | ADC 40 units/day, 5 days/week, transport ≤ 120 min | PASS on the calendar: minutes attended in 15-minute steps, 600 a day, 5 days a week, 120 transportation minutes a day, through WS-R08's limits | `engine/test/attendance.test.ts`, `events.test.ts`; `apps/web/test/quick/otherEvents.test.ts` ("ADW-03") |
+| ADW-04 | HDM ≤ 2 a day; meals never minutes | PASS on the calendar: 2 a day (a third is refused, at WS-R09's own REVIEW severity); meals are counted as meals, never minutes | `engine/test/meals.test.ts`, `events.test.ts`; `otherEvents.test.ts` ("ADW-04"); IMP-T30 |
+| ADW-05 | Chore one-time, no weekly template | PARTIAL: the engine places one-time and intermittent chore occurrences (PASS, CP2-1); Quick Schedule still shows chore as a weekly pattern | `engine/test/oneTime.test.ts` ("placeOneTimeOccurrences (ADW-05)"); the app wiring is still to build |
+| SFC-01 | A day is a day, not 96 units; no concurrent HCBS | PARTIAL: a covered day is one day, covered once, never units or minutes (PASS on the calendar); no concurrent HCBS is Phase 4 | `otherEvents.test.ts` ("SFC-01"); `engine/test/events.test.ts`; Phase 4 (CP4-4) |
 | ILW-01 | CDS and ILW separate, shared tasks, projected switch | PARTIAL: AUTH-11 | Phase 4 |
 | ILW-02 | 49 hours: REVIEW even when diagnostics pass | PARTIAL: CON-09 REVIEW only above 49 h | Phase 4; EVIDENCE E-02 |
-| DATES-01 | Mid-month, suspension, expiry, future, DST, overnight | PARTIAL: SCH-12, SCH-14, SCH-15 | Phase 3 |
+| DATES-01 | Mid-month, suspension, expiry, future, DST, overnight | PARTIAL, narrowed: mid-month start, expiry, future start and the DST weeks PASS on the calendar path; overnight and DST minutes PASS in the engine (SCH-15); a visit in a suspension is BLOCK in the engine (SCH-14). Not on the schedule yet: clock times (Phase 4). EVIDENCE E-17: how Fusion shows a suspension, which Quick Schedule has no way to read | `apps/web/test/quick/phase3-acceptance.test.ts` ("DATES-01 on the calendar path"); `engine/test/calendar.test.ts`, `rules-auth-sch.test.ts` |
 | STAFF-01 | Caregiver double-booked; over 40 h | PASS in the engine (CON-04, CON-05) | Phase 4 |
 | SEC-01 | No upload without action; no PHI in diagnostics; tenant isolation | PARTIAL: IMP-16 privacy test, Firestore rules tests; BAA open | section 7 |
 | EXPORT-01 | PDF, print, CSV, XLSX agree | PARTIAL: PDF and print share one sheet and name kept authorizations; CSV/XLSX to build | Phase 5 |

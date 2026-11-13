@@ -11,7 +11,7 @@ import type { ImportChoice, ImportOutcome } from "./importFlow";
 
 export type NeedsOutcome = Extract<ImportOutcome, { kind: "needs" }>;
 
-/** A message about the import that isn't one of the reader's issues: an empty box or a PDF. */
+/** A message about the import that isn't one of the reader's issues: a file that couldn't be read. */
 export interface ImportNotice {
   title: string;
   detail: string;
@@ -82,41 +82,19 @@ function ServiceChoice({ label, onChoose }: { label: string; onChoose: (choice: 
   );
 }
 
-/** Where the text being read came from: the paste box or a PDF. */
-export type ImportSource = "paste" | "pdf";
-
-function IssueView({
-  issue,
-  from,
-  onChoose,
-}: {
-  issue: ImportIssue;
-  from: ImportSource;
-  onChoose: (choice: ImportChoice) => void;
-}) {
+function IssueView({ issue, onChoose }: { issue: ImportIssue; onChoose: (choice: ImportChoice) => void }) {
   switch (issue.code) {
     case "no-rows":
-      return from === "pdf" ? (
+      return (
         <IssueBox level="error" title="We couldn't find care plan tasks in that PDF">
-          <Body>
-            Open the participant's care plan PDF from Fusion, or copy the care plan from Fusion's screen and paste it
-            above.
-          </Body>
-        </IssueBox>
-      ) : (
-        <IssueBox level="error" title="We couldn't find care plan tasks in that text">
-          <Body>
-            Copy from the participant's name in Fusion down to the last task, then paste again. Or open the care
-            plan PDF.
-          </Body>
+          <Body>Open the participant's care plan PDF from Fusion.</Body>
         </IssueBox>
       );
     case "incomplete":
       return (
-        <IssueBox level="error" title={`This copy has ${issue.have} of the plan's ${issue.total} rows`}>
+        <IssueBox level="error" title={`This PDF has ${issue.have} of the plan's ${issue.total} rows`}>
           <Body>
-            Fusion splits long plans over pages. In Fusion, go to the next page, copy it, and paste it in the box
-            above. We'll add it to what we've read.
+            Open the PDF that has every page of the care plan, or build with the {issue.have} rows we have.
           </Body>
           <div>
             <Button variant="secondary" size="sm" onClick={() => onChoose({ kind: "acceptPartial" })}>
@@ -127,8 +105,8 @@ function IssueView({
       );
     case "different-participant":
       return (
-        <IssueBox level="error" title="That page is for a different participant">
-          <Body>{issue.message} Paste the next page of the same care plan.</Body>
+        <IssueBox level="error" title="That PDF is for a different participant">
+          <Body>Open the PDF with the rest of the pages, or build with the rows we have.</Body>
         </IssueBox>
       );
     case "unknown-service":
@@ -166,7 +144,7 @@ function IssueView({
         <IssueBox level="error" title="This care plan has ended">
           <Body>
             {issue.message} A schedule covers care still to come. Open the participant's current care plan in Fusion
-            and paste it, or open its PDF.
+            and open its PDF.
           </Body>
         </IssueBox>
       );
@@ -186,12 +164,11 @@ export interface ImportIssuesProps {
   outcome: NeedsOutcome | null;
   notice: ImportNotice | null;
   reading: boolean;
-  from: ImportSource;
   onChoose: (choice: ImportChoice) => void;
 }
 
 /** IMPORT-SPEC 3.1: what still stops the plan from building, with the control that resolves it. */
-export function ImportIssues({ outcome, notice, reading, from, onChoose }: ImportIssuesProps) {
+export function ImportIssues({ outcome, notice, reading, onChoose }: ImportIssuesProps) {
   return (
     <div aria-live="polite" className="grid gap-2.5 px-5 pb-5 empty:p-0 max-sm:px-4 max-sm:pb-4">
       {reading ? (
@@ -206,7 +183,7 @@ export function ImportIssues({ outcome, notice, reading, from, onChoose }: Impor
         </IssueBox>
       ) : null}
       {outcome?.issues.map((issue, index) => (
-        <IssueView key={`${issue.code}-${index}`} issue={issue} from={from} onChoose={onChoose} />
+        <IssueView key={`${issue.code}-${index}`} issue={issue} onChoose={onChoose} />
       ))}
     </div>
   );

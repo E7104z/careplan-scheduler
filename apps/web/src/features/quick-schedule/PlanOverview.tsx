@@ -6,13 +6,13 @@ import { formatDuration, formatUnits, monthName, niceDate, weekdayName } from ".
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
 import { READ_SUMMARY_TITLE_ID } from "../import/ReadSummary";
-import { isUpcoming, planWeek, serviceDayWarning, serviceDays, serviceName, type PlanDay } from "./carePlan";
+import { planWeek, serviceDayWarning, serviceDays, serviceName, type PlanDay } from "./carePlan";
 import { checksumLines } from "./checksumText";
 import { monthBalance, monthFigures } from "./model";
-import { otherAmount, otherDetail, otherName, otherReason, otherService, planOthers } from "./others";
+import { otherAmount, otherDetail, otherName, otherReasonLine, otherService, planOthers } from "./others";
 import { figureMonth } from "./planSheet";
 import { scheduleStatus } from "./status";
-import type { CarePlan, PlanOther, PlanVisit, QuickModel } from "./types";
+import type { CarePlan, PlanOther, QuickModel } from "./types";
 
 interface PlanProps {
   plan: CarePlan;
@@ -336,49 +336,7 @@ export function PlanWeekPanel({ plan, models }: PlanProps) {
   );
 }
 
-/** "Past", "This month" or "Coming up", against today's month. */
-function visitWhen(visit: PlanVisit, today: Date): string {
-  if (!isUpcoming(visit, today)) return "Past";
-  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-  return visit.start.slice(0, 7) <= month ? "This month" : "Coming up";
-}
-
-/**
- * APP-SPEC 5.8 nurse visits (IMP-18): authorized by month, so they're listed with the schedule in
- * their month rather than placed in the week.
- */
-export function VisitsPanel({ visits, today }: { visits: PlanVisit[]; today: Date }) {
-  if (visits.length === 0) return null;
-  const upcoming = visits.filter((visit) => isUpcoming(visit, today)).length;
-  return (
-    <Panel title="Nurse visits" meta="By month, not in the week" className="min-w-0">
-      <p className="mb-3 text-sm text-ink-2">
-        {upcoming > 0
-          ? "Each is authorized for one month. Arrange it with the nurse in that month."
-          : "Each is authorized for one month, and those months have passed. None are left in this plan."}
-      </p>
-      <ul className="grid gap-2">
-        {visits.map((visit, index) => {
-          const when = visitWhen(visit, today);
-          return (
-            <li key={index} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-sm border border-line px-3 py-2 text-sm">
-              <span className="min-w-0">
-                <strong className="text-ink">{visit.name}</strong>
-                <span className="text-ink-2">{` · ${monthName(visit.start.slice(0, 7))}`}</span>
-                <span className="block text-[13px] text-ink-3">
-                  {[visit.label, visit.pa ? `PA ${visit.pa}` : null, visit.provider].filter(Boolean).join(" · ")}
-                </span>
-              </span>
-              <span className={cn("text-[13px] font-semibold", when === "Past" ? "text-ink-3" : "text-brand")}>{when}</span>
-            </li>
-          );
-        })}
-      </ul>
-    </Panel>
-  );
-}
-
-function OtherItem({ other }: { other: PlanOther }) {
+function OtherItem({ plan, other, placing }: { plan: CarePlan; other: PlanOther; placing?: (other: PlanOther) => ReactNode }) {
   const recognized = otherService(other) !== undefined || other.code === null;
   return (
     <li className={cn("grid gap-1 rounded-sm border border-l-4 border-line px-3 py-2 text-sm", recognized ? "border-l-info" : "border-l-review")}>
@@ -387,7 +345,7 @@ function OtherItem({ other }: { other: PlanOther }) {
           <strong className="text-ink">{otherName(other)}</strong>
           <span className="text-ink-2">{` · ${otherDetail(other)}`}</span>
         </span>
-        <span className={cn("text-[13px] font-semibold", recognized ? "text-ink-2" : "text-review")}>{otherReason(other)}</span>
+        <span className={cn("text-[13px] font-semibold", recognized ? "text-ink-2" : "text-review")}>{otherReasonLine(plan, other)}</span>
       </span>
       <span className="text-ink">{otherAmount(other)}</span>
       <span className="text-[13px] text-ink-3">
@@ -405,6 +363,7 @@ function OtherItem({ other }: { other: PlanOther }) {
           </ul>
         </details>
       ) : null}
+      {placing?.(other)}
     </li>
   );
 }
@@ -413,7 +372,7 @@ function OtherItem({ other }: { other: PlanOther }) {
  * IMP-19: authorizations in the care plan that aren't in the week, kept so nothing read is lost:
  * services arranged by date or with no caregiver time, and any service we don't recognize.
  */
-export function OthersPanel({ plan }: { plan: CarePlan }) {
+export function OthersPanel({ plan, placing }: { plan: CarePlan; placing?: (other: PlanOther) => ReactNode }) {
   const others = planOthers(plan);
   if (others.length === 0) return null;
   return (
@@ -424,7 +383,7 @@ export function OthersPanel({ plan }: { plan: CarePlan }) {
       </p>
       <ul className="grid gap-2">
         {others.map((other, index) => (
-          <OtherItem key={index} other={other} />
+          <OtherItem key={other.id ?? index} plan={plan} other={other} placing={placing} />
         ))}
       </ul>
     </Panel>

@@ -53,12 +53,12 @@ export function currentExample(state: QuickState, today: Date): QuickState {
   };
 }
 
-/** The de-identified fixture A, imported as if pasted (QS-12), starting this month. */
+/** The de-identified fixture A, imported as if opened from a PDF (QS-12), starting this month. */
 export function exampleStateA(today: Date): QuickState {
   return currentExample(fromFusion(parseFusionText(fixtureA, MO_2026_07), 0, today), today);
 }
 
-/** The de-identified fixture B, imported as if pasted (QS-12), starting this month. */
+/** The de-identified fixture B, imported as if opened from a PDF (QS-12), starting this month. */
 export function exampleStateB(today: Date): QuickState {
   return currentExample(fromFusion(parseFusionText(fixtureB, MO_2026_07), 0, today), today);
 }

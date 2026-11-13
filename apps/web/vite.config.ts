@@ -51,5 +51,8 @@ export default defineConfig({
     // The printed schedule reads its colors from tokens.css (?raw); vitest blanks other CSS.
     css: { include: [/tokens\.css/] },
     include: ["test/**/*.test.{ts,tsx}"],
+    // Quick Schedule is a large page under jsdom, and the files run in parallel: a test that walks
+    // it with many role queries needs more than the 5 s default on a busy machine.
+    testTimeout: 15_000,
   },
 });

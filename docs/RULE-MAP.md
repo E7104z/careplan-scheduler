@@ -37,6 +37,12 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | SCH-14 | `packages/engine/src/rules/sch.ts` | `ruleSCH14VisitDates` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-22, TC-24, FIX-6c | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | `packages/engine/src/calendar/time.ts` | `elapsedMinutes`, `splitByDate` | `packages/engine/test/calendar.test.ts` | TC-27, TC-28 | Product decision approved Oct 20, 2026 |
 | SCH-17 | `packages/engine/src/rules/fit.ts` | `fitToAuthorization` | `packages/engine/test/fit.test.ts` | TC-38, TC-39 | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
+| AMEND-01 | `packages/engine/src/rules/amend.ts`; model in `packages/engine/src/amendments/versions.ts` | `ruleAMEND01EffectiveDates`; `chainOf`, `addVersion`, `versionOn`, `expandChainMonth` | `packages/engine/test/amendments.test.ts` | AMEND-01 | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
+| EVT-01 | `packages/engine/src/rules/evt.ts` | `ruleEVT01EventDates`; `placeEvent` in `packages/engine/src/events/place.ts` | `packages/engine/test/events.test.ts` | EVT-01 | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
+| EVT-02 | `packages/engine/src/rules/evt.ts` | `ruleEVT02EventQuantity`, `placedInMonth`; `eventBalance` in `packages/engine/src/events/place.ts` | `packages/engine/test/events.test.ts` | EVT-02 | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
+| EVT-03 | `packages/engine/src/rules/evt.ts` | `ruleEVT03ContextEvents` | `packages/engine/test/events.test.ts` | EVT-03 | 3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026) |
+| NUR-01 | `packages/engine/src/rules/nur.ts` | `ruleNUR01ApcFirstMonth`; run by `validatePlan` with `authorizedStarts` | `packages/engine/test/nur.test.ts` | RN-03 | HCBS Manual 4.00 Appendix 3 (rev. May 2025), Advanced Personal Care, as reviewed Oct 31, 2026; DHSS has not confirmed the first-month visit count |
+| NUR-02 | `packages/engine/src/rules/nur.ts` | `ruleNUR02UnplacedVisits` | `packages/engine/test/events.test.ts` | RN-04 | Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026 |
 
 ### Conflicts and eligibility
 
@@ -54,6 +60,8 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | CON-13 | `packages/engine/src/rules/conflicts.ts` | `ruleCON13FirstVisit` | `packages/engine/test/rules-con.test.ts` | — (custom) | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | `packages/engine/src/rules/conflicts.ts` | `ruleCON16WaiverEnrollments` | `packages/engine/test/rules-con.test.ts` | TC-18, TC-29, TC-30 | Policy 3.05 (04/25) |
 | CON-17 | `packages/engine/src/rules/conflicts.ts` | `ruleCON17QualificationData` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-35, FIX-2 | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
+| SFC-01 | `packages/engine/src/rules/sfc.ts` | `ruleSFC01HcbsExclusivity` | `packages/engine/test/sfc.test.ts` | SFC-01 | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
+| SFC-02 | `packages/engine/src/rules/sfc.ts` | `ruleSFC02SinglePrimary` | `packages/engine/test/sfc.test.ts` | SFC-02 | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
 
 ## Catalog
 

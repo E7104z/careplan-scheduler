@@ -88,6 +88,30 @@ export interface CalendarException {
   reason: string; author: string; createdAt: string;
   kind?: "change" | "fit";                // Amendment A: "fit" = automatic trim from SCH-17; absent = "change"
 }
+/** How a care plan amendment changes the authorization (Manual 4.20). Stored, never inferred. */
+export type AmendmentDirection = "increase" | "decrease" | "reduction-immediate";
+/**
+ * One effective-dated version of an authorization and its weekly pattern (AMEND-01). The first
+ * version of a chain is the authorization as imported (`amendmentId` and `direction` null).
+ */
+export interface AuthorizationVersion {
+  amendmentId: string | null;
+  direction: AmendmentDirection | null;
+  effectiveFrom: string;          // YYYY-MM-DD, the first date this version is in effect
+  effectiveTo?: string;           // the last date; absent = until the next version or the authorization's end
+  recordedOn?: string;            // the date the amendment was made
+  requestedDate?: string;         // the date as entered, when the Manual 4.20 behavior moved it
+  dateConfirmed?: boolean;        // the effective date is on the care plan; absent = not confirmed
+  authorization: ServiceAuthorization;
+  template: ScheduleTemplate;
+}
+/** An authorization's versions, oldest first. A plan with no amendment has one. */
+export interface AuthorizationChain { serviceAuthId: string; versions: AuthorizationVersion[]; }
+/** A scheduled occurrence and the version in effect on its date (null = the original). */
+export interface VersionedOccurrence {
+  date: string; taskId: string; minutes: number;
+  amendmentId: string | null; serviceAuthId: string;
+}
 export interface Visit {
   id: string; participantId: string; caregiverId: string;
   serviceCode: ServiceCode;

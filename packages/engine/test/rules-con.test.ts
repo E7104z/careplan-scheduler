@@ -105,6 +105,12 @@ describe("conflict rules", () => {
     expect(ruleCON02DifferentServiceOverlap([apc, hm], MO_2026_07).some((r) => r.severity === "REVIEW")).toBe(true);
   });
 
+  it("CON-02 no result for nurse + CDS overlap (the one pair the matrix allows)", () => {
+    const cds = visit({ id: "v-1", serviceCode: "T1019U2", start: "2026-10-05T09:00", end: "2026-10-05T11:00" });
+    const nurse = visit({ id: "v-2", serviceCode: "T1001", start: "2026-10-05T10:00", end: "2026-10-05T11:00" });
+    expect(ruleCON02DifferentServiceOverlap([cds, nurse], MO_2026_07)).toEqual([]);
+  });
+
   it("TC-07: CON-03 BLOCK for Respite overlapping CDS", () => {
     const respite = visit({ id: "v-1", serviceCode: "S5150", start: "2026-10-05T13:00", end: "2026-10-05T17:00" });
     const cds = visit({ id: "v-2", serviceCode: "T1019U2", start: "2026-10-05T14:00", end: "2026-10-05T15:00" });
@@ -121,6 +127,16 @@ describe("conflict rules", () => {
     const a = visit({ id: "v-1", participantId: "P-1", caregiverId: "C-A", serviceCode: "T1019U2", start: "2026-10-05T09:00", end: "2026-10-05T11:00" });
     const b = visit({ id: "v-2", participantId: "P-2", caregiverId: "C-A", serviceCode: "T1019U2", start: "2026-10-05T10:00", end: "2026-10-05T12:00" });
     expect(ruleCON04CaregiverOverlap([a, b]).some((r) => r.severity === "BLOCK")).toBe(true);
+  });
+
+  it("TC-34: CON-04 BLOCK for one caregiver in two services at once for one participant", () => {
+    const a = visit({ id: "v-1", participantId: "P-1", caregiverId: "C-A", serviceCode: "T1019U2", start: "2026-10-05T09:00", end: "2026-10-05T11:00" });
+    const b = visit({ id: "v-2", participantId: "P-1", caregiverId: "C-A", serviceCode: "S5130", start: "2026-10-05T10:00", end: "2026-10-05T12:00" });
+    expect(ruleCON04CaregiverOverlap([a, b]).some((r) => r.severity === "BLOCK")).toBe(true);
+    // The same service for one participant is CON-01's overlap, not a double-booking.
+    expect(ruleCON04CaregiverOverlap([a, { ...b, serviceCode: "T1019U2" }])).toEqual([]);
+    // A visit with no caregiver assigned yet can't be double-booked.
+    expect(ruleCON04CaregiverOverlap([a, { ...b, caregiverId: "" }])).toEqual([]);
   });
 
   it("TC-33: CON-05 WARN only when caregiver exceeds 40 h in a workweek", () => {

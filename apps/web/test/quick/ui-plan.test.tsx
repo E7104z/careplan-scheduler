@@ -183,7 +183,7 @@ describe("Quick Schedule: care plan pane by hand", () => {
   it("picker: \"dress\" + Enter adds Dressing/Grooming and focuses its minutes with the value selected", async () => {
     const { user } = renderQuick();
     const picker = await startByHand(user);
-    expect(screen.queryByRole("heading", { name: "Paste the care plan from Fusion" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Open the care plan PDF from Fusion" })).not.toBeInTheDocument();
     expect(within(statusPanel()).getByText("Add tasks to start")).toBeInTheDocument();
 
     await user.keyboard("dress");

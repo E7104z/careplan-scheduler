@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, type Dispatch } from "react";
 import { MO_2026_07 } from "@careplan/engine";
 import { activeIndex, singlePlan } from "./carePlan.js";
 import { loadPlan, savePlan } from "./persistence.js";
+import { isPlanExtraAction, reducePlanExtra, type PlanExtraAction } from "./planExtraStore.js";
 import { exampleStateA, reduce, type QuickAction } from "./state.js";
 import type { CarePlan } from "./types.js";
 
@@ -10,7 +11,9 @@ export type PlanAction =
   /** Look at the whole care plan, or one service in detail. */
   | { type: "setView"; view: "plan" | number }
   /** A care plan read from Fusion, with all its services. */
-  | { type: "replacePlan"; plan: CarePlan };
+  | { type: "replacePlan"; plan: CarePlan }
+  /** The plan's dated side: events on the calendar (applied by the extras chunk, through the guard). */
+  | PlanExtraAction;
 
 export type StoreAction = QuickAction | PlanAction;
 
@@ -30,9 +33,12 @@ export interface QuickStore {
 
 /**
  * Where a refusal is shown (APP-SPEC 5.7): a task-day change in that task's hint line, a weekly
- * grid cell in the refusal box under the grid, anything else in a toast.
+ * grid cell in the refusal box under the grid, a dated event beside its control, anything else in
+ * a toast.
  */
-export function refusalPlace(action: StoreAction): "task" | "cell" | "toast" {
+export function refusalPlace(action: StoreAction): "task" | "cell" | "toast" | "event" {
+  // The dated side's refusals are shown beside the control that sent them, never in a toast.
+  if (isPlanExtraAction(action)) return "event";
   if (action.type === "togglePinDay" || action.type === "unpin") return "task";
   if (action.type === "setCell") return "cell";
   return "toast";
@@ -55,6 +61,11 @@ export function storeReducer(store: QuickStore, action: StoreAction): QuickStore
   if (action.type === "setView") {
     const plan = validView(store.plan, action.view) ? { ...store.plan, view: action.view } : store.plan;
     return { plan, feedback: { seq, action } };
+  }
+  // Dated events belong to the plan, not to the service being looked at.
+  if (isPlanExtraAction(action)) {
+    const change = reducePlanExtra(store.plan, action, MO_2026_07);
+    return { plan: change.plan, feedback: { seq, action, refusal: change.refusal } };
   }
   const index = activeIndex(store.plan);
   if (index === null) return { plan: store.plan, feedback: { seq, action } };

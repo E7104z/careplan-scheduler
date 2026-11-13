@@ -40,7 +40,7 @@ function rowText(raw: string | null | undefined): string {
   return raw ? raw.replace(/\s+/g, " ").trim() : "—";
 }
 
-/** SOURCE-01: where a field was read on the pasted page, for the raw view. */
+/** SOURCE-01: where a field was read in the PDF's text, for the raw view. */
 function where(source: SourceRef | null | undefined): string {
   return source ? `Page ${source.page} · line ${source.line}` : "—";
 }
@@ -105,7 +105,7 @@ export function ReadSummary({ state, model, planNotes = [], onNewPlan }: ReadSum
   const [reviewing, setReviewing] = useState(false);
   const title = state.isExample ? "Example care plan" : (state.identity?.name ?? "Care plan from Fusion");
   const source = state.isExample
-    ? "This is what a pasted Fusion plan looks like. Paste one above to make your own."
+    ? "This is what a Fusion plan looks like. Open a PDF above to make your own."
     : `Read from Fusion${state.identity ? ` · DCN ${state.identity.dcn}` : ""}`;
   const checksum = model.checksum ? checksumLines(model.checksum) : null;
   const notes = [...planNotes, ...state.notes].filter((note) => note.code !== "duplicate-task");

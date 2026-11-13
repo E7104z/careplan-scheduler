@@ -80,12 +80,28 @@ export interface PlanDay {
   minutes: number;
 }
 
+/** The two services of a CDS+ILW plan, or null when the plan isn't one. */
+export function cdsIlwPair(models: QuickModel[]): { cds: number; ilw: number } | null {
+  const cds = models.findIndex((model) => model.svc.code === "T1019U2");
+  const ilw = models.findIndex((model) => model.svc.code === "T1019U6");
+  return cds >= 0 && ilw >= 0 ? { cds, ilw } : null;
+}
+
+/** Task names that appear in both the State Plan and ILW authorization: one pool, shown once. */
+function sharedTaskNames(cds: QuickModel, ilw: QuickModel): Set<string> {
+  const ilwNames = new Set(ilw.tasks.map((task) => task.name));
+  return new Set(cds.tasks.map((task) => task.name).filter((name) => ilwNames.has(name)));
+}
+
 /**
  * APP-SPEC 5.8: the participant's one week, Sunday to Saturday. Each day lists every service's
  * tasks (in care plan order, services in Fusion's order) and transportation, each item keeping
- * the service it belongs to.
+ * the service it belongs to. CP4-5: CDS and ILW are one task pool, so a task in both shows once,
+ * under the State Plan (CDS) authorization, which pays for it before the ILW units begin.
  */
 export function planWeek(plan: CarePlan, models: QuickModel[]): PlanDay[] {
+  const pool = cdsIlwPair(models);
+  const shared = pool ? sharedTaskNames(models[pool.cds]!, models[pool.ilw]!) : null;
   return WEEKDAYS.map((weekday) => {
     const items: PlanDayItem[] = [];
     plan.services.forEach((state, service) => {
@@ -95,9 +111,11 @@ export function planWeek(plan: CarePlan, models: QuickModel[]): PlanDay[] {
       model.entries
         .filter((entry) => entry.weekday === weekday)
         .sort((a, b) => (order.get(a.taskId) ?? 0) - (order.get(b.taskId) ?? 0))
-        .forEach((entry) =>
-          items.push({ service, name: names.get(entry.taskId) ?? entry.taskId, minutes: entry.minutes, transport: false }),
-        );
+        .forEach((entry) => {
+          const name = names.get(entry.taskId) ?? entry.taskId;
+          if (pool && shared?.has(name) && service === pool.ilw) return;
+          items.push({ service, name, minutes: entry.minutes, transport: false });
+        });
       if (model.allowance && model.allowance.weeklyMinutes > 0 && state.transport.day === weekday) {
         items.push({ service, name: "Essential transportation", minutes: model.allowance.weeklyMinutes, transport: true });
       }
