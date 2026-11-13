@@ -712,6 +712,17 @@ service on its own, but the participant lives one week. So:
     change that would put the month over its units is refused there, "Not changed. That would
     put <task> over its N units in <Month>." Setting the pattern's own minutes back removes the
     change.
+- **Checks added in Coverage Phase 3** (copy in `ruleCopy.ts`, shown as in 5.5; the refusal
+  sentences above are what a person sees when a placement is refused):
+
+  | Rule | Severity | Title | What to do |
+  |---|---|---|---|
+  | AMEND-01 | REVIEW | A care plan change needs its start date checked | The schedule crosses a care plan change. Check the date the change takes effect against the care plan in Fusion. |
+  | EVT-01 | BLOCK | That date is outside the authorization | Pick a date inside the dates and months the care plan authorizes for this service. |
+  | EVT-02 | BLOCK | That is more than the care plan authorizes this month | The care plan's count for the month is the limit. Remove a date first, or choose another month. |
+  | EVT-03 | BLOCK | This authorization has no caregiver time | Only a reminder can go on this authorization. It is never a visit and is never billed. |
+  | NUR-01 | REVIEW | Advanced Personal Care: check the first month's nurse visits | A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan. DHSS hasn't confirmed the first-month visit count, so this stays under review. |
+  | NUR-02 | WARN | No date was placed for this month's visit | Pick a date for the visit in the month it was authorized. This doesn't say whether the visit happened. |
 
 ## 6. Accounts
 
