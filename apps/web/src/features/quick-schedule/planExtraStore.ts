@@ -1,4 +1,4 @@
-import type { RulePack } from "@careplan/engine";
+import type { RulePack, Weekday } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
 import type { CarePlan, DayChange } from "./types.js";
@@ -19,7 +19,9 @@ export type PlanExtraAction =
   /** Take a recorded change off a service. */
   | { type: "removeAmendment"; service: number; amendmentId: string }
   /** "Change this day": a task's minutes on one date, over the weekly pattern. Refused with the limit. */
-  | { type: "changeDay"; service: number; change: DayChange };
+  | { type: "changeDay"; service: number; change: DayChange }
+  /** Set (or clear, with null) a service's visit start time on a weekday. Refused if it would break an overlap rule. */
+  | { type: "setStartTime"; service: number; weekday: Weekday; time: string | null };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -29,7 +31,7 @@ export interface PlanExtraChange {
 export type PlanExtraReducer = (plan: CarePlan, action: PlanExtraAction, pack: RulePack) => PlanExtraChange;
 
 const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
-  "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay",
+  "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay", "setStartTime",
 ]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {

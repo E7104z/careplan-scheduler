@@ -112,6 +112,8 @@ export interface QuickState {
   amendments?: PlanAmendment[];
   /** One-day changes over the weekly pattern; absent in plans saved before them. */
   dayChanges?: DayChange[];
+  /** Optional visit start time by weekday ("0" Sunday to "6" Saturday), as "HH:mm" in America/Chicago (Coverage Phase 4). */
+  startTimes?: Record<string, string>;
 }
 
 /** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */

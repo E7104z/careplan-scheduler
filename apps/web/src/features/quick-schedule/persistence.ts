@@ -57,6 +57,7 @@ function isNote(value: unknown): boolean {
   );
 }
 
+const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DIRECTIONS = new Set(["increase", "decrease", "reduction-immediate"]);
 
 /** A recorded care plan change (Coverage Phase 3); a bad one drops the saved plan. */
@@ -123,7 +124,10 @@ function isStoredState(value: unknown): value is StoredState {
           (change) =>
             isRecord(change) && typeof change.date === "string" && ISO_DATE.test(change.date) &&
             typeof change.taskId === "string" && isInt(change.minutes, 0, 1440),
-        )))
+        ))) &&
+    (value.startTimes === undefined ||
+      (isRecord(value.startTimes) &&
+        Object.entries(value.startTimes).every(([weekday, time]) => /^[0-6]$/.test(weekday) && typeof time === "string" && CLOCK_TIME.test(time))))
   );
 }
 

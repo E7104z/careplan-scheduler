@@ -67,6 +67,13 @@ export function formatUnits(minutes: number): string {
   return `${units} unit${units === 1 ? "" : "s"}${remainder ? ` + ${remainder} min` : ""}`;
 }
 
+/** "09:00" -> "9:00 AM", "13:30" -> "1:30 PM" (locale-independent). */
+export function clockTime(time: string): string {
+  const [hours, minutes] = time.split(":").map(Number);
+  const hour = ((hours ?? 0) + 11) % 12 + 1;
+  return `${hour}:${String(minutes ?? 0).padStart(2, "0")} ${(hours ?? 0) < 12 ? "AM" : "PM"}`;
+}
+
 /** A visit's length: "45 min", "1 h", "5 h 15 min". */
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);

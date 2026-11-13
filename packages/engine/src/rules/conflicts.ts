@@ -16,6 +16,20 @@ import type {
   Weekday,
 } from "../types.js";
 
+/** A service on the schedule, and whether every one of its care days has a clock time (CP4-1). */
+export interface ScheduledService {
+  serviceAuthId: string;
+  serviceCode: Visit["serviceCode"];
+  hasClockTimes: boolean;
+}
+
+const RESPITE_CODES: ReadonlySet<string> = new Set(["S5150", "S5150TF"]);
+
+/** An overlap rule never passes on missing data: a service with no clock times is under review. */
+function noClockTimes(ruleId: string, service: ScheduledService): ValidationResult {
+  return { ruleId, severity: "REVIEW", message: "No clock times yet, so overlaps can't be checked", refs: { serviceAuthId: service.serviceAuthId } };
+}
+
 function overlaps(a: { start: string; end: string }, b: { start: string; end: string }): boolean {
   return a.start < b.end && b.start < a.end;
 }
@@ -52,8 +66,9 @@ function assignedCaregiverIds(auth: ServiceAuthorization, visits: Visit[]): Set<
  * @rule CON-01
  * @source CDS policy clarification Q5
  */
-export function ruleCON01SameServiceOverlap(visits: Visit[]): ValidationResult[] {
-  const results: ValidationResult[] = [];
+export function ruleCON01SameServiceOverlap(visits: Visit[], services: readonly ScheduledService[] = []): ValidationResult[] {
+  // A service with no clock times can't be checked for overlapping visits: REVIEW, never a pass.
+  const results: ValidationResult[] = services.filter((service) => !service.hasClockTimes).map((service) => noClockTimes("CON-01", service));
   const statePlanLike = new Set(["T1019U2", "T1019U6"]);
   for (let i = 0; i < visits.length; i++) {
     for (let j = i + 1; j < visits.length; j++) {
@@ -78,8 +93,18 @@ export function ruleCON01SameServiceOverlap(visits: Visit[]): ValidationResult[]
  * @rule CON-02
  * @source CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)
  */
-export function ruleCON02DifferentServiceOverlap(visits: Visit[], pack: RulePack): ValidationResult[] {
-  const results: ValidationResult[] = [];
+export function ruleCON02DifferentServiceOverlap(
+  visits: Visit[],
+  pack: RulePack,
+  services: readonly ScheduledService[] = [],
+): ValidationResult[] {
+  // With two or more services, one without clock times can't be checked against the others (respite is CON-03's).
+  const results: ValidationResult[] =
+    services.length < 2
+      ? []
+      : services
+          .filter((service) => !service.hasClockTimes && !RESPITE_CODES.has(service.serviceCode))
+          .map((service) => noClockTimes("CON-02", service));
   for (let i = 0; i < visits.length; i++) {
     for (let j = i + 1; j < visits.length; j++) {
       const a = visits[i]!;
@@ -109,9 +134,14 @@ export function ruleCON02DifferentServiceOverlap(visits: Visit[], pack: RulePack
  * @rule CON-03
  * @source Policy 3.50 (rev. Jul 2026)
  */
-export function ruleCON03RespiteOverlap(visits: Visit[]): ValidationResult[] {
-  const results: ValidationResult[] = [];
-  const respite = new Set(["S5150", "S5150TF"]);
+export function ruleCON03RespiteOverlap(visits: Visit[], services: readonly ScheduledService[] = []): ValidationResult[] {
+  // With respite in the plan and another service beside it, any service without clock times leaves respite overlap unchecked.
+  const hasRespite = services.some((service) => RESPITE_CODES.has(service.serviceCode));
+  const results: ValidationResult[] =
+    hasRespite && services.length >= 2
+      ? services.filter((service) => !service.hasClockTimes).map((service) => noClockTimes("CON-03", service))
+      : [];
+  const respite = RESPITE_CODES;
   for (let i = 0; i < visits.length; i++) {
     for (let j = i + 1; j < visits.length; j++) {
       const a = visits[i]!;

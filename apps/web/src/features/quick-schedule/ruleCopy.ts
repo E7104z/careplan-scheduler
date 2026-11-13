@@ -137,6 +137,10 @@ const CON_COPY: Record<string, RuleCopy> = {
     title: "Two agency visits for the same service overlap",
     whatToDo: "Check the times; overlapping agency visits are usually a mistake.",
   },
+  "CON-01/REVIEW": {
+    title: "Overlaps can't be checked without clock times",
+    whatToDo: "Add a start time for each care day of this service, so its visits can be checked against each other.",
+  },
   "CON-02/BLOCK": {
     title: "These two services can't overlap",
     whatToDo: "Change one visit's time.",
@@ -148,6 +152,10 @@ const CON_COPY: Record<string, RuleCopy> = {
   "CON-03/BLOCK": {
     title: "Respite overlaps another service",
     whatToDo: "Respite can't happen at the same time as any other service.",
+  },
+  "CON-03/REVIEW": {
+    title: "Respite overlap can't be checked without clock times",
+    whatToDo: "Add a start time for each care day, so respite can be checked against the other services.",
   },
   "CON-04/BLOCK": {
     title: "A caregiver is booked in two places at once",

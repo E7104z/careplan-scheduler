@@ -135,7 +135,10 @@ export function AmendmentsPanel({ state, model, service, feedback, dispatch }: A
         {direction === "decrease" ? (
           <p className="text-[13px] text-ink-2">A decrease starts on the first of a month. One dated later in a month starts the first of the next month.</p>
         ) : null}
-        <div className="overflow-x-auto">
+        {state.tasks.length === 0 ? (
+          <p className="text-[13px] text-ink-2">This service has no tasks: record the new units a month.</p>
+        ) : (
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Each task from the change on">
           <table className="w-full min-w-[420px] text-sm">
             <caption className="sr-only">Each task's minutes and days from the change on</caption>
             <thead>
@@ -179,7 +182,10 @@ export function AmendmentsPanel({ state, model, service, feedback, dispatch }: A
             </tbody>
           </table>
         </div>
-        <p className="text-[13px] text-ink-2">Enter 0 minutes to take a task out of the week from the change on.</p>
+        )}
+        {state.tasks.length > 0 ? (
+          <p className="text-[13px] text-ink-2">Enter 0 minutes to take a task out of the week from the change on.</p>
+        ) : null}
         <label className="flex items-start gap-2 text-sm text-ink max-sm:min-h-11 max-sm:items-center">
           <input type="checkbox" className="mt-0.5 h-4 w-4" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
           The care plan shows this date

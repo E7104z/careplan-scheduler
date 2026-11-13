@@ -1,6 +1,6 @@
 import { Fragment, useId } from "react";
 import type { Weekday } from "@careplan/engine";
-import { formatDuration, formatUnits, weekdayName } from "../../lib/format";
+import { clockTime, formatDuration, formatUnits, weekdayName } from "../../lib/format";
 import { Panel } from "../../ui/Panel";
 import { hasSchedule } from "./model";
 import type { QuickModel, QuickState } from "./types";
@@ -12,6 +12,8 @@ interface DayVisit {
   tasks: { name: string; minutes: number }[];
   taskMinutes: number;
   transportMinutes: number;
+  /** The visit's start time that weekday ("09:00"), when the person set one (Coverage Phase 4); else null. */
+  startTime: string | null;
 }
 
 /** Each weekday's tasks in care plan order, with the transportation set aside on its usual day. */
@@ -28,6 +30,7 @@ export function dailyVisits(state: QuickState, model: QuickModel): DayVisit[] {
       tasks,
       taskMinutes: tasks.reduce((sum, task) => sum + task.minutes, 0),
       transportMinutes: model.allowance && state.transport.day === weekday ? model.allowance.weeklyMinutes : 0,
+      startTime: state.startTimes?.[String(weekday)] ?? null,
     };
   });
 }
@@ -80,6 +83,7 @@ function DayCard({ visit }: { visit: DayVisit }) {
             ) : null}
           </ul>
           <p className="border-t border-line pt-1.5 text-sm text-ink">
+            {visit.startTime ? <span className="block">Starts {clockTime(visit.startTime)}</span> : null}
             <strong>Visit length {formatDuration(total)}</strong>
             <span className="block text-[13px] text-ink-2">
               {total} minutes = {formatUnits(total)}

@@ -1,5 +1,5 @@
 import type { RulePack, Weekday } from "@careplan/engine";
-import { formatDuration, formatUnits, niceDate, shortMonth, weekdayName } from "../../lib/format";
+import { clockTime, formatDuration, formatUnits, niceDate, shortMonth, weekdayName } from "../../lib/format";
 import { fusionUnitsText } from "./checksumText";
 import { dailyVisits } from "./DailyTaskList";
 import { contextFor, groupResults } from "./grouping";
@@ -190,7 +190,8 @@ export function buildScheduleSheet(state: QuickState, model: QuickModel, pack: R
     return {
       name: weekdayName(visit.weekday),
       care: state.activeDays[visit.weekday] ?? false,
-      visit: minutes > 0 ? formatDuration(minutes) : null,
+      // With a start time set (Coverage Phase 4), the visit reads "9:00 AM, 5 h 15 min".
+      visit: minutes > 0 ? (visit.startTime ? `${clockTime(visit.startTime)}, ${formatDuration(minutes)}` : formatDuration(minutes)) : null,
       minutes: minutes > 0 ? grouped.format(minutes) : "",
       units: minutes > 0 ? unitsCell(minutes) : "",
     };

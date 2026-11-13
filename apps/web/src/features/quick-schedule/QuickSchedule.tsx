@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { MO_2026_07 } from "@careplan/engine";
 import { usePageTitle } from "../../lib/usePageTitle";
@@ -8,6 +8,7 @@ import { ImportPanel, PDF_CHOOSER_ID, type BuiltFrom } from "../import/ImportPan
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
+import { AmendmentsSlot, CalendarSlot, OtherPlacingSlot, PlanChecksSlot, VisitsSlot, VisitTimesSlot } from "./extrasSlots";
 import { buildQuickModel, hasSchedule } from "./model";
 import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
@@ -18,13 +19,6 @@ import type { CarePlan, QuickModel } from "./types";
 import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
 
 const PACK = MO_2026_07;
-
-// The dated side (nurse visit dates and the rest of Coverage Phase 3) is its own chunk, loaded
-// only for a plan that has something to place.
-const VisitsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitsPanel })));
-const AmendmentsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.AmendmentsPanel })));
-const ParticipantCalendar = lazy(() => import("./extras").then((extras) => ({ default: extras.ParticipantCalendar })));
-const OtherPlacing = lazy(() => import("./extras").then((extras) => ({ default: extras.OtherPlacing })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
 
@@ -137,31 +131,25 @@ export function QuickSchedule() {
     };
   }, []);
 
+  // The dated side (Coverage Phase 3 on) is its own chunk; these slots are empty until it loads.
+  const opened = !plan.services[0]!.isExample;
   const visitsPanel =
-    plan.visits.length > 0 ? (
-      <Suspense fallback={null}>
-        <VisitsPanel plan={plan} today={new Date()} feedback={feedback} dispatch={dispatch} />
-      </Suspense>
-    ) : null;
+    plan.visits.length > 0 ? <VisitsSlot plan={plan} today={new Date()} feedback={feedback} dispatch={dispatch} /> : null;
+  // Visit checks (Coverage Phase 4): the rules that read visits, for a plan the person opened or built.
+  const planChecks = opened && canPrint ? <PlanChecksSlot plan={plan} models={models} pack={PACK} /> : null;
 
   // The participant calendar (Coverage Phase 3): the Month tab, for a plan the person opened or
   // built, once it has a schedule. It is shown, and its chunk loaded, when the person opens it.
-  const calendarOffered = !plan.services[0]!.isExample && canPrint;
+  const calendarOffered = opened && canPrint;
   const calendar =
     calendarOffered && monthOpen ? (
-      <Suspense fallback={null}>
-        <ParticipantCalendar key={planKey} plan={plan} models={models} pack={PACK} today={new Date()} feedback={feedback} dispatch={dispatch} />
-      </Suspense>
+      <CalendarSlot key={planKey} plan={plan} models={models} pack={PACK} today={new Date()} feedback={feedback} dispatch={dispatch} />
     ) : null;
 
   const othersPanel = (
     <OthersPanel
       plan={plan}
-      placing={(other) => (
-        <Suspense fallback={null}>
-          <OtherPlacing plan={plan} other={other} feedback={feedback} dispatch={dispatch} />
-        </Suspense>
-      )}
+      placing={(other) => <OtherPlacingSlot plan={plan} other={other} feedback={feedback} dispatch={dispatch} />}
     />
   );
 
@@ -236,6 +224,7 @@ export function QuickSchedule() {
             </nav>
           ) : null}
           {monthOpen && calendarOffered ? calendar : <PlanWeekPanel plan={plan} models={models} />}
+          {planChecks}
           {visitsPanel}
           {othersPanel}
         </div>
@@ -256,12 +245,14 @@ export function QuickSchedule() {
             </div>
             <SchedulePane state={state} model={model} models={models} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
-          {/* Care plan changes (Manual 4.20), for a plan the person opened or built. */}
-          {state.isExample || index === null ? null : (
-            <Suspense fallback={null}>
-              <AmendmentsPanel key={`${planKey}-${index}`} state={state} model={model} service={index} pack={PACK} feedback={feedback} dispatch={dispatch} />
-            </Suspense>
-          )}
+          {/* Visit start times and care plan changes, for a plan the person opened or built. */}
+          {opened && index !== null ? (
+            <>
+              <VisitTimesSlot state={state} model={model} service={index} feedback={feedback} dispatch={dispatch} />
+              <AmendmentsSlot key={`${planKey}-${index}`} state={state} model={model} service={index} pack={PACK} feedback={feedback} dispatch={dispatch} />
+            </>
+          ) : null}
+          {several ? null : planChecks}
           {several || !calendarOffered ? null : (
             <div className="print:hidden">
               <Button variant="secondary" aria-expanded={monthOpen} onClick={() => setMonthOpen(!monthOpen)}>

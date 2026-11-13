@@ -723,6 +723,31 @@ service on its own, but the participant lives one week. So:
   | EVT-03 | BLOCK | This authorization has no caregiver time | Only a reminder can go on this authorization. It is never a visit and is never billed. |
   | NUR-01 | REVIEW | Advanced Personal Care: check the first month's nurse visits | A new Advanced Personal Care authorization is expected to have two nurse visits in its first month unless an ongoing nurse visit covers it. Check the care plan. DHSS hasn't confirmed the first-month visit count, so this stays under review. |
   | NUR-02 | WARN | No date was placed for this month's visit | Pick a date for the visit in the month it was authorized. This doesn't say whether the visit happened. |
+- **Visit start times and visit checks** (Coverage Phase 4, CP4-1; `VisitTimes.tsx`,
+  `visits.ts`, `PlanChecks.tsx`, `extrasSlots.tsx`). For a plan the person opened or built.
+  - **Start times.** With a service open in detail, a panel "Visit start times" (meta "None
+    set" or "N of M set"): "Optional. Add a start time to check overlaps with other services."
+    One native time input for each care day, "<Weekday> start time", stored with the service
+    (`QuickState.startTimes`, optional in storage, "HH:mm" in America/Chicago). Under each: "Visit
+    length 2 h", and with a time set "Visit length 2 h, ends 11:00 AM" or "... ends 1:00 AM the
+    next day". The visit's length is the day's total already shown as its visit length; the end
+    is the engine's `addMinutesLocal`, so a visit past midnight and a clock-change day are right.
+    The daily task list shows "Starts 9:00 AM" on that day, and the one-service printout's visit
+    row reads "9:00 AM, 2 h".
+  - **Visits.** `buildVisits(plan, models, pack)` turns services with start times into engine
+    `Visit` objects for the dates of the plan, from the one occurrence list. A service or a day
+    with no start time produces none.
+  - **Visit checks.** A panel "Visit checks" on the whole care plan (and under a one-service
+    plan) lists the rules that read visits, grouped as in 5.5. Where start times are missing the
+    overlap rules don't pass: each is "Needs review" with the engine's sentence, said once with
+    the services and rules it covers: "No clock times yet, so overlaps can't be checked" · "PC -
+    Agency, PC - CDS, HC · CON-01, CON-02". With nothing to raise it reads "Every visit rule we
+    can check from this schedule's times is met."
+  - **Guard.** Setting a time goes through the guard (5.7): a time that would break an overlap
+    rule is refused in the panel (`role="alert"`) with the rule's copy, "Not changed. Two visits
+    for the same service overlap. A participant can't get the same CDS or ILW service twice at
+    once. Change one visit's time."; a value that isn't a time: "Not changed. Enter the time as
+    hours and minutes, like 9:00 AM."
 
 ## 6. Accounts
 

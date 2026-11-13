@@ -162,7 +162,7 @@ export function ParticipantCalendar({ plan, models, pack, today, feedback, dispa
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={`${monthName(month)} as a list, scrollable`}>
               <table className="w-full min-w-[420px] text-sm">
                 <caption className="sr-only">{`${monthName(month)} as a list`}</caption>
                 <thead>

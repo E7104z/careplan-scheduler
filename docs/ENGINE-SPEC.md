@@ -290,9 +290,9 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 
 | ID | Rule | Severity | Status | Source |
 |---|---|---|---|---|
-| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. | BLOCK / WARN | PARTIAL | CDS policy clarification Q5 |
-| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
-| CON-03 | Respite overlapping any other service → BLOCK. | BLOCK | VERIFIED | Policy 3.50 (rev. Jul 2026) |
+| CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. A scheduled service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked"; it never passes on missing data. | BLOCK / WARN / REVIEW | PARTIAL | CDS policy clarification Q5 |
+| CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. With two or more services, one with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
+| CON-03 | Respite overlapping any other service → BLOCK. With respite and another service in the plan, a service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | BLOCK / REVIEW | VERIFIED | Policy 3.50 (rev. Jul 2026) |
 | CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
 | CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |

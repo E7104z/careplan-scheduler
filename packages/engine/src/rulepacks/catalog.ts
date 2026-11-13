@@ -135,18 +135,18 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
 
   // Conflicts and eligibility (conflicts.ts)
   {
-    id: "CON-01", area: "Conflicts and eligibility", severities: ["BLOCK", "WARN"], status: "PARTIAL",
-    rule: "Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN.",
+    id: "CON-01", area: "Conflicts and eligibility", severities: ["BLOCK", "WARN", "REVIEW"], status: "PARTIAL",
+    rule: "Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. A scheduled service with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\"; it never passes on missing data.",
     source: "CDS policy clarification Q5",
   },
   {
     id: "CON-02", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "PARTIAL",
-    rule: "Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW.",
+    rule: "Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. With two or more services, one with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\".",
     source: "CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)",
   },
   {
-    id: "CON-03", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "VERIFIED",
-    rule: "Respite overlapping any other service → BLOCK.",
+    id: "CON-03", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
+    rule: "Respite overlapping any other service → BLOCK. With respite and another service in the plan, a service with no clock times → REVIEW \"No clock times yet, so overlaps can't be checked\".",
     source: "Policy 3.50 (rev. Jul 2026)",
   },
   {

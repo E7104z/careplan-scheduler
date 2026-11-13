@@ -14,6 +14,17 @@ export function elapsedMinutes(startLocal: string, endLocal: string): number {
 }
 
 /**
+ * SCH-15: the local datetime a visit ends, `minutes` of real elapsed time after it starts in
+ * America/Chicago. A visit past midnight ends on the next date, and a visit across a clock
+ * change is still as long as its minutes. Returns "YYYY-MM-DDTHH:mm".
+ * @rule SCH-15
+ * @source Product decision approved Oct 20, 2026
+ */
+export function addMinutesLocal(startLocal: string, minutes: number): string {
+  return DateTime.fromISO(startLocal, { zone: ZONE }).plus({ minutes }).toFormat("yyyy-MM-dd'T'HH:mm");
+}
+
+/**
  * SCH-15: split a visit by calendar date using real elapsed time (DST-safe).
  * @rule SCH-15
  * @source Product decision approved Oct 20, 2026
