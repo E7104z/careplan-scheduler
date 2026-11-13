@@ -1,7 +1,7 @@
 # CarePlan Scheduler — App Specification (Phase 2)
 
 Phase 2 puts the Phase 1 rules engine in front of people: a public site, sign-in, agency
-accounts, and **Quick Schedule**: paste a care plan from Fusion (or open its PDF) and get a
+accounts, and **Quick Schedule**: open a care plan PDF from Fusion and get a
 ready schedule that can't be edited outside Missouri's rules. Nothing about a participant is
 stored in Phase 2.
 
@@ -14,7 +14,7 @@ Visual and behavioral target: `docs/design/quick-schedule-prototype.html` (open 
 browser; it runs the real engine). Tokens: `docs/design/tokens.css`.
 
 **Done when:** the Vercel preview of the `phase-2-app` pull request works end to end: a
-visitor pastes a Fusion care plan into Quick Schedule without an account and gets a ready
+visitor opens a Fusion care plan PDF in Quick Schedule without an account and gets a ready
 schedule; an agency owner signs up,
 verifies their email, creates the agency, invites a scheduler, and the scheduler joins; every
 acceptance check in section 11 passes.
@@ -37,10 +37,10 @@ acceptance check in section 11 passes.
 | D-10 | Signed-in sessions end after 30 minutes without activity, with a 2-minute warning. | Expected by agencies and the state for any system that will hold participant data. |
 | D-11 | Deployed on Vercel from the repo root (`vercel.json`), with strict security headers. Firebase is used only for Auth and Firestore, not Hosting. | Every pull request gets a preview link. |
 | D-12 | The engine gains one export, `RULE_CATALOG` (rule ID, area, rule text, severities, status, source), tested against ENGINE-SPEC section 5. | The public "Rules and sources" page and the check copy are generated from the engine, not retyped. |
-| D-13 | **Import is the front door.** Quick Schedule opens on "Paste the care plan from Fusion" and "Open the care plan PDF"; building by hand is the fallback. Reading Fusion text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
+| D-13 | **Import is the front door.** Quick Schedule opens on "Open the care plan PDF from Fusion"; building by hand is the fallback. **Nov 13, 2026: paste removed, PDF only** (the owner's decision; the paste box, its "Build schedule" button and every paste message are gone, and the care plan PDF is the only way a plan comes in). Reading the PDF's text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
 | D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
 | D-15 | PDFs are read in the browser with `pdfjs-dist` 4.10.38, loaded only when a PDF is opened (its own chunk and worker file). Nothing is uploaded. | Keeps public pages fast; keeps participant data on the person's computer. |
-| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are pasted into it. |
+| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are opened in it. |
 | D-17 | **The printout is a one-page PDF** (US Letter landscape), drawn in the browser with `pdf-lib` 1.17.1 and `@pdf-lib/fontkit` 1.1.1 in Public Sans (`@fontsource/public-sans` 5.3.0, static weights), loaded only when someone prints (5.4). Nothing is uploaded. | Decided Oct 26, 2026, at the user's request: the page sent to the print dialog came out on several pages, and each browser and the Windows app split, turned and captioned it its own way. A PDF is the same one page everywhere. |
 
 ### Pinned versions (verified to install, typecheck, test and build together on Node 22)
@@ -206,8 +206,8 @@ Each component has a test that renders it and runs axe (`vitest-axe` is **not** 
 | Toast | Radix Toast, bottom-right (bottom-center on phones), 5s; the message has `role="status"` (on the message, not the list item, so the viewport stays a valid list; decided Oct 25, 2026). Message names the result of the action ("Invite link copied"). |
 | Menu | Radix DropdownMenu for the account menu and agency switcher. Not for site navigation: the public header's phone navigation is a disclosure (a button with `aria-expanded` showing a `nav` of plain links). |
 | EmptyState | Short sentence saying what will appear here and the one action that starts it. |
-| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px; `onPasteText` hands the box's text up after the browser inserts a paste (the `input` event with `inputType` "insertFromPaste"). |
-| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. |
+| Textarea | Label (may be visually hidden), `spellCheck={false}`, `autoComplete="off"`, resizable vertically, min height 150px. A plain text box: it reads nothing from the clipboard (the paste import was removed Nov 13, 2026). |
+| FileDrop | A `<label>` wrapping a visually hidden `<input type="file">`, so click, Enter/Space and drag-and-drop all work; highlighted on drag-over (brand border and tint); shows the accepted type in words. Focus ring on the label via `:focus-within`. An optional `id` goes on the file input, so a page can put focus on the chooser. |
 | SkipLink | First focusable element: "Skip to main content". |
 | Logo | The four-square mark from the prototype (three filled squares, one outlined) + "CarePlan Scheduler". The outlined square is the unit still to be scheduled. |
 
@@ -243,25 +243,26 @@ React with the components above. Its reference logic is `docs/design/reference/`
 layout, copy and behavior unless this section says otherwise; this section wins.
 
 Two ways in, one schedule:
-- **From Fusion** (the default): paste the care plan or open its PDF (IMPORT-SPEC). Minutes per
+- **From Fusion** (the default): open the care plan PDF (IMPORT-SPEC). Minutes per
   day and days per week come from Fusion and are locked.
 - **By hand** (fallback): enter service, dates and tasks (QS-01 to QS-09).
 
 ### 5.1 Layout
-- Page intro: `h1` "Quick Schedule"; "Paste a care plan from Fusion or open its PDF. You get a
-  ready schedule that follows Missouri's rules, and you can change it within them."; actions
-  "New care plan" (only while a pasted plan is showing), "Print schedule" and "Save as PDF"
+- Page intro: `h1` "Quick Schedule"; "Open a care plan PDF from Fusion. You get a ready
+  schedule that follows Missouri's rules, and you can change it within them."; actions
+  "New care plan" (only while a plan the person opened or built is showing), "Print schedule" and "Save as PDF"
   (5.4 Print).
 - **Import panel** (shown until a real plan is built, and again after "New care plan"), two
   columns at ≥ 860px:
-  - Left: `h2` "Paste the care plan from Fusion"; numbered steps (a real sequence): "In
-    Fusion, open the participant's care plan." / "Select from the participant's name down to
-    the last task, and copy." / "Paste it here. If Fusion shows the tasks on two pages, paste
-    one page at a time."; a textarea (no spellcheck); button "Build schedule"; "Examples:
-    5-day plan · 7-day plan" (fixtures A and B).
-  - Right: `h2` "Or open the care plan PDF"; a drop zone "Choose the PDF / or drop it here"
-    (a `<label>` around a hidden file input, `accept="application/pdf,.pdf"`); "The PDF is read
-    on this computer. It isn't uploaded."; "No care plan handy? Build a schedule by hand".
+  - Left: `h2` "Open the care plan PDF from Fusion"; numbered steps (a real sequence): "In
+    Fusion, open the participant's care plan." / "Download it as a PDF." / "Choose the PDF here
+    or drop it on the box."; a drop zone "Choose the PDF / or drop it here" (a `<label>` around
+    a hidden file input, `id="qs-pdf"`, `accept="application/pdf,.pdf"`); "The PDF is read on
+    this computer. It isn't uploaded." There is no text box and no "Build schedule" button.
+  - Right: "Examples: 5-day plan · 7-day plan" (fixtures A and B); "No care plan handy? Build
+    a schedule by hand".
+  - A PDF chosen after an incomplete one is added to it (IMP-12). After "New care plan", focus
+    goes to the PDF chooser.
   - Below both: the import issues (IMPORT-SPEC 3.1), `aria-live="polite"`.
 - **Read summary** (after a plan is built from Fusion): participant name as `h2` (focused
   after import), "Read from Fusion · DCN <dcn>"; facts: Service, Plan, Fusion units, Tasks,
@@ -272,9 +273,9 @@ Two ways in, one schedule:
   schedule against."; then warnings (unread rows, unknown tasks, odd minutes, "Built from 10
   of the plan's 14 rows"); buttons "Review what we read" (a table: task, minutes a day, days
   a week, units in the viewed month, plus transportation) and "New care plan". For the
-  example the title is "Example care plan" with "This is what a pasted Fusion plan looks
-  like. Paste one above to make your own."
-- Notice (info style): "Nothing you paste or open is uploaded or saved to our servers. It
+  example the title is "Example care plan" with "This is what a Fusion plan looks like. Open
+  a PDF above to make your own."
+- Notice (info style): "Nothing you open is uploaded or saved to our servers. It
   stays in this browser tab, and the participant's name and DCN are gone when you close it."
 - Two panes at ≥ 1060px: Care plan (360–400px) left, Schedule right; one column below. In one
   column a link "Skip to the schedule" sits above the Care plan pane and goes to the Schedule
@@ -314,7 +315,7 @@ Both modes:
 | QS-07 | Task days | DayToggle per task. Unpinned: the composer's days in the `auto` style and the hint "We chose the lightest days. Select a day to choose yourself." Selecting a day pins the task: the pinned set starts from the days shown and toggles that day. Pinned: solid style, hint "Your days · Let us choose" (the link unpins). Non-care days are disabled. A pinned set can't exceed days per week: one more shows "Bathing is authorized for 3 days a week. Unselect a day first." and changes nothing. Unselecting a task's last day leaves it pinned with no days (off the week, SCH-02 "fewer days"), so the next day selected is where it goes; this is how a 1-day task moves. A care day turned off that empties a pinned set returns the task to our days. A refused change (5.7) shows its sentence in the same place. |
 | QS-08 | Care days | DayToggle, default from the import (IMPORT-SPEC 4) or all seven by hand. Turning a day off removes it from every pinned set and clears minute changes. None selected: "Choose at least one care day." |
 | QS-10 | Weekly grid cell | Selecting a scheduled cell turns it into a number field (Enter or blur saves, Escape cancels). 0 removes that day for that task. Changed cells get a warn underline; a value above the task's minutes per day gets the warn background (SCH-03 is allowed). "Undo my minute changes" appears while any change exists. Changing a task's minutes, days or pins clears that task's cell changes, and a change whose task moves off that day (another task's pins, transportation day, adding or removing a task) is dropped, so it can't come back later. |
-| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if pasted (marked as examples), moved to start this month with their length kept: the fixtures are real plans from 2025, and a schedule covers only months still to come. "New care plan" reopens the import panel with an empty box and keeps the current schedule underneath until the next plan is built. |
+| QS-12 | Examples / New care plan / by hand | Examples load fixtures A and B as if opened from a PDF (marked as examples), moved to start this month with their length kept: the fixtures are real plans from 2025, and a schedule covers only months still to come. "New care plan" reopens the import panel, with focus on the PDF chooser, and keeps the current schedule underneath until the next plan is built. |
 
 ### 5.3 Model (`features/quick-schedule/model.ts`, pure; reference `quick-model.js`)
 `buildQuickModel(state, pack): QuickModel`:
@@ -943,8 +944,8 @@ percentages, meter widths). No inline scripts are allowed.
   files of about 18 KB each, all same-origin and cached for a year. It is never in a page's
   static imports, so it counts toward no page budget.
 - Quick Schedule recomputes in one frame after a change on a mid-range laptop; a unit test
-  times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading a
-  pasted plan takes under 20 ms.
+  times `buildQuickModel` for fixture B (11 months) and fails above 50 ms in CI. Reading the
+  text of a plan's PDF takes under 20 ms.
 - Fonts: one variable font file (latin subset) preloaded (`vite.config.ts` adds the
   `<link rel="preload">` for the hashed file at build time and fails the build if it's missing).
 
@@ -958,14 +959,14 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | ID | Check | How |
 |---|---|---|
 | AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon..Fri `290, 285, 275, 270, 195`, "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
-| AC-02 | On Nov 20, 2025 (before B's plan starts), pasting fixture B into the box builds the schedule with no button press: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
+| AC-02 | On Nov 20, 2025 (before B's plan starts), opening fixture B's PDF (`fusion-table-with-banner.pdf`) builds the schedule: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
 | AC-03 | B with Fusion's figure at 440, in December 2025: "the schedule stops 320 minutes early, starting Dec 30, 2025", the line "Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min", and the Dec 31 cell shows "−195 min". | Playwright |
 | AC-04 | With B: changing Monday's Bathing to 60 is refused: "Not changed. That would put Bathing over its 93 units in October 2026." and "Bathing can't have more than 45 minutes on Monday."; the week is unchanged. | Playwright |
 | AC-05 | With B: Monday's Bathing 45 → 30 is accepted (SCH-03 not involved); Tuesday's 45 → 60 is refused with "The most Bathing can have on Tuesday is 55 minutes."; "Use 55 minutes" applies 55 and the status stays "Ready to use". | Playwright |
-| AC-06 | Fixture D shows "This copy has 10 of the plan's 14 rows"; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
-| AC-07 | Pasting B-page1 then B-page2 builds one plan with 15 tasks and the 455 match line. | Playwright |
+| AC-06 | Fixture D, opened as a PDF, shows "This PDF has 10 of the plan's 14 rows" and "Open the PDF that has every page of the care plan, or build with the 10 rows we have."; "Build with the 10 rows I have" builds it and the summary lists "Built from 10 of the plan's 14 rows." | Playwright |
+| AC-07 | Opening a PDF of B-page1 ("This PDF has 10 of the plan's 16 rows"), then a second PDF of B-page2, builds one plan with 15 tasks and the 455 match line. | Playwright |
 | AC-08 | Opening `fusion-table-with-banner.pdf` with the file input gives the same result as AC-02. Opening `fusion-table-only.pdf` asks for the plan dates; entering 2026-01-01 and 2026-12-31 builds it. | Playwright |
-| AC-09 | Pasting text with no care plan shows "We couldn't find care plan tasks in that text". | Playwright |
+| AC-09 | A PDF with no care plan in it shows "We couldn't find care plan tasks in that PDF" and "Open the participant's care plan PDF from Fusion." The chooser's file input accepts only `application/pdf,.pdf`; a text file that reaches it anyway shows "That isn't a PDF" and builds nothing. The import panel has no text box. | Playwright |
 | AC-10 | Selecting a second day for Clean Bath (1 day a week) shows "Clean Bath is authorized for 1 day a week. Unselect a day first." and changes nothing. | component test |
 | AC-11 | Reloading keeps the plan, but the summary title becomes "Care plan from Fusion" and the DCN is gone. A new tab starts with the example. | Playwright |
 | AC-12 | By hand: "Build a schedule by hand" opens the inputs; keyboard-only "dress" + Enter adds Dressing/Grooming and focuses its minutes; 60-minute transportation once a week shows "300 minutes a month = 20 units"; switching to Homemaker (ADW) removes tasks with the toast. | Playwright |
@@ -993,12 +994,12 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 ## 12. Landing, Rules and Privacy pages
 
 **Landing (`/`)** for agency owners and state reviewers. Left-aligned, no stock photos.
-- Headline (40px, 700): "Paste a Fusion care plan. Get a schedule that follows Missouri's rules."
-- Lead (17px, ink-2, ≤ 60ch): "Copy the care plan from Fusion or open its PDF. CarePlan
+- Headline (40px, 700): "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules."
+- Lead (17px, ink-2, ≤ 60ch): "Open the care plan PDF from Fusion. CarePlan
   Scheduler reads every task, checks its total against Fusion's, builds the week, and won't let
   anyone change it in a way that breaks a rule. Every check names the policy it comes from."
 - Actions: primary "Try Quick Schedule" (`/quick`), secondary "Create agency account".
-  Small line: "Quick Schedule needs no account. Nothing you paste is uploaded."
+  Small line: "Quick Schedule needs no account. Nothing you open is uploaded."
 - Live figure beside the headline (stacks below on phones): the example plan's Day total row
   with unit tiles and "Ready to use", computed by the engine on the page (no screenshot).
   This is the page's one memorable element. The example plan is fixture A built by the Quick
@@ -1009,7 +1010,9 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
   and 4 are computed on the page by the engine and the import package (fixture A, TC-01,
   RULE_CATALOG); figure 3 is a static example of the refusal box, styled exactly like the
   real one:
-  1. "Reads Fusion the way you copy it" — paste or PDF, one page or two; figure: the match
+  1. "Reads the care plan PDF from Fusion" — lead "Open the care plan PDF." and detail
+     "Fusion's care plan PDFs are read in your browser, every page, and the plan stays on your
+     computer."; figure: the match
      line "Every task read. Our total from these tasks matches Fusion's 466 units a month."
   2. "Built from tasks, not averages" — monthly units are never spread evenly across days;
      figure: the TC-01 week `70, 90, 90, 90, 90, 90, 70`.
@@ -1037,8 +1040,8 @@ Then "Services and monthly limits" from `MO_2026_07.services` (code, name, unit,
 ceiling or "—", weekly hour limit, source) and "Days-per-month factors" from
 `daysPerMonthFactor` (1 → 5 … 7 → 31).
 
-**Privacy (`/privacy`)**: plain-language page: Quick Schedule reads pasted text and PDFs in
-the browser and keeps everything in that tab (the participant's name and DCN only until the
+**Privacy (`/privacy`)**: plain-language page: Quick Schedule "reads the care plan PDF you
+open, on your computer. Nothing you open is uploaded." and keeps everything in that tab (the participant's name and DCN only until the
 page is reloaded or closed); accounts store name, email and agency details in Google Firebase (United States); no
 advertising or analytics trackers; participant data arrives in a later release and will be
 covered by a business associate agreement before any agency enters it; contact email.

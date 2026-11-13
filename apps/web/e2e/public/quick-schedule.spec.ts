@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
-import { changeCell, fixturePdf, fixtureText, pasteCarePlan, statusPanel } from "./helpers";
+import { changeCell, fixturePdf, fixtureText, openCarePlan, openCarePlanText, PDF_CHOOSER, statusPanel } from "./helpers";
 
 // Nov 20, 2025: every fixture's plan is current or still to come (B starts Dec 1, 2025; D runs
 // Sep 2025 to Jun 2026). A schedule covers only months still to come (APP-SPEC 5.3 step 5).
@@ -13,14 +13,14 @@ test.beforeEach(async ({ page }) => {
 
 async function buildB(page: Page): Promise<void> {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
 }
 
 test("AC-01: first visit shows the import panel and the 5-day example", async ({ page }) => {
   await page.goto("/quick");
 
-  await expect(page.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Example care plan" })).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 466 units a month.")).toBeVisible();
   await expect(statusPanel(page)).toContainText("Ready to use");
@@ -36,14 +36,14 @@ test("AC-01: first visit shows the import panel and the 5-day example", async ({
   await expect(tiles.nth(6)).toContainText("Off");
 });
 
-test("AC-02: pasting fixture B builds with no button press", async ({ page }) => {
+test("AC-02: opening fixture B's PDF builds the schedule", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
 
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expect(page.getByText("Read from Fusion · DCN 10000002")).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 455 units for a 30-day month. Fusion counts the days in each month for daily tasks, so a 31-day month has 469 and a 28-day month 434.")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeHidden();
   // Each month gets Fusion's proration of its 455 (IMP-10), so nothing differs and nothing is cut.
   await expect(statusPanel(page)).toContainText("Ready to use");
   await expect(statusPanel(page)).toContainText("Follows every rule we check, for all 11 months.");
@@ -53,7 +53,7 @@ test("AC-02: pasting fixture B builds with no button press", async ({ page }) =>
 test("AC-03: B at 440 units: December 2025 is cut at the end, with the tasks listed", async ({ page, isMobile }) => {
   test.skip(isMobile, "the trim and calendar are viewport-independent; covered on desktop");
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455").replaceAll("455 units", "440 units"));
+  await openCarePlanText(page, fixtureText("B-tabbed-7day-455").replaceAll("455 units", "440 units"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
 
   await expect(page.getByLabel("Units in December 2025")).toBeVisible();
@@ -76,7 +76,7 @@ test("AC-25: on Oct 21, 2026, no month before October 2026 is scheduled, and an 
   await expect(page.getByRole("button", { name: "Previous month" })).toBeDisabled();
 
   // B (Dec 2025 to Oct 2026) has only October left.
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expect(page.getByText("Oct 1, 2026", { exact: true })).toBeVisible();
   await expect(statusPanel(page)).toContainText("for the one month left in the plan");
@@ -85,7 +85,7 @@ test("AC-25: on Oct 21, 2026, no month before October 2026 is scheduled, and an 
 
   // D ended on Jun 30, 2026.
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
+  await openCarePlanText(page, fixtureText("D-page1-only-incomplete"));
   await page.getByRole("button", { name: "Build with the 10 rows I have" }).click();
   await expect(page.getByRole("heading", { name: "This care plan has ended" })).toBeVisible();
 });
@@ -116,20 +116,20 @@ test("AC-05: accepted Monday edit, refused Tuesday edit, then Use 55 minutes", a
 });
 test("AC-06: fixture D offers a partial build and the summary says what's missing", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
+  await openCarePlanText(page, fixtureText("D-page1-only-incomplete"));
 
-  await expect(page.getByText("This copy has 10 of the plan's 14 rows")).toBeVisible();
+  await expect(page.getByText("This PDF has 10 of the plan's 14 rows")).toBeVisible();
   await page.getByRole("button", { name: "Build with the 10 rows I have" }).click();
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT D" })).toBeVisible();
   await expect(page.getByText(/Built from 10 of the plan's 14 rows/)).toBeVisible();
 });
 
-test("AC-07: pasting B page 1 then page 2 builds one plan with 15 tasks", async ({ page }) => {
+test("AC-07: a second PDF with the rest of the pages builds one plan with 15 tasks", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-page1-of-2"));
-  await expect(page.getByLabel("Care plan text, page 2")).toBeVisible();
+  await openCarePlanText(page, fixtureText("B-page1-of-2"));
+  await expect(page.getByText("This PDF has 10 of the plan's 16 rows")).toBeVisible();
 
-  await pasteCarePlan(page, fixtureText("B-page2-of-2"));
+  await openCarePlanText(page, fixtureText("B-page2-of-2"), "care-plan-2.pdf");
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 455 units for a 30-day month. Fusion counts the days in each month for daily tasks, so a 31-day month has 469 and a 28-day month 434.")).toBeVisible();
   await expect(page.getByText("15 + transportation")).toBeVisible();
@@ -137,13 +137,13 @@ test("AC-07: pasting B page 1 then page 2 builds one plan with 15 tasks", async 
 
 test("AC-08: the PDF with a banner builds like AC-02; the table-only PDF asks for dates", async ({ page }) => {
   await page.goto("/quick");
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-with-banner"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expect(page.getByText("Read from Fusion · DCN 10000002")).toBeVisible();
   await expect(statusPanel(page)).toContainText("Ready to use");
 
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-only"));
+  await openCarePlan(page, fixturePdf("fusion-table-only"));
   await expect(page.getByText("Enter the plan dates")).toBeVisible();
   await page.getByLabel("Plan starts").fill("2026-01-01");
   await page.getByLabel("Plan ends").fill("2026-12-31");
@@ -153,7 +153,7 @@ test("AC-08: the PDF with a banner builds like AC-02; the table-only PDF asks fo
 
 test("AC-24: Fusion's care plan report PDF builds the plan and leaves out the nurse visits", async ({ page }) => {
   await page.goto("/quick");
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-care-plan-report"));
+  await openCarePlan(page, fixturePdf("fusion-care-plan-report"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT E" })).toBeVisible();
   await expect(page.getByText("Read from Fusion · DCN 10000005")).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 229 units a month.")).toBeVisible();
@@ -163,15 +163,29 @@ test("AC-24: Fusion's care plan report PDF builds the plan and leaves out the nu
   await expect(statusPanel(page)).toContainText("Ready to use");
 });
 
-test("AC-09: pasting text with no care plan says so", async ({ page }) => {
+test("AC-09: a PDF with no care plan in it says so, and a file that isn't a PDF is refused", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, "Meeting notes from Tuesday");
-  await expect(page.getByText("We couldn't find care plan tasks in that text")).toBeVisible();
+  await openCarePlanText(page, "Meeting notes from Tuesday", "notes.pdf");
+  await expect(page.getByText("We couldn't find care plan tasks in that PDF")).toBeVisible();
+  await expect(page.getByText("Open the participant's care plan PDF from Fusion.")).toBeVisible();
+
+  // The chooser offers PDFs only; a text file that reaches it anyway (dropped on the box) is refused.
+  await expect(page.locator(PDF_CHOOSER)).toHaveAttribute("accept", "application/pdf,.pdf");
+  await page.locator(PDF_CHOOSER).setInputFiles({
+    name: "care-plan.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(fixtureText("D-page1-only-incomplete")),
+  });
+  await expect(page.getByText("That isn't a PDF")).toBeVisible();
+  await expect(page.getByText("Choose the care plan PDF you saved from Fusion.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT D" })).toHaveCount(0);
+  // PDF only: no text box to put a care plan in.
+  await expect(page.getByRole("region", { name: "Open the care plan PDF from Fusion" }).getByRole("textbox")).toHaveCount(0);
 });
 
 test("AC-11: a reload keeps the plan without the DCN; a new tab starts with the example", async ({ page, context }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("Laundry (Off Site)"));
 
@@ -182,7 +196,7 @@ test("AC-11: a reload keeps the plan without the DCN; a new tab starts with the 
   const secondTab = await context.newPage();
   await secondTab.clock.setFixedTime(FIXED_TIME);
   await secondTab.goto("/quick");
-  await expect(secondTab.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeVisible();
+  await expect(secondTab.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeVisible();
   await expect(secondTab.getByRole("heading", { name: "Example care plan" })).toBeVisible();
 });
 
@@ -199,7 +213,7 @@ test("AC-12: by hand, from the keyboard, with transportation and a service chang
   await page.keyboard.press("Enter");
   const picker = page.getByRole("combobox", { name: "Add a task" });
   await expect(picker).toBeFocused();
-  await expect(page.getByRole("heading", { name: "Paste the care plan from Fusion" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeHidden();
 
   await page.keyboard.type("dress");
   await expect(page.getByRole("option", { name: "Dressing/Grooming" })).toHaveAttribute("aria-selected", "true");
@@ -249,7 +263,7 @@ test("AC-14: opening a PDF requests only same-origin files", async ({ page }) =>
   page.on("request", (request) => urls.push(request.url()));
 
   await page.goto("/quick");
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-with-banner"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await page.waitForLoadState("networkidle");
 
@@ -277,9 +291,9 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
     }
   };
 
-  // Pasted (AC-02), a cell refused and changed (AC-04, AC-05).
+  // Opened (AC-02), a cell refused and changed (AC-04, AC-05).
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("Laundry (Off Site)"));
   await changeCell(page, "Bathing", "Monday", 45, 30);
@@ -294,29 +308,29 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
   await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes('"viewMonth":"2026-01"'));
   await expectNothingStored();
 
-  // A partial paste (AC-06).
+  // An incomplete PDF (AC-06).
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
+  await openCarePlanText(page, fixtureText("D-page1-only-incomplete"));
   await page.getByRole("button", { name: "Build with the 10 rows I have" }).click();
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT D" })).toBeVisible();
   await expectNothingStored();
 
-  // B pasted one page at a time (AC-07).
+  // B in two PDFs (AC-07).
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await pasteCarePlan(page, fixtureText("B-page1-of-2"));
-  await expect(page.getByLabel("Care plan text, page 2")).toBeVisible();
+  await openCarePlanText(page, fixtureText("B-page1-of-2"));
+  await expect(page.getByText("This PDF has 10 of the plan's 16 rows")).toBeVisible();
   await expectNothingStored();
-  await pasteCarePlan(page, fixtureText("B-page2-of-2"));
+  await openCarePlanText(page, fixtureText("B-page2-of-2"), "care-plan-2.pdf");
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expectNothingStored();
 
   // The PDFs (AC-08): with the banner, then the table only with the dates entered.
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-with-banner"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expectNothingStored();
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-table-only"));
+  await openCarePlan(page, fixturePdf("fusion-table-only"));
   await page.getByLabel("Plan starts").fill("2026-01-01");
   await page.getByLabel("Plan ends").fill("2026-12-31");
   await page.getByRole("button", { name: "Use these dates" }).click();
@@ -325,7 +339,7 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
 
   // Fusion's care plan report (AC-24).
   await page.getByRole("button", { name: "New care plan" }).first().click();
-  await page.setInputFiles('input[type="file"]', fixturePdf("fusion-care-plan-report"));
+  await openCarePlan(page, fixturePdf("fusion-care-plan-report"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT E" })).toBeVisible();
   await expectNothingStored();
 });
@@ -344,11 +358,14 @@ test("AC-19: no page scroll at phone size; the grid scrolls inside its panel", a
   await expect(gridWrap).toBeVisible();
   expect(await gridWrap.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
 
-  const pasteHeading = page.getByRole("heading", { name: "Paste the care plan from Fusion" });
-  const pdfHeading = page.getByRole("heading", { name: "Or open the care plan PDF" });
-  const pasteBox = await pasteHeading.boundingBox();
-  const pdfBox = await pdfHeading.boundingBox();
-  expect(pdfBox?.y ?? 0).toBeGreaterThanOrEqual(pasteBox?.y ?? 0);
+  // The PDF chooser sits under its heading and inside the screen, with the examples below it.
+  const heading = (await page.getByRole("heading", { name: "Open the care plan PDF from Fusion" }).boundingBox())!;
+  const chooser = (await page.locator("label", { has: page.locator(PDF_CHOOSER) }).boundingBox())!;
+  const examples = (await page.getByRole("button", { name: "5-day plan" }).boundingBox())!;
+  expect(chooser.y).toBeGreaterThanOrEqual(heading.y + heading.height);
+  expect(chooser.x).toBeGreaterThanOrEqual(0);
+  expect(chooser.x + chooser.width).toBeLessThanOrEqual(viewport);
+  expect(examples.y).toBeGreaterThanOrEqual(chooser.y + chooser.height);
 });
 
 
@@ -403,7 +420,7 @@ test("two panes side by side: no Skip to the schedule link", async ({ page, isMo
 
 test("AC-28: a care plan report with several services is one schedule for the participant", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+  await openCarePlanText(page, fixtureText("F-care-plan-report-multi"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT F" })).toBeVisible();
   await expect(page.getByText("Choose the one to schedule")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Whole care plan/, pressed: true })).toBeVisible();

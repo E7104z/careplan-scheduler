@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { expectGridScrollsInPanel, expectPhoneLayout } from "../layout-checks";
-import { changeCell, fixtureText, pasteCarePlan } from "./helpers";
+import { changeCell, fixturePdf, fixtureText, openCarePlan, openCarePlanText } from "./helpers";
 
 // AC-19 at 390 × 844 (the phone project) for the public routes in AC-18 and the other public
 // pages: no sideways page scroll, and 44 × 44 px buttons and toggles (APP-SPEC 4.4).
@@ -14,7 +14,7 @@ test.beforeEach(async ({ page, isMobile }) => {
 });
 
 for (const { path, heading } of [
-  { path: "/", heading: "Paste a Fusion care plan. Get a schedule that follows Missouri's rules." },
+  { path: "/", heading: "Open a Fusion care plan PDF. Get a schedule that follows Missouri's rules." },
   { path: "/rules", heading: "Rules and sources" },
   { path: "/privacy", heading: "Privacy" },
   { path: "/sign-in", heading: "Sign in" },
@@ -42,14 +42,14 @@ test("AC-19: /quick with the example, then an import issue, at phone size", asyn
   await expectPhoneLayout(page);
   await expectGridScrollsInPanel(page);
 
-  await pasteCarePlan(page, fixtureText("D-page1-only-incomplete"));
-  await expect(page.getByText("This copy has 10 of the plan's 14 rows")).toBeVisible();
+  await openCarePlanText(page, fixtureText("D-page1-only-incomplete"));
+  await expect(page.getByText("This PDF has 10 of the plan's 14 rows")).toBeVisible();
   await expectPhoneLayout(page);
 });
 
 test("AC-19: /quick with a built plan and a refused change at phone size", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expectPhoneLayout(page);
   await expectGridScrollsInPanel(page);
@@ -84,7 +84,7 @@ test("AC-19: /quick with a built plan and a refused change at phone size", async
 
 test("AC-19: on a phone, Skip to the schedule goes past a long care plan to the status", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("B-tabbed-7day-455"));
+  await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   const status = page.getByRole("status", { name: "Schedule status" });
   await expect(status).not.toBeInViewport();
@@ -98,7 +98,7 @@ test("AC-19: on a phone, Skip to the schedule goes past a long care plan to the 
 
 test("AC-19: /quick with a care plan of several services at phone size", async ({ page }) => {
   await page.goto("/quick");
-  await pasteCarePlan(page, fixtureText("F-care-plan-report-multi"));
+  await openCarePlanText(page, fixtureText("F-care-plan-report-multi"));
   await expect(page.getByRole("heading", { name: "The participant's week" })).toBeVisible();
   await expectPhoneLayout(page);
   await page.getByRole("button", { name: "Open PC - Agency" }).click();
