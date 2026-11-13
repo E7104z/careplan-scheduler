@@ -88,10 +88,10 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
 
   it("lists the nurse visits by month, both past on Oct 21, 2026", async () => {
     await openF();
-    const visits = screen.getByRole("heading", { level: 2, name: "Nurse visits" }).closest("section")!;
+    const visits = (await screen.findByRole("heading", { level: 2, name: "Nurse visits" })).closest("section")!;
     expect(within(visits).getByText(/those months have passed/)).toBeInTheDocument();
-    expect(within(visits).getByText(/May 2026/)).toBeInTheDocument();
-    expect(within(visits).getByText(/August 2026/)).toBeInTheDocument();
+    expect(within(visits).getByText("· May 2026")).toBeInTheDocument();
+    expect(within(visits).getByText("· August 2026")).toBeInTheDocument();
     expect(within(visits).getAllByText("Past")).toHaveLength(2);
   });
 
@@ -159,8 +159,8 @@ describe("a care plan report with one service", () => {
     await user.upload(screen.getByLabelText(/Choose the PDF/), new File(["%PDF"], "plan.pdf", { type: "application/pdf" }));
     await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT E" });
     expect(screen.queryByRole("navigation", { name: "Care plan views" })).not.toBeInTheDocument();
-    const visits = screen.getByRole("heading", { level: 2, name: "Nurse visits" }).closest("section")!;
-    expect(within(visits).getByText(/November 2026/)).toBeInTheDocument();
+    const visits = (await screen.findByRole("heading", { level: 2, name: "Nurse visits" })).closest("section")!;
+    expect(within(visits).getByText("· November 2026")).toBeInTheDocument();
     expect(within(visits).getByText("Coming up")).toBeInTheDocument();
     expect(within(visits).getByText("Past")).toBeInTheDocument();
   });

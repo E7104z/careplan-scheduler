@@ -25,6 +25,7 @@ const SOURCES: Record<string, string> = {
   "EVT-01": "The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026",
   "EVT-02": "Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits",
   "EVT-03": "3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026)",
+  "NUR-02": "Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026",
   "CON-01": "CDS policy clarification Q5",
   "CON-02": "CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026)",
   "CON-03": "Policy 3.50 (rev. Jul 2026)",

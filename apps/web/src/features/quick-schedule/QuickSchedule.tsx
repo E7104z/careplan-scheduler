@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Info } from "lucide-react";
 import { MO_2026_07 } from "@careplan/engine";
 import { usePageTitle } from "../../lib/usePageTitle";
@@ -9,7 +9,7 @@ import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
 import { buildQuickModel, hasSchedule } from "./model";
-import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs, VisitsPanel } from "./PlanOverview";
+import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
@@ -18,6 +18,10 @@ import type { CarePlan, QuickModel } from "./types";
 import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
 
 const PACK = MO_2026_07;
+
+// The dated side (nurse visit dates and the rest of Coverage Phase 3) is its own chunk, loaded
+// only for a plan that has something to place.
+const VisitsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitsPanel })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
 
@@ -127,6 +131,13 @@ export function QuickSchedule() {
     };
   }, []);
 
+  const visitsPanel =
+    plan.visits.length > 0 ? (
+      <Suspense fallback={null}>
+        <VisitsPanel plan={plan} today={new Date()} feedback={feedback} dispatch={dispatch} />
+      </Suspense>
+    ) : null;
+
   return (
     <div className="mx-auto grid w-full max-w-[1440px] gap-6 px-[max(16px,env(safe-area-inset-left))] pb-16 pt-6">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 print:hidden">
@@ -188,7 +199,7 @@ export function QuickSchedule() {
         <div className="grid gap-5">
           <AuthorizationsPanel plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
           <PlanWeekPanel plan={plan} models={models} />
-          <VisitsPanel visits={plan.visits} today={new Date()} />
+          {visitsPanel}
           <OthersPanel plan={plan} />
         </div>
       ) : (
@@ -208,7 +219,7 @@ export function QuickSchedule() {
             </div>
             <SchedulePane state={state} model={model} models={models} pack={PACK} feedback={feedback} dispatch={dispatch} />
           </div>
-          {several ? null : <VisitsPanel visits={plan.visits} today={new Date()} />}
+          {several ? null : visitsPanel}
           {several ? null : <OthersPanel plan={plan} />}
         </>
       )}

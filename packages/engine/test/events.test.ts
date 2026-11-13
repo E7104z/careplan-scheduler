@@ -5,6 +5,7 @@ import {
   placeEvent,
   removeEvent,
   ruleById,
+  ruleNUR02UnplacedVisits,
   type EventAuthorization,
   type PlanEvent,
   type PlanEventKind,
@@ -234,5 +235,26 @@ describe("eventBalance: in the service's own unit", () => {
 describe("the EVT rules are cataloged", () => {
   it.each(["EVT-01", "EVT-02", "EVT-03"])("%s is a BLOCK rule in the Schedule table", (id) => {
     expect(ruleById(id)).toMatchObject({ area: "Schedule", severities: ["BLOCK"] });
+  });
+});
+
+describe("NUR-02: a passed visit month with no date placed (RN-04)", () => {
+  it("warns for a past month with no date, and not once a date is placed", () => {
+    expect(ruleNUR02UnplacedVisits([GHE], [], "2026-12")).toEqual([
+      { ruleId: "NUR-02", severity: "WARN", message: "No date was placed for this month's visit.", refs: { serviceAuthId: "auth-ghe", month: "2026-11" } },
+    ]);
+    const list = placed(GHE, [event("NURSE_VISIT", GHE.id, "2026-11-12")]);
+    expect(ruleNUR02UnplacedVisits([GHE], list, "2026-12")).toEqual([]);
+  });
+
+  it("says nothing for this month, a month to come, or a service that isn't counted in visits", () => {
+    expect(ruleNUR02UnplacedVisits([GHE], [], "2026-11")).toEqual([]);
+    expect(ruleNUR02UnplacedVisits([GHE], [], "2026-10")).toEqual([]);
+    expect(ruleNUR02UnplacedVisits([MEALS, SFC, ADC, CASE_MGMT], [], "2027-06")).toEqual([]);
+  });
+
+  it("a reminder is not a visit: it doesn't settle the month", () => {
+    const list = placed(GHE, [event("REMINDER", GHE.id, "2026-11-15", 0)]);
+    expect(ruleNUR02UnplacedVisits([GHE], list, "2026-12")).toHaveLength(1);
   });
 });

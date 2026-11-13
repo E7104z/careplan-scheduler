@@ -122,6 +122,11 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "A shift or billable event on an authorization of class CONTEXT (ILW case management, financial management, equipment, supplies, adaptations) → BLOCK; only a reminder may be placed on it. A reminder is never billable and has no quantity.",
     source: "3.00 Appendix 1 (rev. Jul 2026); Missouri coverage audit section 10, decision 2, and PR #10 (Oct 31, 2026)",
   },
+  {
+    id: "NUR-02", area: "Schedule", severities: ["WARN"], status: "APPROVED",
+    rule: "An authorized nurse visit month that has passed with no date placed → WARN \"No date was placed for this month's visit.\" It says nothing about whether the visit happened: the app schedules, it does not record delivery.",
+    source: "Missouri coverage audit RN-04 (missed general health evaluation follow-up); the follow-up wording is a product decision, Nov 13, 2026",
+  },
 
   // Conflicts and eligibility (conflicts.ts)
   {

@@ -581,6 +581,24 @@ service on its own, but the participant lives one week. So:
   service or several, names the nurse visits by month and each kept authorization (IMP-19).
 - **Storage**: the whole plan under `cps.quick.v3` without any `identity` (5.6); a single
   service saved under `cps.quick.v2` by the version before still opens.
+- **Nurse visits on dates** (Coverage Phase 3, Nov 13, 2026; `NurseVisits.tsx`, `planEvents.ts`).
+  The Nurse visits panel reads "By date, in the month authorized". Each visit Fusion authorized
+  is listed in its month with "No date yet" and a native date input "Pick a date", limited to
+  that authorization's month. Picking a date places one nurse visit event (`CarePlan.events`,
+  optional in storage, no name or DCN); the row then shows "Visit date", the date ("May 12,
+  2026") and "Remove date". The app never creates a visit Fusion did not authorize and never
+  places one by itself. Every placement goes through the engine's `placeEvent` (5.7): a date
+  outside the month, a visit past the month's count, a second nurse visit that day, or a 27th
+  in six months is refused beside the visit (`role="alert"`) and nothing changes: "Not placed.
+  Jun 2, 2026 is outside May 2026, the month this is authorized for. Pick a date in that month."
+  A general health evaluation placed on the date of another authorized nurse visit is one visit
+  that day ("Done at the nurse visit that day: one visit.") and counts once against the
+  one-a-day limit. A placed evaluation gets a reminder on the 15th of the next month,
+  "Reminder, not a visit · Jun 15, 2026 · Upload the evaluation (HCBS 08-26-01)": not billable,
+  never counted as a visit, and removed with its visit. A month that has passed with no date
+  shows "No date was placed for this month's visit. Pick a date above if one was arranged."
+  (rule NUR-02, WARN); it says nothing about whether the visit happened. No visit month is ever
+  derived: a plan shows only the months Fusion authorized (RN-01).
 
 ## 6. Accounts
 

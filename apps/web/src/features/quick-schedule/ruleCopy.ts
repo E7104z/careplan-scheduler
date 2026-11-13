@@ -114,6 +114,11 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "Only a reminder can go on this authorization. It is never a visit and is never billed.",
   },
+  "NUR-02/WARN": {
+    title: "No date was placed for this month's visit",
+    whatToDo:
+      "Pick a date for the visit in the month it was authorized. This doesn't say whether the visit happened.",
+  },
 };
 
 

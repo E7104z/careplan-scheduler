@@ -106,13 +106,52 @@ type StoredState = Omit<QuickState, "id"> & { id?: string };
 /** A CarePlan as it may be stored, with services that may predate task UUIDs. */
 type StoredCarePlan = Omit<CarePlan, "services"> & { services: StoredState[] };
 
+const EVENT_KINDS = new Set(["NURSE_VISIT", "ADC_DAY", "MEAL_DELIVERY", "SFC_DAY", "REMINDER"]);
+const LOCAL_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+const isOptional = (value: unknown, test: (value: unknown) => boolean): boolean => value === undefined || test(value);
+
+/** A dated event (Coverage Phase 3), validated the way `others` are: a bad one drops the saved plan. */
+function isEvent(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.authorizationId === "string" &&
+    typeof value.kind === "string" &&
+    EVENT_KINDS.has(value.kind) &&
+    typeof value.date === "string" &&
+    ISO_DATE.test(value.date) &&
+    isInt(value.quantity, 0) &&
+    typeof value.billable === "boolean" &&
+    value.billable === (value.kind !== "REMINDER") &&
+    isOptional(value.start, (time) => typeof time === "string" && LOCAL_TIME.test(time)) &&
+    isOptional(value.end, (time) => typeof time === "string" && LOCAL_TIME.test(time)) &&
+    isOptional(value.transportMinutes, (minutes) => isInt(minutes, 0, 1440)) &&
+    isOptional(value.evaluation, (flag) => typeof flag === "boolean") &&
+    isOptional(value.note, (note) => typeof note === "string" && note.length <= 500)
+  );
+}
+
 /** JOIN-03: give a stored authorization without a UUID a fresh one so every authorization has one. */
 function migrateState(state: StoredState): QuickState {
   return { ...state, id: state.id ?? newId() };
 }
 
+/**
+ * Authorizations saved before Coverage Phase 3 get the UUID their dated events point at; an event
+ * whose authorization is no longer in the plan is dropped rather than left pointing at nothing.
+ */
 function migratePlan(plan: StoredCarePlan): CarePlan {
-  return { ...plan, services: plan.services.map(migrateState) };
+  const visits = plan.visits.map((visit) => ({ ...visit, id: visit.id ?? newId() }));
+  const others = plan.others?.map((other) => ({ ...other, id: other.id ?? newId() }));
+  const ids = new Set([...visits, ...(others ?? [])].map((authorization) => authorization.id));
+  const events = plan.events?.filter((event) => ids.has(event.authorizationId));
+  return {
+    ...plan,
+    services: plan.services.map(migrateState),
+    visits,
+    ...(others ? { others } : {}),
+    ...(events ? { events } : {}),
+  };
 }
 
 function isVisit(value: unknown): boolean {
@@ -128,7 +167,8 @@ function isVisit(value: unknown): boolean {
     typeof value.end === "string" &&
     ISO_DATE.test(value.end) &&
     isInt(value.units, 0) &&
-    isStringOrNull(value.pa)
+    isStringOrNull(value.pa) &&
+    isOptional(value.id, (id) => typeof id === "string")
   );
 }
 
@@ -153,7 +193,8 @@ function isOther(value: unknown): boolean {
         isInt(month.units, 0),
     ) &&
     Array.isArray(value.rows) &&
-    value.rows.every((row) => typeof row === "string")
+    value.rows.every((row) => typeof row === "string") &&
+    isOptional(value.id, (id) => typeof id === "string")
   );
 }
 
@@ -166,6 +207,8 @@ function isStoredCarePlan(value: unknown): value is StoredCarePlan {
     value.visits.every(isVisit) &&
     // Kept authorizations (IMP-19); plans saved before them have none.
     (value.others === undefined || (Array.isArray(value.others) && value.others.every(isOther))) &&
+    // Dated events (Coverage Phase 3); plans saved before them have none.
+    (value.events === undefined || (Array.isArray(value.events) && value.events.every(isEvent))) &&
     Array.isArray(value.notes) &&
     value.notes.every(isNote) &&
     ((value.view === "plan" && count > 1) || isInt(value.view, 0, count - 1))

@@ -3,6 +3,7 @@ import type {
   CalendarException,
   DaysPerWeek,
   MonthlyAuthorization,
+  PlanEvent,
   ScheduleTemplate,
   ScheduleValidationResult,
   ServiceAuthorization,
@@ -82,6 +83,8 @@ export interface QuickState {
 
 /** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */
 export interface PlanVisit {
+  /** A UUID for this authorization (JOIN-03), which its dated events point at. Absent in plans saved before Coverage Phase 3. */
+  id?: string;
   /** Fusion's label: "GHE". */
   label: string | null;
   serviceCode: ServiceCode;
@@ -100,6 +103,8 @@ export interface PlanVisit {
  * Schedule doesn't place yet, a code outside Appendix 1, or a service the person chose to keep.
  */
 export interface PlanOther {
+  /** A UUID for this authorization (JOIN-03), which its dated events point at. Absent in plans saved before Coverage Phase 3. */
+  id?: string;
   label: string | null;
   /** The procedure code as Fusion printed it; null when the person kept a service with none. */
   code: string | null;
@@ -129,6 +134,12 @@ export interface CarePlan {
    * plans by hand, which have none.
    */
   others?: PlanOther[];
+  /**
+   * Dated events the person placed (Coverage Phase 3): nurse visits, adult day care days, meal
+   * deliveries, covered days and reminders. They carry no name and no DCN. Absent in plans saved
+   * before them.
+   */
+  events?: PlanEvent[];
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

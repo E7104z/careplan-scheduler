@@ -88,11 +88,24 @@ if (!manifest["index.html"]) fail("manifest has no entry for index.html");
 const entry = staticGraph("index.html");
 measure("entry chunk + static imports (gzip)", [...entry], ENTRY_BUDGET);
 
+/**
+ * A page's chunk in the manifest. It is listed under its source file, unless another lazy chunk
+ * also imports from it (Quick Schedule's dated side does): Vite then lists it under its file name,
+ * so it is found as the one lazy chunk of that name the entry loads with import().
+ */
+function pageChunkKey(source) {
+  if (manifest[source]) return source;
+  const name = source.split("/").pop().replace(/\.\w+$/, "");
+  const keys = (manifest["index.html"].dynamicImports ?? []).filter((key) => manifest[key]?.name === name);
+  return keys.length === 1 ? keys[0] : null;
+}
+
 for (const [path, source] of Object.entries(PUBLIC_PAGES)) {
-  if (!manifest[source]?.isDynamicEntry) {
+  const key = pageChunkKey(source);
+  if (key === null || !manifest[key].isDynamicEntry) {
     fail(`${source} (${path}) is not a lazy page chunk; public pages load with React.lazy (router.tsx)`);
   }
-  const page = staticGraph(source, new Set(entry));
+  const page = staticGraph(key, new Set(entry));
   measure(`page ${path}: entry + ${source} and its static imports (gzip)`, [...page], PAGE_BUDGET);
 }
 
