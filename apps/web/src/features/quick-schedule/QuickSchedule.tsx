@@ -8,7 +8,7 @@ import { ImportPanel, PDF_CHOOSER_ID, type BuiltFrom } from "../import/ImportPan
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
-import { AmendmentsSlot, CalendarSlot, CaregiversSlot, OtherPlacingSlot, PlanChecksSlot, VisitsSlot, VisitTimesSlot, WaiversSlot } from "./extrasSlots";
+import { AmendmentsSlot, CalendarSlot, CaregiversSlot, CoverageBlocksSlot, OtherPlacingSlot, PlanChecksSlot, VisitsSlot, VisitTimesSlot, WaiversSlot } from "./extrasSlots";
 import { buildQuickModel, hasSchedule } from "./model";
 import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
@@ -256,6 +256,7 @@ export function QuickSchedule() {
           {opened && index !== null ? (
             <>
               <VisitTimesSlot state={state} model={model} service={index} feedback={feedback} dispatch={dispatch} />
+              <CoverageBlocksSlot state={state} model={model} service={index} feedback={feedback} dispatch={dispatch} />
               <AmendmentsSlot key={`${planKey}-${index}`} state={state} model={model} service={index} pack={PACK} feedback={feedback} dispatch={dispatch} />
             </>
           ) : null}

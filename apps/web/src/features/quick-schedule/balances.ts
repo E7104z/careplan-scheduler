@@ -1,6 +1,6 @@
-import { eventBalance } from "@careplan/engine";
-import { formatUnits, monthName } from "../../lib/format";
-import { serviceName } from "./carePlan.js";
+import { dailyUnitsForMonth, eventBalance, importedUnitsForProgram, ruleAUTH11ProjectIlwSwitch } from "@careplan/engine";
+import { formatUnits, monthName, niceDate } from "../../lib/format";
+import { cdsIlwPair, serviceName } from "./carePlan.js";
 import { quantityText } from "./eventText.js";
 import { combinedRespiteFigure, monthBalance, monthFigures } from "./model.js";
 import { otherName } from "./others.js";
@@ -70,6 +70,32 @@ export function nextVisitNeeded(plan: CarePlan, currentMonth: string): string | 
 export function respiteLine(models: QuickModel[], month: string): string | null {
   const combined = combinedRespiteFigure(models, month);
   return combined ? `Basic and Advanced Respite together: ${combined.units} of ${combined.ceiling} units in ${monthName(month)}` : null;
+}
+
+/**
+ * CP4-5 / INFO 05-25-01: when a care plan has both State Plan (CDS) and ILW authorization and both
+ * were imported, the day in `month` the State Plan units run out and the ILW units begin, from the
+ * engine's AUTH-11 projection (the same daily units and imported figures the checks use). Null when
+ * the plan isn't CDS+ILW, a figure wasn't imported, or the switch doesn't fall in this month.
+ */
+export function ilwSwitchProjection(models: QuickModel[], month: string): string | null {
+  const pair = cdsIlwPair(models);
+  if (!pair) return null;
+  const cds = models[pair.cds]!;
+  const ilw = models[pair.ilw]!;
+  const authorizations = [cds.auth, ilw.auth];
+  const monthly = [...cds.monthlyAuthorizations, ...ilw.monthlyAuthorizations];
+  const statePlanUnits = importedUnitsForProgram(authorizations, monthly, "CDS", month);
+  const ilwUnits = importedUnitsForProgram(authorizations, monthly, "ILW", month);
+  if (statePlanUnits === undefined || ilwUnits === undefined) return null;
+  const taskIds = new Set([...cds.tasks, ...ilw.tasks].map((task) => task.id));
+  const cdsDaily = dailyUnitsForMonth(cds.template, [...cds.trims, ...cds.dayExceptions], month, taskIds);
+  const ilwDaily = dailyUnitsForMonth(ilw.template, [...ilw.trims, ...ilw.dayExceptions], month, taskIds);
+  const dailyUnits = cdsDaily.map((units, day) => units + (ilwDaily[day] ?? 0));
+  const projected = ruleAUTH11ProjectIlwSwitch(dailyUnits, statePlanUnits, ilwUnits);
+  if (projected.length === 0) return null;
+  const day = projected[0]!.refs.date;
+  return `Projected: ILW units begin about ${niceDate(`${month}-${String(Number(day)).padStart(2, "0")}`)}`;
 }
 
 /** The plan's months, first to last: every service's scheduled months and every month with an event. */

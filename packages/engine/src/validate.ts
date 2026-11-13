@@ -115,7 +115,7 @@ function derivedMonthUnits(
 }
 
 /** Whole 15-minute units scheduled on each day of a month for the given task ids. */
-function dailyUnitsForMonth(
+export function dailyUnitsForMonth(
   template: ScheduleTemplate,
   exceptions: CalendarException[],
   month: string,
@@ -133,7 +133,7 @@ function dailyUnitsForMonth(
 }
 
 /** Sum of imported Fusion units for a program in a month, or undefined when none exist. */
-function importedUnitsForProgram(
+export function importedUnitsForProgram(
   authorizations: ServiceAuthorization[],
   monthlyAuthorizations: MonthlyAuthorization[],
   program: ProgramCode,

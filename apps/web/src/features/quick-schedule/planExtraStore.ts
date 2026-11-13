@@ -31,7 +31,10 @@ export type PlanExtraAction =
   /** Waiver enrollments (Coverage Phase 4, CON-16): add, change or take one off. Refused if they'd overlap. */
   | { type: "addWaiver" }
   | { type: "updateWaiver"; index: number; patch: Partial<PlanWaiver> }
-  | { type: "removeWaiver"; index: number };
+  | { type: "removeWaiver"; index: number }
+  /** Respite coverage blocks (Policy 3.50): add a same-day span of care, or take one off. Refused if a rule forbids it. */
+  | { type: "addCoverageBlock"; service: number; date: string; start: string; end: string }
+  | { type: "removeCoverageBlock"; service: number; blockId: string };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -44,6 +47,7 @@ const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
   "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay", "setStartTime",
   "addCaregiver", "updateCaregiver", "removeCaregiver", "assignCaregiver", "setSfcCaregiver",
   "addWaiver", "updateWaiver", "removeWaiver",
+  "addCoverageBlock", "removeCoverageBlock",
 ]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {

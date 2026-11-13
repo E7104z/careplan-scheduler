@@ -4,7 +4,7 @@ import { cn } from "../../lib/cn";
 import { monthName, niceDate, weekdayName } from "../../lib/format";
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
-import { balanceRows, calendarMonths, nextVisitNeeded, respiteLine } from "./balances";
+import { balanceRows, calendarMonths, ilwSwitchProjection, nextVisitNeeded, respiteLine } from "./balances";
 import { amendmentMarkers, calendarCells, listRows, moveDate, type CalendarCell } from "./calendarView";
 import { DayChangeForm } from "./DayChangeForm";
 import { localMonth } from "./model";
@@ -55,7 +55,9 @@ export function ParticipantCalendar({ plan, models, pack, today, feedback, dispa
   const selectedCell = selected !== null && selected.startsWith(month) ? cells.find((cell) => cell.date === selected) : undefined;
   const at = months.indexOf(month);
   const balances = balanceRows(plan, models, month);
-  const notes = [nextVisitNeeded(plan, current), respiteLine(models, month)].filter((note): note is string => note !== null);
+  const notes = [nextVisitNeeded(plan, current), respiteLine(models, month), ilwSwitchProjection(models, month)].filter(
+    (note): note is string => note !== null,
+  );
 
   const go = (next: string) => {
     setChosen(next);

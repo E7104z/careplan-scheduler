@@ -4,6 +4,7 @@ import { changeDay } from "./dayChanges.js";
 import { buildQuickModel } from "./model.js";
 import { applyEvent, dropEvent } from "./planEvents.js";
 import { registerPlanExtras } from "./planExtraStore.js";
+import { addCoverageBlock, removeCoverageBlock } from "./coverage.js";
 import { guardedPlanChange, setStartTime } from "./visits.js";
 import { addWaiver, removeWaiver, updateWaiver } from "./waivers.js";
 
@@ -27,6 +28,9 @@ registerPlanExtras((plan, action, pack) => {
   if (action.type === "addWaiver") return guardedPlanChange(plan, addWaiver(plan), pack, models());
   if (action.type === "updateWaiver") return guardedPlanChange(plan, updateWaiver(plan, action.index, action.patch), pack, models());
   if (action.type === "removeWaiver") return { plan: removeWaiver(plan, action.index) };
+  // Respite coverage blocks (Policy 3.50): the span is the care; adding one a rule forbids is refused.
+  if (action.type === "addCoverageBlock") return addCoverageBlock(plan, action.service, action.date, action.start, action.end, pack, models());
+  if (action.type === "removeCoverageBlock") return removeCoverageBlock(plan, action.service, action.blockId);
   return { plan: removeAmendment(plan, action.service, action.amendmentId) };
 });
 
@@ -38,3 +42,4 @@ export { VisitTimes } from "./VisitTimes";
 export { PlanChecks } from "./PlanChecks";
 export { CaregiversPanel } from "./CaregiversPanel";
 export { WaiversPanel } from "./WaiversPanel";
+export { CoverageBlocks } from "./CoverageBlocks.js";
