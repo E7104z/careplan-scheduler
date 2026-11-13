@@ -1,7 +1,7 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
-import type { CarePlan, DayChange } from "./types.js";
+import type { CarePlan, DayChange, PlanCaregiver } from "./types.js";
 
 /**
  * Changes to the plan's dated side (Coverage Phase 3 on): events on the calendar. The code that
@@ -21,7 +21,13 @@ export type PlanExtraAction =
   /** "Change this day": a task's minutes on one date, over the weekly pattern. Refused with the limit. */
   | { type: "changeDay"; service: number; change: DayChange }
   /** Set (or clear, with null) a service's visit start time on a weekday. Refused if it would break an overlap rule. */
-  | { type: "setStartTime"; service: number; weekday: Weekday; time: string | null };
+  | { type: "setStartTime"; service: number; weekday: Weekday; time: string | null }
+  /** Caregivers (Coverage Phase 4): add one, change what was entered, remove one, assign to a service or a covered-day role. */
+  | { type: "addCaregiver" }
+  | { type: "updateCaregiver"; id: string; patch: Partial<Omit<PlanCaregiver, "id">> }
+  | { type: "removeCaregiver"; id: string }
+  | { type: "assignCaregiver"; service: number; id: string; on: boolean }
+  | { type: "setSfcCaregiver"; otherId: string; role: "primary" | "backup"; id: string | null };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -32,6 +38,7 @@ export type PlanExtraReducer = (plan: CarePlan, action: PlanExtraAction, pack: R
 
 const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
   "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay", "setStartTime",
+  "addCaregiver", "updateCaregiver", "removeCaregiver", "assignCaregiver", "setSfcCaregiver",
 ]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {

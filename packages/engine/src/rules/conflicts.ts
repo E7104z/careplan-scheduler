@@ -282,7 +282,8 @@ export function ruleCON07AgencyAide(
           refs: { serviceAuthId: auth.id },
         });
       }
-      if (caregiver.agencyEmployee !== true) {
+      // Only a stated "not an employee" is a finding here; an unanswered question is CON-17's REVIEW.
+      if (caregiver.agencyEmployee === false) {
         results.push({
           ruleId: "CON-07",
           severity,
@@ -517,6 +518,14 @@ export function ruleCON17QualificationData(
           ruleId: "CON-17",
           severity: "REVIEW",
           message: "Missing relationship data needed by CON-07",
+          refs: { serviceAuthId: auth.id },
+        });
+      }
+      if ((AGENCY_PROGRAMS.has(auth.program) || FACILITY_PROGRAMS.has(auth.program)) && caregiver.agencyEmployee === undefined) {
+        results.push({
+          ruleId: "CON-17",
+          severity: "REVIEW",
+          message: "Missing employment data needed by CON-07",
           refs: { serviceAuthId: auth.id },
         });
       }

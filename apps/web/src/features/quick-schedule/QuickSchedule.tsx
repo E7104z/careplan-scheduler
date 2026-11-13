@@ -8,7 +8,7 @@ import { ImportPanel, PDF_CHOOSER_ID, type BuiltFrom } from "../import/ImportPan
 import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
-import { AmendmentsSlot, CalendarSlot, OtherPlacingSlot, PlanChecksSlot, VisitsSlot, VisitTimesSlot } from "./extrasSlots";
+import { AmendmentsSlot, CalendarSlot, CaregiversSlot, OtherPlacingSlot, PlanChecksSlot, VisitsSlot, VisitTimesSlot } from "./extrasSlots";
 import { buildQuickModel, hasSchedule } from "./model";
 import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs } from "./PlanOverview";
 import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
@@ -136,7 +136,13 @@ export function QuickSchedule() {
   const visitsPanel =
     plan.visits.length > 0 ? <VisitsSlot plan={plan} today={new Date()} feedback={feedback} dispatch={dispatch} /> : null;
   // Visit checks (Coverage Phase 4): the rules that read visits, for a plan the person opened or built.
-  const planChecks = opened && canPrint ? <PlanChecksSlot plan={plan} models={models} pack={PACK} /> : null;
+  const planChecks =
+    opened && canPrint ? (
+      <>
+        <PlanChecksSlot plan={plan} models={models} pack={PACK} />
+        <CaregiversSlot plan={plan} models={models} feedback={feedback} dispatch={dispatch} />
+      </>
+    ) : null;
 
   // The participant calendar (Coverage Phase 3): the Month tab, for a plan the person opened or
   // built, once it has a schedule. It is shown, and its chunk loaded, when the person opens it.

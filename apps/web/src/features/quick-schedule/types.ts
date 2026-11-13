@@ -1,6 +1,7 @@
 import type {
   AmendmentDirection,
   AuthorizedTask,
+  Caregiver,
   CalendarException,
   DaysPerWeek,
   MonthlyAuthorization,
@@ -78,6 +79,24 @@ export interface DayChange {
   minutes: number;
 }
 
+/** A caregiver's relationship to the participant, as the engine names them. */
+export type CaregiverRelationship = Caregiver["relationships"][string];
+
+/**
+ * A caregiver (Coverage Phase 4). Qualifications are what the person entered: null means not
+ * entered, and is never guessed from a name or a role word (CON-17). `name` lives in memory only,
+ * like the participant's: it is never written to storage, and after a reload the caregiver is
+ * shown as "Caregiver 1".
+ */
+export interface PlanCaregiver {
+  id: string;
+  name?: string;
+  relationship: CaregiverRelationship | null;
+  agencyEmployee: boolean | null;
+  nurseLicense: boolean | null;
+  fcsrRegistered: boolean | null;
+}
+
 /** APP-SPEC 5.6. `identity` lives in memory only and is never persisted. */
 export interface QuickState {
   source: "fusion" | "manual";
@@ -112,6 +131,8 @@ export interface QuickState {
   amendments?: PlanAmendment[];
   /** One-day changes over the weekly pattern; absent in plans saved before them. */
   dayChanges?: DayChange[];
+  /** The caregivers assigned to this service, by id; each visit takes the first (Coverage Phase 4). */
+  caregiverIds?: string[];
   /** Optional visit start time by weekday ("0" Sunday to "6" Saturday), as "HH:mm" in America/Chicago (Coverage Phase 4). */
   startTimes?: Record<string, string>;
 }
@@ -140,6 +161,8 @@ export interface PlanVisit {
 export interface PlanOther {
   /** A UUID for this authorization (JOIN-03), which its dated events point at. Absent in plans saved before Coverage Phase 3. */
   id?: string;
+  /** A structured family caregiver service's primary and backup caregivers, by id (Coverage Phase 4). */
+  sfcCaregivers?: { primary: string | null; backup: string | null };
   label: string | null;
   /** The procedure code as Fusion printed it; null when the person kept a service with none. */
   code: string | null;
@@ -175,6 +198,8 @@ export interface CarePlan {
    * before them.
    */
   events?: PlanEvent[];
+  /** The plan's caregivers (Coverage Phase 4); their names are never persisted. Absent in plans saved before them. */
+  caregivers?: PlanCaregiver[];
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

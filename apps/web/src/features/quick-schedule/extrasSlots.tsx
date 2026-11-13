@@ -9,6 +9,7 @@ const Amendments = lazy(() => import("./extras").then((extras) => ({ default: ex
 const Calendar = lazy(() => import("./extras").then((extras) => ({ default: extras.ParticipantCalendar })));
 const Times = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitTimes })));
 const Checks = lazy(() => import("./extras").then((extras) => ({ default: extras.PlanChecks })));
+const Caregivers = lazy(() => import("./extras").then((extras) => ({ default: extras.CaregiversPanel })));
 
 export function VisitsSlot(props: ComponentProps<typeof Visits>) {
   return (
@@ -54,6 +55,14 @@ export function PlanChecksSlot(props: ComponentProps<typeof Checks>) {
   return (
     <Suspense fallback={null}>
       <Checks {...props} />
+    </Suspense>
+  );
+}
+
+export function CaregiversSlot(props: ComponentProps<typeof Caregivers>) {
+  return (
+    <Suspense fallback={null}>
+      <Caregivers {...props} />
     </Suspense>
   );
 }

@@ -748,6 +748,37 @@ service on its own, but the participant lives one week. So:
     for the same service overlap. A participant can't get the same CDS or ILW service twice at
     once. Change one visit's time."; a value that isn't a time: "Not changed. Enter the time as
     hours and minutes, like 9:00 AM."
+- **Caregivers** (Coverage Phase 4, CP4-2; `CaregiversPanel.tsx`, `caregivers.ts`). A panel
+  "Caregivers" (meta "None added" or "N added"), for a plan the person opened or built:
+  "Optional. Add the people who give the care to check who can serve this participant and
+  whether anyone is booked twice. Enter what you know about each; nothing is guessed. Names stay
+  in this tab and are never saved." Button "Add a caregiver".
+  - **What is entered.** For each caregiver: "Name of Caregiver 1 (kept in this tab only, never
+    saved)"; "Relationship of Caregiver 1 to the participant" (Not entered / Not related /
+    Spouse / Legal guardian / Parent / Sibling / Child / Stepchild / Grandparent / Grandchild /
+    Other family); and three questions, each Not entered / Yes / No: "Agency employee", "Nurse
+    license", "On the Family Care Safety Registry". Every answer starts at "Not entered".
+    Qualifications are entered, never guessed from a name or a role word (CON-17).
+  - **Names are memory-only**, exactly like the participant's: kept in React state, never
+    written to `sessionStorage`, Firestore, the URL or logs. `savePlan` drops them, and a stored
+    caregiver that carries a name is refused on load. After a reload a caregiver is "Caregiver
+    1", by their place in the plan; the printout always uses that label.
+  - **Assignment.** "Services Caregiver 1 is assigned to": a checkbox for each service. A
+    service can have several caregivers; each visit takes the first. For a structured family
+    caregiver authorization: "<label> covered days: Caregiver 1 is" Not the caregiver / The
+    primary caregiver / The backup caregiver (one person can't be both). Stored as optional
+    `CarePlan.caregivers`, `QuickState.caregiverIds` and `PlanOther.sfcCaregivers`.
+  - **Checks.** An assigned caregiver is checked by the engine's own rules, called as they are:
+    CON-06 (a spouse or legal guardian as the paid CDS attendant), CON-07 (a close family member
+    or a non-employee as an agency aide) and CON-17. Missing data is never a pass and never a
+    block: Visit checks shows "Caregiver details are missing" under "Needs review" until the
+    relationship and, for an agency service, the employment are entered. (An unanswered
+    employment question used to read as "not an employee" in the engine; it is now CON-17's
+    REVIEW, and only a stated No is CON-07's BLOCK.)
+  - **Guard.** What is entered and who is assigned go through the guard (5.7). A change that
+    would add a Must-fix result is refused in the panel (`role="alert"`) and nothing changes:
+    "Not changed. This attendant can't be paid for this participant. A spouse or legal guardian
+    can't be the CDS attendant."
 
 ## 6. Accounts
 

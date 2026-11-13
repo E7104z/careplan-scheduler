@@ -37,7 +37,8 @@ export interface QuickStore {
  * a toast.
  */
 export function refusalPlace(action: StoreAction): "task" | "cell" | "toast" | "event" {
-  if (action.type === "placeEvent" || action.type === "recordAmendment" || action.type === "changeDay" || action.type === "setStartTime") return "event";
+  // The dated side's refusals are shown beside the control that sent them, never in a toast.
+  if (isPlanExtraAction(action)) return "event";
   if (action.type === "togglePinDay" || action.type === "unpin") return "task";
   if (action.type === "setCell") return "cell";
   return "toast";

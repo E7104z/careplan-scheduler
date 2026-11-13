@@ -3,6 +3,9 @@ import {
   ruleCON01SameServiceOverlap,
   ruleCON02DifferentServiceOverlap,
   ruleCON03RespiteOverlap,
+  ruleCON06AttendantRelationship,
+  ruleCON07AgencyAide,
+  ruleCON17QualificationData,
   weekdayOf,
   type RulePack,
   type ScheduledService,
@@ -10,13 +13,13 @@ import {
   type Visit,
   type Weekday,
 } from "@careplan/engine";
+import { assignedTo, assignmentVisits, engineCaregivers, PARTICIPANT_ID } from "./caregivers.js";
 import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
 
-/** One plan is one participant. The id is a constant: no name or DCN is ever used as a key. */
-export const PARTICIPANT_ID = "participant";
+export { PARTICIPANT_ID };
 
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -68,7 +71,8 @@ export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack
     if (time === null || day.minutes <= 0) continue;
     const start = `${day.date}T${time}`;
     visits.push({
-      id: `${state.id}:${day.date}`, participantId: PARTICIPANT_ID, caregiverId: "", serviceCode: state.serviceCode,
+      // Each visit takes the service's first assigned caregiver; "" while none is assigned.
+      id: `${state.id}:${day.date}`, participantId: PARTICIPANT_ID, caregiverId: assignedTo(plan, day.service)[0] ?? "", serviceCode: state.serviceCode,
       start, end: addMinutesLocal(start, day.minutes), taskIds: day.taskIds,
     });
   }
@@ -76,16 +80,26 @@ export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack
 }
 
 /**
- * The visit rules on the schedule (CP4-1): same-service, different-service and respite overlap,
- * on the visits the start times give. A service with no clock times is REVIEW, never a pass.
+ * The visit and caregiver rules on the schedule: same-service, different-service and respite
+ * overlap on the visits the start times give (a service with no clock times is REVIEW, never a
+ * pass), and who can serve this participant (CON-06, CON-07), with missing qualification data
+ * asked for by CON-17 (REVIEW) rather than assumed. The existing rule functions are called as
+ * they are; none is re-implemented here.
  */
 export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: RulePack): ValidationResult[] {
   const visits = buildVisits(plan, models, pack);
   const services = scheduledServices(plan, models);
+  // The qualification rules find a service's caregivers from its visits: the assignments say who is on what.
+  const assigned = [...visits, ...assignmentVisits(plan, models)];
+  const authorizations = models.map((model) => ({ ...model.auth, participantId: PARTICIPANT_ID }));
+  const caregivers = engineCaregivers(plan);
   return [
     ...ruleCON01SameServiceOverlap(visits, services),
     ...ruleCON02DifferentServiceOverlap(visits, pack, services),
     ...ruleCON03RespiteOverlap(visits, services),
+    ...ruleCON06AttendantRelationship(authorizations, caregivers, assigned),
+    ...ruleCON07AgencyAide(authorizations, caregivers, assigned),
+    ...ruleCON17QualificationData(authorizations, caregivers, assigned),
   ];
 }
 
@@ -123,6 +137,16 @@ export function setStartTime(plan: CarePlan, service: number, weekday: Weekday, 
   if (time === null) delete startTimes[String(weekday)];
   else startTimes[String(weekday)] = time;
   const next: CarePlan = { ...plan, services: plan.services.map((existing, index) => (index === service ? { ...state, startTimes } : existing)) };
+  const blocks = newBlocks(planVisitResults(plan, models, pack), planVisitResults(next, models, pack));
+  return blocks.length > 0 ? { plan, refusal: visitRefusal(blocks[0]!) } : { plan: next };
+}
+
+/**
+ * A change to who gives the care, through the guard (APP-SPEC 5.7): `next` is accepted unless it
+ * adds a Must-fix result, such as a spouse as the paid CDS attendant; then the plan is unchanged
+ * and the rule's words say why.
+ */
+export function guardedPlanChange(plan: CarePlan, next: CarePlan, pack: RulePack, models: QuickModel[]): VisitChange {
   const blocks = newBlocks(planVisitResults(plan, models, pack), planVisitResults(next, models, pack));
   return blocks.length > 0 ? { plan, refusal: visitRefusal(blocks[0]!) } : { plan: next };
 }
