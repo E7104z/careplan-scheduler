@@ -53,6 +53,12 @@ export function niceDate(iso: string): string {
   return `${MONTH_NAMES[(month ?? 1) - 1]!.slice(0, 3)} ${day}, ${year}`;
 }
 
+/** Epoch milliseconds -> "Nov 3, 2026" (locale-independent). */
+export function niceDateFromMillis(millis: number): string {
+  const date = new Date(millis);
+  return `${MONTH_NAMES[date.getMonth()]!.slice(0, 3)} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
 /** Whole 15-minute units plus leftover minutes: "2 units", "2 units + 5 min", or "5 min" under one unit. */
 export function formatUnits(minutes: number): string {
   const units = Math.floor(minutes / 15);

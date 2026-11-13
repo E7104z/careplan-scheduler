@@ -1,9 +1,9 @@
 import { collectionGroup, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { getDb } from "../auth/firebase";
-import { asRole, asString } from "./docFields";
+import { asRole, asString, asTenant } from "./docFields";
 import { listAgencyInvites, listMyInvites } from "./invites";
 import { listMembers } from "./members";
-import { agencyInitialState, type AgencyState, type AuthActor, type Membership, type Tenant } from "./types";
+import { agencyInitialState, type AgencyState, type AuthActor, type Membership } from "./types";
 
 // APP-SPEC 7.2: my memberships come from a collection-group query; the current agency is
 // users/{uid}.lastTenantId when the person is still a member, otherwise the first membership.
@@ -56,7 +56,7 @@ export async function loadAgencyData(account: AuthActor): Promise<AgencyState> {
   return {
     memberships,
     tenantId: current.tenantId,
-    tenant: tenantSnapshot.exists() ? (tenantSnapshot.data() as Tenant) : null,
+    tenant: tenantSnapshot.exists() ? asTenant((tenantSnapshot.data() ?? {}) as Record<string, unknown>) : null,
     role: current.role,
     members,
     agencyInvites,

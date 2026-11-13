@@ -294,3 +294,32 @@ describe("R-18 listing my pending invites (the invite banner's query)", () => {
     await assertFails(myPending(verified(OTHER), INVITEE.email));
   });
 });
+
+describe("R-19 and R-20 accepting the business associate agreement", () => {
+  const acceptBaa = (db: Db, by: string, acceptedAt: unknown) =>
+    tenantDoc(db, TENANT).update({
+      baaVersion: "1.0",
+      baaAcceptedBy: by,
+      baaAcceptedAt: acceptedAt,
+    });
+
+  it("R-19 allows the owner to accept the BAA with all three fields", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await assertSucceeds(acceptBaa(verified(OWNER), OWNER.uid, serverTimestamp()));
+  });
+
+  it("R-19 denies a non-owner accepting the BAA", async () => {
+    await seedTenant(TENANT, TENANT_NAME, [{ person: SCHEDULER, role: "scheduler" }]);
+    await assertFails(acceptBaa(verified(SCHEDULER), SCHEDULER.uid, serverTimestamp()));
+  });
+
+  it("R-20 denies recording someone else as the person who accepted", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await assertFails(acceptBaa(verified(OWNER), OTHER.uid, serverTimestamp()));
+  });
+
+  it("R-20 denies an acceptance time that is not the server time", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await assertFails(acceptBaa(verified(OWNER), OWNER.uid, inDays(1)));
+  });
+});
