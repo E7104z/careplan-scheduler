@@ -107,3 +107,37 @@ describe("Services arranged by date (APP-SPEC 5.8)", () => {
     expect(screen.getAllByText("Arranged by date")).toHaveLength(3);
   });
 });
+
+describe("Context authorizations: optional reminders, never shifts (CP3-5)", () => {
+  // Fixture G with its context authorization made ILW case management (T2024U6), which may hold a reminder.
+  const withCaseManagement = fixtureG.replaceAll("T2040U6", "T2024U6");
+
+  it("case management takes a dated reminder with the person's note, and it counts toward nothing", async () => {
+    const { user } = renderQuick();
+    await openCarePlanText(user, withCaseManagement);
+    await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT G" });
+    const group = await screen.findByRole("group", { name: "Place FMS on the calendar" });
+    expect(within(group).getByText("A reminder is a note on a date. It is never a visit and is never billed.")).toBeInTheDocument();
+    // Only a date and a note: there is no quantity to enter on a context authorization.
+    expect(within(group).queryByLabelText("Meals")).not.toBeInTheDocument();
+    expect(within(group).queryByLabelText("Minutes attended")).not.toBeInTheDocument();
+
+    setDate(group, "2026-11-10");
+    await user.type(within(group).getByLabelText("Note (optional)"), "Call the case manager");
+    await user.click(within(group).getByRole("button", { name: "Add reminder for FMS" }));
+    expect(await within(group).findByText("Nov 10, 2026 · Reminder, not a visit · Call the case manager")).toBeInTheDocument();
+    // No balance line and no "dates placed": a reminder is not a date of service.
+    expect(within(group).queryByText(/placed, .* left/)).not.toBeInTheDocument();
+    expect(screen.getByText("No caregiver time")).toBeInTheDocument();
+    expect(screen.queryByText(/No caregiver time · /)).not.toBeInTheDocument();
+  });
+
+  it("a reminder needs no note", async () => {
+    const { user } = renderQuick();
+    await openCarePlanText(user, withCaseManagement);
+    const group = await screen.findByRole("group", { name: "Place FMS on the calendar" });
+    setDate(group, "2026-12-01");
+    await user.click(within(group).getByRole("button", { name: "Add reminder for FMS" }));
+    expect(await within(group).findByText("Dec 1, 2026 · Reminder, not a visit")).toBeInTheDocument();
+  });
+});

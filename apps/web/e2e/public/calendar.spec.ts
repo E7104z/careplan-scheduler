@@ -122,3 +122,31 @@ test("ADW-03, ADW-04: adult day care and meals are placed on dates in their own 
   await expect(page.getByRole("group", { name: "Place HDM on the calendar" }).getByText("Nov 3, 2026 · 2 meals")).toBeVisible();
   await expect(page.getByRole("group", { name: "Place ADC on the calendar" }).getByText("Nov 2, 2026 · 8 h · 60 min transportation")).toBeVisible();
 });
+
+test("CP3-5: a context authorization takes a reminder, never a shift", async ({ page, isMobile }) => {
+  await page.clock.setFixedTime(new Date("2026-10-31T12:00:00-05:00"));
+  await page.goto("/quick");
+  // Fixture G with its context authorization made ILW case management (T2024U6).
+  await openCarePlanText(page, fixtureText("G-care-plan-report-kept").replaceAll("T2040U6", "T2024U6"));
+  await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT G" })).toBeVisible();
+
+  const group = page.getByRole("group", { name: "Place FMS on the calendar" });
+  await expect(group.getByText("A reminder is a note on a date. It is never a visit and is never billed.")).toBeVisible();
+  await group.getByLabel("Date", { exact: true }).fill("2026-11-10");
+  await group.getByLabel("Note (optional)").fill("Call the case manager");
+  await group.getByRole("button", { name: "Add reminder for FMS" }).click();
+  await expect(group.getByText("Nov 10, 2026 · Reminder, not a visit · Call the case manager")).toBeVisible();
+  await expect(page.getByText("No caregiver time", { exact: true })).toBeVisible();
+  await analyze(page);
+  if (isMobile) {
+    await expectNoPageScroll(page);
+    await expectTouchTargets(page);
+  }
+});
+
+test("CP3-5: financial management shows its authorization and offers nothing to place", async ({ page }) => {
+  await openG(page);
+  await expect(page.getByText("Nothing to place: this is authorization context only.")).toBeVisible();
+  await expect(page.getByRole("group", { name: "Place FMS on the calendar" })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Place XYZ on the calendar" })).toHaveCount(0);
+});

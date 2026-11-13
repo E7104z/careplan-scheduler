@@ -626,6 +626,18 @@ service on its own, but the participant lives one week. So:
   authorized in November 2026". The reason line keeps "Arranged by date" and adds the count:
   "Arranged by date · 5 dates placed". Nothing placed here enters the week, a caregiver's time
   or any 15-minute unit total.
+- **Reminders on context authorizations** (Coverage Phase 3). A kept authorization of class
+  CONTEXT never has caregiver time. ILW case management (`T2024U6`) and ILW equipment, supplies
+  and environmental adaptations (`T2029U6`, `T2028U6`, `S5165U6`) may hold a dated reminder,
+  only if the person adds one: "A reminder is a note on a date. It is never a visit and is never
+  billed."; Date, "Note (optional)" (200 characters at most); button "Add reminder". It is
+  listed as "Nov 10, 2026 · Reminder, not a visit · <note>". A reminder is not billable, has no
+  quantity, is never a caregiver shift, is in no unit total and no balance, and does not change
+  the reason line ("No caregiver time"). ILW financial management (`T2040U6`) is authorization
+  context only: it shows its authorization and "Nothing to place: this is authorization context
+  only." Any other event on a context authorization is refused by the engine (EVT-03): "Not
+  placed. This authorization has no caregiver time, so only a reminder can go on it." The
+  scheduler holds no costs; these authorizations have no cost field.
 
 ## 6. Accounts
 
