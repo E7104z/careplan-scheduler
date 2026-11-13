@@ -98,7 +98,8 @@ describe("Quick Schedule model", () => {
     const model = buildQuickModel(state, MO_2026_07);
     expect(model.allowance?.weeklyMinutes).toBe(150);
     expect(dayTotals(model)).toEqual([0, 290, 285, 275, 270, 195, 0]);
-    expect(model.results.filter((r) => r.severity === "BLOCK" || r.severity === "REVIEW")).toHaveLength(0);
+    // The one thing to review is CDS-04 (CP4-7): A has CDS transportation, and NEMT trips can't be CDS time.
+    expect(model.results.filter((r) => r.severity === "BLOCK" || r.severity === "REVIEW").map((r) => r.ruleId)).toEqual(["CDS-04"]);
   });
 
   it("IMP-T25: E, Fusion's care plan report: each month's own figure, a matching checksum, no BLOCK", () => {

@@ -7,6 +7,7 @@ import { registerPlanExtras } from "./planExtraStore.js";
 import { addCoverageBlock, removeCoverageBlock } from "./coverage.js";
 import { guardedPlanChange, setStartTime } from "./visits.js";
 import { addWaiver, removeWaiver, updateWaiver } from "./waivers.js";
+import { addProgram, removeProgram, updateProgram } from "./programs.js";
 
 // The dated side of Quick Schedule (Coverage Phase 3 on), as one chunk: loaded with import() only
 // for a plan that has visits or kept authorizations to place. Loading it registers how its
@@ -28,6 +29,11 @@ registerPlanExtras((plan, action, pack) => {
   if (action.type === "addWaiver") return guardedPlanChange(plan, addWaiver(plan), pack, models());
   if (action.type === "updateWaiver") return guardedPlanChange(plan, updateWaiver(plan, action.index, action.patch), pack, models());
   if (action.type === "removeWaiver") return { plan: removeWaiver(plan, action.index) };
+  // Other programs (CP4-7): a fact about the participant, not a schedule change, so always
+  // recorded; a program that rules out a service shows as Must fix under Visit checks.
+  if (action.type === "addProgram") return { plan: addProgram(plan) };
+  if (action.type === "updateProgram") return { plan: updateProgram(plan, action.index, action.patch) };
+  if (action.type === "removeProgram") return { plan: removeProgram(plan, action.index) };
   // Respite coverage blocks (Policy 3.50): the span is the care; adding one a rule forbids is refused.
   if (action.type === "addCoverageBlock") return addCoverageBlock(plan, action.service, action.date, action.start, action.end, pack, models());
   if (action.type === "removeCoverageBlock") return removeCoverageBlock(plan, action.service, action.blockId);
@@ -42,4 +48,5 @@ export { VisitTimes } from "./VisitTimes";
 export { PlanChecks } from "./PlanChecks";
 export { CaregiversPanel } from "./CaregiversPanel";
 export { WaiversPanel } from "./WaiversPanel";
+export { ProgramsPanel } from "./ProgramsPanel";
 export { CoverageBlocks } from "./CoverageBlocks.js";

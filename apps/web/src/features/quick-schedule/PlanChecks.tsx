@@ -15,6 +15,8 @@ export interface PlanCheckLine {
   /** What to do, from the rule's copy; "" when the sentence says it all. */
   whatToDo: string;
   ruleIds: string[];
+  /** The figures behind it, for a rule whose sentence carries them (CON-09's two week readings). */
+  details: string[];
   /** The services it names, in the plan's order. */
   services: string[];
   count: number;
@@ -26,6 +28,9 @@ const HEADINGS: Record<Severity, string> = {
   WARN: "Check",
   INFO: "Good to know",
 };
+/** Rules whose engine sentence is the detail a person needs, shown under the rule's own words. */
+const DETAIL_RULES: ReadonlySet<string> = new Set(["CON-09"]);
+
 const BORDER: Record<Severity, string> = { BLOCK: "border-l-block", REVIEW: "border-l-review", WARN: "border-l-warn", INFO: "border-l-info" };
 
 /**
@@ -40,8 +45,9 @@ export function planCheckLines(results: ValidationResult[], plan: CarePlan, mode
     const own = /^No clock times yet/.test(result.message) || /isn't entered|not entered|hasn't confirmed/.test(result.message);
     const text = own || !copy ? result.message : copy.title;
     const key = `${result.severity}|${text}`;
-    const line = lines.get(key) ?? { severity: result.severity, text, whatToDo: own || !copy ? "" : copy.whatToDo, ruleIds: [], services: [], count: 0 };
+    const line = lines.get(key) ?? { severity: result.severity, text, whatToDo: own || !copy ? "" : copy.whatToDo, ruleIds: [], details: [], services: [], count: 0 };
     if (!line.ruleIds.includes(result.ruleId)) line.ruleIds.push(result.ruleId);
+    if (DETAIL_RULES.has(result.ruleId) && text !== result.message && !line.details.includes(result.message)) line.details.push(result.message);
     const service = result.refs.serviceAuthId ? names.get(result.refs.serviceAuthId) : undefined;
     if (service && !line.services.includes(service)) line.services.push(service);
     line.count += 1;
@@ -79,6 +85,11 @@ export function PlanChecks({ plan, models, pack }: PlanChecksProps) {
               <span className="text-[13px] font-semibold text-ink-2">{HEADINGS[line.severity]}</span>
               <strong className="text-ink">{line.text}</strong>
               {line.whatToDo ? <span className="text-ink-2">{line.whatToDo}</span> : null}
+              {line.details.map((detail) => (
+                <span key={detail} className="text-[13px] text-ink-2">
+                  {detail}
+                </span>
+              ))}
               <span className="text-[13px] text-ink-3">
                 {[line.services.join(", "), line.ruleIds.join(", ")].filter(Boolean).join(" · ")}
               </span>

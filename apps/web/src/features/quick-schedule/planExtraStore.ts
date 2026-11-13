@@ -1,7 +1,7 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
-import type { CarePlan, DayChange, PlanCaregiver, PlanWaiver } from "./types.js";
+import type { CarePlan, DayChange, PlanCaregiver, PlanProgram, PlanWaiver } from "./types.js";
 
 /**
  * Changes to the plan's dated side (Coverage Phase 3 on): events on the calendar. The code that
@@ -32,6 +32,10 @@ export type PlanExtraAction =
   | { type: "addWaiver" }
   | { type: "updateWaiver"; index: number; patch: Partial<PlanWaiver> }
   | { type: "removeWaiver"; index: number }
+  /** Programs outside DSDS (CP4-7): add, change or take one off. Always recorded; what one rules out shows under Visit checks. */
+  | { type: "addProgram" }
+  | { type: "updateProgram"; index: number; patch: Partial<PlanProgram> }
+  | { type: "removeProgram"; index: number }
   /** Respite coverage blocks (Policy 3.50): add a same-day span of care, or take one off. Refused if a rule forbids it. */
   | { type: "addCoverageBlock"; service: number; date: string; start: string; end: string }
   | { type: "removeCoverageBlock"; service: number; blockId: string };
@@ -47,6 +51,7 @@ const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
   "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay", "setStartTime",
   "addCaregiver", "updateCaregiver", "removeCaregiver", "assignCaregiver", "setSfcCaregiver",
   "addWaiver", "updateWaiver", "removeWaiver",
+  "addProgram", "updateProgram", "removeProgram",
   "addCoverageBlock", "removeCoverageBlock",
 ]);
 

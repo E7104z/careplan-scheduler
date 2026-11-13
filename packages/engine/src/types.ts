@@ -127,6 +127,15 @@ export interface Caregiver {
   fcsrRegistered?: boolean;
 }
 export interface WaiverEnrollment { participantId: string; waiver: WaiverCode; start: string; end: string; }
+/**
+ * A program outside DSDS that the person enters, with its dates (CP4-7), never inferred: PACE;
+ * the DD residential services Shared Living, Residential Habilitation and Individualized
+ * Supportive Living; DMH self-directed services; and personal assistant services in a DD waiver.
+ */
+export type OtherProgram =
+  | "PACE" | "DD_SHARED_LIVING" | "DD_RESIDENTIAL_HABILITATION" | "DD_ISL"
+  | "DMH_SELF_DIRECTED" | "DD_WAIVER_PERSONAL_ASSISTANT";
+export interface ProgramEnrollment { participantId: string; program: OtherProgram; start: string; end: string; }
 export interface ValidationResult {
   ruleId: string; severity: Severity; message: string;
   refs: {

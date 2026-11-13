@@ -496,6 +496,16 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | CON-16 | BLOCK | Two waiver enrollments overlap | A participant can't be in two waivers on the same dates. |
 | CON-16 | REVIEW | No waiver enrollment on file | This waiver service needs an enrollment record. |
 | CON-17 | REVIEW | Caregiver details are missing | Add the caregiver's relationship and qualifications so we can check eligibility. |
+| CDS-01 | BLOCK | Prompting or stand-by can't be a CDS task | No CDS time can be authorized for stand-by, prompting or cueing on its own. Check this task against the care plan. |
+| CDS-01 | REVIEW | Check the prompting in this CDS task | Prompting and cueing can be part of a hands-on task, but they can't be time on their own. Check that the minutes are for hands-on help. |
+| CDS-02 | BLOCK | Waiting or respite can't be CDS time | No CDS time can be authorized for respite or for waiting for the participant at an appointment. Check this task against the care plan. |
+| CDS-02 | REVIEW | Check the waiting time in this CDS task | Respite, and waiting for the participant at an appointment, can't be CDS time. Check what this task's minutes cover. |
+| CDS-03 | REVIEW | Check this CDS task isn't skilled care | CDS can't include a task a licensed professional must do or train, such as skilled nursing or therapy a physician ordered. Check this task against the care plan. |
+| CDS-04 | REVIEW | Check CDS transportation against NEMT | Trips to medical appointments that NEMT covers can't be CDS transportation. To check a trip, call NEMT at 1-866-269-5927. |
+| CDS-05 | BLOCK | CDS can't be given to an RCF or ALF resident | People who live in a nursing facility, RCF or ALF aren't eligible for CDS. End CDS before the facility care starts. |
+| PRG-01 | BLOCK | HCBS can't be given during PACE | A participant enrolled in PACE isn't eligible for any HCBS service. Check the PACE dates against the care plan. |
+| PRG-02 | BLOCK | This DMH program rules out this personal care | DD Shared Living, Residential Habilitation and Individualized Supportive Living rule out State Plan personal care. DMH self-directed services rule out CDS and ILW. Check the program dates against the care plan. |
+| PRG-03 | REVIEW | State Plan personal care comes before DD waiver personal assistance | State Plan personal care must be used up before a comparable DD waiver service. Check with the participant's DD support coordinator. |
 
 Unknown rule ID or severity: the engine message is the title and "Rule <id>" the detail; log
 nothing.
@@ -784,6 +794,22 @@ service on its own, but the participant lives one week. So:
     would add a Must-fix result is refused in the panel (`role="alert"`) and nothing changes:
     "Not changed. This attendant can't be paid for this participant. A spouse or legal guardian
     can't be the CDS attendant."
+- **Other programs** (CP4-7; `ProgramsPanel.tsx`, `programs.ts`). A panel "Other programs" (meta
+  "None entered" or "N entered") beside Waivers, for a plan the person opened or built:
+  "Optional. Enter PACE or a Department of Mental Health program this participant is in, with
+  its dates. It is checked against the care plan, never guessed." Button "Add a program"; each
+  row has "Program" (PACE; DD Shared Living; DD Residential Habilitation; DD Individualized
+  Supportive Living; DMH self-directed services; DD waiver personal assistant services), "Start
+  date", "End date" and "Remove program". Stored as optional `CarePlan.programs`.
+  - **Checks.** PRG-01 (PACE rules out every HCBS service, Policy 4.35.3), PRG-02 (DD
+    residential services rule out State Plan personal care, and DMH self-directed services rule
+    out CDS and ILW, Policies 4.35.1 and 3.25) and PRG-03 (State Plan personal care before DD
+    waiver personal assistance, REVIEW) run under Visit checks, with CDS-05 (CDS beside RCF/ALF
+    personal care on the plan). CDS-01 to CDS-04 read one CDS authorization's task labels and
+    transportation, so they are that service's own Checks.
+  - **Not guarded.** An entered program is a fact about the participant, not a change to the
+    schedule, so it is always recorded; refusing it would hide why the plan can't be used. What
+    it rules out shows as "Must fix before you use this schedule" under Visit checks.
 
 ## 6. Accounts
 

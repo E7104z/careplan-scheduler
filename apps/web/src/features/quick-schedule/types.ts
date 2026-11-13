@@ -6,6 +6,7 @@ import type {
   CoverageBlock,
   DaysPerWeek,
   MonthlyAuthorization,
+  OtherProgram,
   PlanEvent,
   ScheduleTemplate,
   ScheduleValidationResult,
@@ -104,6 +105,15 @@ export interface PlanCaregiver {
  * never inferred from the services. Checked for overlap; a waiver service without a covering
  * enrollment is asked for (REVIEW).
  */
+/** A program outside DSDS the participant is in (CP4-7: PACE, a DMH program), as the person entered it. */
+export interface PlanProgram {
+  program: OtherProgram;
+  /** YYYY-MM-DD the enrollment begins. */
+  start: string;
+  /** YYYY-MM-DD the enrollment ends. */
+  end: string;
+}
+
 export interface PlanWaiver {
   waiver: WaiverCode;
   /** YYYY-MM-DD the enrollment begins. */
@@ -223,6 +233,8 @@ export interface CarePlan {
   caregivers?: PlanCaregiver[];
   /** Waivers the participant is enrolled in, with dates (Coverage Phase 4, CON-16). Absent in plans saved before them. */
   waivers?: PlanWaiver[];
+  /** Programs outside DSDS the participant is in, with dates (CP4-7, PRG-01 to PRG-03). Absent in plans saved before them. */
+  programs?: PlanProgram[];
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

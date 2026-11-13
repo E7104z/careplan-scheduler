@@ -11,6 +11,7 @@ const RELATIONSHIPS = new Set([
   "spouse", "legal_guardian", "parent", "sibling", "child", "stepchild", "grandparent", "grandchild", "other_family", "none",
 ]);
 const WAIVER_CODES = new Set(["ILW", "ADW", "ADCW", "SFCW"]);
+const PROGRAM_CODES = new Set(["PACE", "DD_SHARED_LIVING", "DD_RESIDENTIAL_HABILITATION", "DD_ISL", "DMH_SELF_DIRECTED", "DD_WAIVER_PERSONAL_ASSISTANT"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -96,6 +97,17 @@ function isWaiver(value: unknown): boolean {
   );
 }
 
+/** A program outside DSDS (CP4-7) as the person entered it: a code and its dates. */
+function isProgram(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.program === "string" &&
+    PROGRAM_CODES.has(value.program) &&
+    typeof value.start === "string" && ISO_DATE.test(value.start) &&
+    typeof value.end === "string" && ISO_DATE.test(value.end)
+  );
+}
+
 /**
  * A caregiver (Coverage Phase 4) as storage may hold one: an id and the qualifications the person
  * entered. A stored caregiver with a `name` is refused: names live in memory only, like the
@@ -124,12 +136,13 @@ export function stateExtrasValid(value: Record<string, unknown>): boolean {
   );
 }
 
-/** The optional fields Phases 3 and 4 put on the plan: dated events and caregivers. */
+/** The optional fields Phases 3 and 4 put on the plan: dated events, caregivers, waivers and other programs. */
 export function planExtrasValid(value: Record<string, unknown>): boolean {
   return (
     isOptional(value.events, (list) => Array.isArray(list) && list.every(isEvent)) &&
     isOptional(value.caregivers, (list) => Array.isArray(list) && list.every(isCaregiver)) &&
-    isOptional(value.waivers, (list) => Array.isArray(list) && list.every(isWaiver))
+    isOptional(value.waivers, (list) => Array.isArray(list) && list.every(isWaiver)) &&
+    isOptional(value.programs, (list) => Array.isArray(list) && list.every(isProgram))
   );
 }
 

@@ -62,6 +62,14 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | CON-17 | `packages/engine/src/rules/conflicts.ts` | `ruleCON17QualificationData` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-35, FIX-2 | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
 | SFC-01 | `packages/engine/src/rules/sfc.ts` | `ruleSFC01HcbsExclusivity` | `packages/engine/test/sfc.test.ts` | SFC-01 | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
 | SFC-02 | `packages/engine/src/rules/sfc.ts` | `ruleSFC02SinglePrimary` | `packages/engine/test/sfc.test.ts` | SFC-02 | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
+| CDS-01 | `packages/engine/src/rules/cds.ts` | `ruleCDS01PromptingCueing` | `packages/engine/test/cds-programs.test.ts` | CDS-01 | Policy 3.25 (rev. Jan 2026); Policy 4.35.1 (read Nov 13, 2026) |
+| CDS-02 | `packages/engine/src/rules/cds.ts` | `ruleCDS02WaitingTime` | `packages/engine/test/cds-programs.test.ts` | CDS-02 | Policy 3.25 (rev. Jan 2026) |
+| CDS-03 | `packages/engine/src/rules/cds.ts` | `ruleCDS03LicensedTasks` | `packages/engine/test/cds-programs.test.ts` | CDS-03 | Policy 3.25 (rev. Jan 2026) |
+| CDS-04 | `packages/engine/src/rules/cds.ts` | `ruleCDS04NemtTrips` | `packages/engine/test/cds-programs.test.ts` | CDS-04 | Policy 3.25 (rev. Jan 2026) |
+| CDS-05 | `packages/engine/src/rules/cds.ts` | `ruleCDS05FacilityResidents` | `packages/engine/test/cds-programs.test.ts` | CDS-05 | Policy 3.25 (rev. Jan 2026) |
+| PRG-01 | `packages/engine/src/rules/programs.ts` | `rulePRG01Pace` | `packages/engine/test/cds-programs.test.ts` | PRG-01 | Policy 4.35.3 (rev. May 2023) |
+| PRG-02 | `packages/engine/src/rules/programs.ts` | `rulePRG02DmhPrograms` | `packages/engine/test/cds-programs.test.ts` | PRG-02 | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
+| PRG-03 | `packages/engine/src/rules/programs.ts` | `rulePRG03FundingSequence` | `packages/engine/test/cds-programs.test.ts` | PRG-03 | Policy 4.35.1 (read Nov 13, 2026) |
 
 ## Catalog
 

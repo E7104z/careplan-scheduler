@@ -1,4 +1,5 @@
 import type { Severity, ValidationResult } from "@careplan/engine";
+import { PROGRAM_COPY } from "./ruleCopyPrograms.js";
 
 export interface RuleCopy {
   title: string;
@@ -276,6 +277,7 @@ const STATE_FORMULA_COPY: Record<string, RuleCopy> = {
 export const RULE_COPY: Record<string, RuleCopy> = {
   ...AUTH_SCH_COPY,
   ...CON_COPY,
+  ...PROGRAM_COPY,
   ...STATE_FORMULA_COPY,
 };
 

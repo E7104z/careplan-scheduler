@@ -35,12 +35,21 @@ import {
   ruleCON17QualificationData,
 } from "./rules/conflicts.js";
 import { ruleCON09WeeklyHours, type WeeklyHourGroup } from "./rules/weeklyHours.js";
+import {
+  ruleCDS01PromptingCueing,
+  ruleCDS02WaitingTime,
+  ruleCDS03LicensedTasks,
+  ruleCDS04NemtTrips,
+  ruleCDS05FacilityResidents,
+} from "./rules/cds.js";
+import { rulePRG01Pace, rulePRG02DmhPrograms, rulePRG03FundingSequence } from "./rules/programs.js";
 import type { RulePack } from "./rulepacks/types.js";
 import type {
   CalendarException,
   Caregiver,
   MonthlyAuthorization,
   ProgramCode,
+  ProgramEnrollment,
   ScheduleTemplate,
   ServiceAuthorization,
   ServiceCode,
@@ -72,6 +81,8 @@ export interface ValidateScheduleInput extends ValidatePlanInput {
   caregivers: Caregiver[];
   enrollments: WaiverEnrollment[];
   tenantWorkweekStart: Weekday;
+  /** Programs outside DSDS the person entered (CP4-7: PRG-01 to PRG-03); none when absent. */
+  programs?: ProgramEnrollment[];
 }
 
 /** A validation result stamped with the rule-pack version it was validated under. */
@@ -168,7 +179,7 @@ function weeklyHoursDailyMinutes(visits: Visit[]): WeeklyHourMinutes[] {
   return [...byScope.values()];
 }
 
-/** The rules that read only the plan: authorization (AUTH-*) and template (SCH-02 to SCH-12). */
+/** The rules that read only the plan: authorization (AUTH-*), CDS tasks (CDS-01 to CDS-04) and template (SCH-02 to SCH-12). */
 function planRules(input: ValidatePlanInput): ValidationResult[] {
   const { authorizations, monthlyAuthorizations, template, exceptions, months } = input;
   const tasks = authorizations.flatMap((auth) => auth.tasks);
@@ -196,6 +207,12 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   }
   results.push(...ruleAUTH12PendingApproval(authorizations));
 
+  // CDS task rules (Policy 3.25): from the labels and transportation the plan states
+  results.push(...ruleCDS01PromptingCueing(authorizations));
+  results.push(...ruleCDS02WaitingTime(authorizations));
+  results.push(...ruleCDS03LicensedTasks(authorizations));
+  results.push(...ruleCDS04NemtTrips(authorizations));
+
   // Schedule rules (SCH-*) on the template
   results.push(...ruleSCH02TemplateDays(template, tasks));
   results.push(...ruleSCH03TemplateMinutes(template, tasks));
@@ -206,7 +223,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   return results;
 }
 
-/** The rules that read visits, caregivers and enrollments: SCH-14 and every CON rule. */
+/** The rules that read visits, caregivers and enrollments: SCH-14, every CON rule, CDS-05 and PRG-01 to PRG-03. */
 function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   const { pack, authorizations, visits, caregivers, enrollments, tenantWorkweekStart } = input;
   const results: ValidationResult[] = [];
@@ -227,6 +244,13 @@ function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   results.push(...ruleCON13FirstVisit(authorizations, visits));
   results.push(...ruleCON16WaiverEnrollments(enrollments, visits));
   results.push(...ruleCON17QualificationData(authorizations, caregivers, visits));
+
+  // Setting and program compatibility (CP4-7): across the plan's services and entered programs
+  const programs = input.programs ?? [];
+  results.push(...ruleCDS05FacilityResidents(authorizations));
+  results.push(...rulePRG01Pace(authorizations, programs));
+  results.push(...rulePRG02DmhPrograms(authorizations, programs));
+  results.push(...rulePRG03FundingSequence(authorizations, programs));
   return results;
 }
 

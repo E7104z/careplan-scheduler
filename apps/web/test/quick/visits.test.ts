@@ -47,7 +47,7 @@ describe("no start times: overlaps can't be checked, and that is never a pass", 
     expect(planCheckLines(results, plan, models)).toEqual([
       {
         severity: "REVIEW", text: "No clock times yet, so overlaps can't be checked", whatToDo: "",
-        ruleIds: ["CON-01", "CON-02"], services: ["PC - Agency", "PC - CDS", "HC"], count: 6,
+        ruleIds: ["CON-01", "CON-02"], details: [], services: ["PC - Agency", "PC - CDS", "HC"], count: 6,
       },
     ]);
   });

@@ -371,3 +371,14 @@ when the email goes:
    app opens unchanged.
 5. **Scope stopped at Phase 1.** Phases 2-5 change scheduling behavior and need the owner's
    approval of this plan first, as the request asks.
+6. **CDS task rules and program checks (CP4-7, Nov 13, 2026).** Severities follow the policy
+   text read that day at health.mo.gov. BLOCK only where it states the exclusion outright:
+   Policy 3.25 (rev. Jan 2026) "No time can be authorized for" stand-by, prompting, cueing,
+   respite or waiting (CDS-01, CDS-02, for a task label that is only that), and its "not eligible
+   for CDS" for NF/RCF/ALF residents (CDS-05) and DMH self-directed services (PRG-02); Policy
+   4.35.3 (rev. May 2023) for PACE (PRG-01); Policy 4.35.1 for DD Shared Living, Residential
+   Habilitation and ISL against State Plan personal care (PRG-02). REVIEW where the plan can't
+   show the fact: a label that only mentions those words, a therapy or skilled-care label
+   (CDS-03), NEMT coverage of a CDS trip (CDS-04) and whether State Plan care is used up before
+   DD waiver personal assistance (PRG-03). The prompt's "DMH residential limits State Plan PC"
+   is stronger in 4.35.1 ("not eligible"), so PRG-02 is BLOCK.

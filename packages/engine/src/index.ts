@@ -25,6 +25,8 @@ export * from "./rules/sch.js";
 export * from "./rules/fit.js";
 export * from "./rules/conflicts.js";
 export * from "./rules/weeklyHours.js";
+export * from "./rules/cds.js";
+export * from "./rules/programs.js";
 export * from "./rules/amend.js";
 export * from "./amendments/versions.js";
 export * from "./amendments/apply.js";

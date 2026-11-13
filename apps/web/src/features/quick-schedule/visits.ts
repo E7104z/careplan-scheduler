@@ -8,6 +8,10 @@ import {
   ruleCON07AgencyAide,
   ruleCON16WaiverEnrollments,
   ruleCON17QualificationData,
+  ruleCDS05FacilityResidents,
+  rulePRG01Pace,
+  rulePRG02DmhPrograms,
+  rulePRG03FundingSequence,
   weekdayOf,
   type RulePack,
   type ScheduledService,
@@ -18,6 +22,7 @@ import {
 import { assignedTo, assignmentVisits, engineCaregivers, PARTICIPANT_ID } from "./caregivers.js";
 import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
+import { enginePrograms } from "./programs.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
 import { respiteWeeklyHours } from "./respiteHours.js";
@@ -121,6 +126,11 @@ export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: Rul
     ...ruleCON16WaiverEnrollments(enrollments, visits),
     ...ruleCON17QualificationData(authorizations, caregivers, assigned),
     ...respiteWeeklyHours(plan),
+    // Setting and program compatibility (CP4-7), from the plan's services and the programs entered.
+    ...ruleCDS05FacilityResidents(authorizations),
+    ...rulePRG01Pace(authorizations, enginePrograms(plan)),
+    ...rulePRG02DmhPrograms(authorizations, enginePrograms(plan)),
+    ...rulePRG03FundingSequence(authorizations, enginePrograms(plan)),
     ...sfcResults(plan),
   ];
 }

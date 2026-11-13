@@ -46,7 +46,8 @@ test("AC-02: opening fixture B's PDF builds the schedule", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeHidden();
   // Each month gets Fusion's proration of its 455 (IMP-10), so nothing differs and nothing is cut.
   await expect(statusPanel(page)).toContainText("Ready to use");
-  await expect(statusPanel(page)).toContainText("Follows every rule we check, for all 11 months.");
+  // B has CDS transportation, so CDS-04 (CP4-7) asks for a look at NEMT trips.
+  await expect(statusPanel(page)).toContainText("Follows every rule we check. 1 item is worth a look in Checks.");
   await expect(page.getByText("Fusion, for a 31-day month: 469 units − 23 transportation")).toBeVisible();
 });
 
@@ -79,7 +80,9 @@ test("AC-25: on Oct 21, 2026, no month before October 2026 is scheduled, and an 
   await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await expect(page.getByText("Oct 1, 2026", { exact: true })).toBeVisible();
-  await expect(statusPanel(page)).toContainText("for the one month left in the plan");
+  // CDS-04 (CP4-7) puts one item in Checks, so the status names it instead of the months
+  // (the months-left wording is covered in ui-import.test.tsx).
+  await expect(statusPanel(page)).toContainText("Follows every rule we check. 1 item is worth a look in Checks.");
   await expect(page.getByRole("button", { name: "Previous month" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Next month" })).toBeDisabled();
 

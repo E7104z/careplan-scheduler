@@ -304,6 +304,14 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
 | SFC-01 | SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked. | BLOCK / REVIEW | VERIFIED | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
 | SFC-02 | More than one primary caregiver on an SFCW authorization → BLOCK. | BLOCK | VERIFIED | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
+| CDS-01 | A CDS task whose label is only stand-by, prompting, cueing or encouragement → BLOCK; a CDS task label that mentions one alongside another task → REVIEW (it may be a component of that task). Read only from the label the plan prints. | BLOCK / REVIEW | VERIFIED | Policy 3.25 (rev. Jan 2026); Policy 4.35.1 (read Nov 13, 2026) |
+| CDS-02 | A CDS task whose label is only waiting time or respite → BLOCK; a CDS task label that mentions waiting or respite alongside another task → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.25 (rev. Jan 2026) |
+| CDS-03 | A CDS task label naming therapy, skilled or licensed care, or a physician → REVIEW: tasks a licensed professional must perform or train are excluded, and a label can't show who must. | REVIEW | PARTIAL | Policy 3.25 (rev. Jan 2026) |
+| CDS-04 | A CDS authorization with transportation minutes → REVIEW: trips to medical appointments NEMT covers are not CDS transportation, and which trips NEMT covers isn't on the plan. | REVIEW | PARTIAL | Policy 3.25 (rev. Jan 2026) |
+| CDS-05 | CDS on dates that overlap RCF/ALF personal care (RCF_PC, RCF_APC) on the same plan → BLOCK on the CDS authorization; the setting is known only from the plan. | BLOCK | VERIFIED | Policy 3.25 (rev. Jan 2026) |
+| PRG-01 | A PACE enrollment the person entered that overlaps an HCBS authorization → BLOCK on each overlapping authorization. Never inferred. | BLOCK | VERIFIED | Policy 4.35.3 (rev. May 2023) |
+| PRG-02 | An entered DD Shared Living, Residential Habilitation or Individualized Supportive Living enrollment overlapping State Plan personal care (CDS, AGENCY_PC, APC, RCF_PC, RCF_APC) → BLOCK; an entered DMH self-directed enrollment overlapping CDS or ILW → BLOCK. One result per authorization. | BLOCK | VERIFIED | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
+| PRG-03 | An entered DD waiver personal assistant enrollment → REVIEW: State Plan personal care must be used up before that comparable waiver service, and whether it is isn't on the plan. | REVIEW | PARTIAL | Policy 4.35.1 (read Nov 13, 2026) |
 
 ---
 
