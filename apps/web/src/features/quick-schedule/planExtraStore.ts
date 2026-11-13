@@ -1,7 +1,7 @@
 import type { RulePack } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
-import type { CarePlan } from "./types.js";
+import type { CarePlan, DayChange } from "./types.js";
 
 /**
  * Changes to the plan's dated side (Coverage Phase 3 on): events on the calendar. The code that
@@ -17,7 +17,9 @@ export type PlanExtraAction =
   /** Record a care plan change on a service (its place in the plan). Refused with the reason. */
   | { type: "recordAmendment"; service: number; amendment: AmendmentDraft }
   /** Take a recorded change off a service. */
-  | { type: "removeAmendment"; service: number; amendmentId: string };
+  | { type: "removeAmendment"; service: number; amendmentId: string }
+  /** "Change this day": a task's minutes on one date, over the weekly pattern. Refused with the limit. */
+  | { type: "changeDay"; service: number; change: DayChange };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -27,7 +29,7 @@ export interface PlanExtraChange {
 export type PlanExtraReducer = (plan: CarePlan, action: PlanExtraAction, pack: RulePack) => PlanExtraChange;
 
 const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
-  "placeEvent", "removeEvent", "recordAmendment", "removeAmendment",
+  "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay",
 ]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {

@@ -1,4 +1,5 @@
 import { recordAmendment, removeAmendment } from "./amendments.js";
+import { changeDay } from "./dayChanges.js";
 import { applyEvent, dropEvent } from "./planEvents.js";
 import { registerPlanExtras } from "./planExtraStore.js";
 
@@ -9,9 +10,11 @@ registerPlanExtras((plan, action, pack) => {
   if (action.type === "placeEvent") return applyEvent(plan, action.event, pack);
   if (action.type === "removeEvent") return { plan: dropEvent(plan, action.eventId) };
   if (action.type === "recordAmendment") return recordAmendment(plan, action.service, action.amendment, pack);
+  if (action.type === "changeDay") return changeDay(plan, action.service, action.change, pack);
   return { plan: removeAmendment(plan, action.service, action.amendmentId) };
 });
 
 export { VisitsPanel } from "./NurseVisits";
 export { OtherPlacing } from "./OtherPlacing";
 export { AmendmentsPanel } from "./AmendmentsPanel";
+export { ParticipantCalendar } from "./ParticipantCalendar";

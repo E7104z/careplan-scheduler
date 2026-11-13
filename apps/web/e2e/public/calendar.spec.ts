@@ -192,3 +192,57 @@ test("AMEND-01: a care plan change is recorded on a service, forward only, and s
   await page.reload();
   await expect(page.locator("section", { has: page.getByRole("heading", { name: "Care plan changes" }) }).getByText("1 recorded")).toBeVisible();
 });
+
+for (const theme of ["light", "dark"] as const) {
+  test(`CP3-7: the participant calendar, its list and a one-day change (${theme})`, async ({ page, isMobile }) => {
+    await page.addInitScript((value) => localStorage.setItem("cps.theme", value), theme);
+    await openF(page);
+
+    // The whole care plan opens on the week; Month puts the calendar in its place.
+    const tabs = page.getByRole("navigation", { name: "Week or month" });
+    await expect(tabs.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
+    await tabs.getByRole("button", { name: "Month" }).click();
+    const calendar = page.locator("section", { has: page.getByRole("heading", { name: "The participant's month" }) });
+    await expect(calendar).toBeVisible();
+
+    // A narrow screen opens on the list; a wide one on the grid.
+    if (isMobile) await expect(calendar.getByRole("table", { name: "April 2026 as a list" })).toBeVisible();
+    else await expect(calendar.getByRole("grid", { name: "April 2026, by date" })).toBeVisible();
+    await analyze(page);
+    if (isMobile) {
+      await expectNoPageScroll(page);
+      await expectTouchTargets(page);
+    }
+
+    // The grid from the keyboard: arrows move, Enter chooses the date.
+    await calendar.getByRole("button", { name: "Calendar", exact: true }).click();
+    const grid = calendar.getByRole("grid", { name: "April 2026, by date" });
+    await expect(grid.getByRole("gridcell", { name: "Sunday, Apr 5, 2026: no care" })).toBeVisible();
+    await grid.getByRole("gridcell", { name: /^Wednesday, Apr 1, 2026/ }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(grid.getByRole("gridcell", { name: /^Thursday, Apr 2, 2026/ })).toBeFocused();
+    await page.keyboard.press("ArrowRight");
+    await expect(grid.getByRole("gridcell", { name: /^Friday, Apr 3, 2026: .*PC - CDS 120 minutes/ })).toBeFocused();
+    await page.keyboard.press("Enter");
+    const form = calendar.getByRole("group", { name: "Change this day: Friday, Apr 3, 2026" });
+    await expect(form).toBeVisible();
+    await analyze(page);
+    if (isMobile) await expectNoPageScroll(page);
+
+    // A one-day change over the month's units is refused there; nothing is changed.
+    const field = form.getByRole("textbox").first();
+    await field.fill("9999");
+    await form.getByRole("button", { name: /^Save / }).first().click();
+    await expect(form.getByRole("alert")).toContainText("Not changed.");
+
+    // The same month as a list has the same Friday, and the balances are beside it.
+    await calendar.getByRole("button", { name: "Month as a list" }).click();
+    const table = calendar.getByRole("table", { name: "April 2026 as a list" });
+    await expect(table.getByRole("row", { name: /Apr 3, 2026 PC - CDS Essential transportation 120 min/ })).toBeVisible();
+    const balances = calendar.getByRole("region", { name: "Authorization balances" });
+    await expect(balances.getByText(/^226 units in April 2026 · /)).toBeVisible();
+    await expect(balances.getByText("Next nurse visit to place: General Health Evaluation, May 2026")).toBeVisible();
+    await analyze(page);
+    if (isMobile) await expectNoPageScroll(page);
+  });
+}

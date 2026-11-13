@@ -67,6 +67,17 @@ export interface PlanAmendment {
   units: number | null;
 }
 
+/**
+ * A one-day change (Coverage Phase 3): the minutes a task has on one date, instead of what the
+ * weekly pattern gives it that day. The pattern and the authorization are never edited; the
+ * engine reads it as a calendar exception (SCH-11).
+ */
+export interface DayChange {
+  date: string;
+  taskId: string;
+  minutes: number;
+}
+
 /** APP-SPEC 5.6. `identity` lives in memory only and is never persisted. */
 export interface QuickState {
   source: "fusion" | "manual";
@@ -99,6 +110,8 @@ export interface QuickState {
   rowsRead: number;
   /** Care plan changes recorded on this service; absent in plans saved before them. */
   amendments?: PlanAmendment[];
+  /** One-day changes over the weekly pattern; absent in plans saved before them. */
+  dayChanges?: DayChange[];
 }
 
 /** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */
@@ -188,6 +201,8 @@ export interface QuickModel {
   auth: ServiceAuthorization;
   template: ScheduleTemplate;
   trims: CalendarException[];
+  /** The person's one-day changes as calendar exceptions over the pattern (after the trims). */
+  dayExceptions: CalendarException[];
   allowance: QuickAllowance | null;
   months: string[];
   monthlyAuthorizations: MonthlyAuthorization[];

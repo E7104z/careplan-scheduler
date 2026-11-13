@@ -23,6 +23,7 @@ const PACK = MO_2026_07;
 // only for a plan that has something to place.
 const VisitsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitsPanel })));
 const AmendmentsPanel = lazy(() => import("./extras").then((extras) => ({ default: extras.AmendmentsPanel })));
+const ParticipantCalendar = lazy(() => import("./extras").then((extras) => ({ default: extras.ParticipantCalendar })));
 const OtherPlacing = lazy(() => import("./extras").then((extras) => ({ default: extras.OtherPlacing })));
 
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
@@ -60,6 +61,8 @@ export function QuickSchedule() {
   const importShown = plan.services[0]!.isExample || importOpen;
   // A new plan starts its panes fresh (no half-typed values or open tables from the last one).
   const [planKey, setPlanKey] = useState(0);
+  // The Month tab: closed until the person opens it, and closed again for a new plan.
+  const [monthOpen, setMonthOpen] = useState(false);
   const [toast, setToast] = useState<{ seq: number; message: string } | null>(null);
   const toastSeq = useRef(0);
   useEffect(() => {
@@ -80,6 +83,7 @@ export function QuickSchedule() {
   const onBuilt = (next: CarePlan, from: BuiltFrom) => {
     dispatch({ type: "replacePlan", plan: next });
     setPlanKey((key) => key + 1);
+    setMonthOpen(false);
     setImportOpen(false);
     focusAfter.current = from === "import" ? READ_SUMMARY_TITLE_ID : from === "manual" ? TASK_PICKER_ID : null;
   };
@@ -137,6 +141,16 @@ export function QuickSchedule() {
     plan.visits.length > 0 ? (
       <Suspense fallback={null}>
         <VisitsPanel plan={plan} today={new Date()} feedback={feedback} dispatch={dispatch} />
+      </Suspense>
+    ) : null;
+
+  // The participant calendar (Coverage Phase 3): the Month tab, for a plan the person opened or
+  // built, once it has a schedule. It is shown, and its chunk loaded, when the person opens it.
+  const calendarOffered = !plan.services[0]!.isExample && canPrint;
+  const calendar =
+    calendarOffered && monthOpen ? (
+      <Suspense fallback={null}>
+        <ParticipantCalendar key={planKey} plan={plan} models={models} pack={PACK} today={new Date()} feedback={feedback} dispatch={dispatch} />
       </Suspense>
     ) : null;
 
@@ -211,7 +225,17 @@ export function QuickSchedule() {
       {state === null || model === null ? (
         <div className="grid gap-5">
           <AuthorizationsPanel plan={plan} models={models} onView={(view) => dispatch({ type: "setView", view })} />
-          <PlanWeekPanel plan={plan} models={models} />
+          {calendarOffered ? (
+            <nav aria-label="Week or month" className="flex flex-wrap gap-2 print:hidden">
+              <Button variant={monthOpen ? "secondary" : "primary"} size="sm" aria-pressed={!monthOpen} onClick={() => setMonthOpen(false)}>
+                Week
+              </Button>
+              <Button variant={monthOpen ? "primary" : "secondary"} size="sm" aria-pressed={monthOpen} onClick={() => setMonthOpen(true)}>
+                Month
+              </Button>
+            </nav>
+          ) : null}
+          {monthOpen && calendarOffered ? calendar : <PlanWeekPanel plan={plan} models={models} />}
           {visitsPanel}
           {othersPanel}
         </div>
@@ -238,6 +262,14 @@ export function QuickSchedule() {
               <AmendmentsPanel key={`${planKey}-${index}`} state={state} model={model} service={index} pack={PACK} feedback={feedback} dispatch={dispatch} />
             </Suspense>
           )}
+          {several || !calendarOffered ? null : (
+            <div className="print:hidden">
+              <Button variant="secondary" aria-expanded={monthOpen} onClick={() => setMonthOpen(!monthOpen)}>
+                {monthOpen ? "Hide the month calendar" : "Show the month calendar"}
+              </Button>
+            </div>
+          )}
+          {several ? null : calendar}
           {several ? null : visitsPanel}
           {several ? null : othersPanel}
         </>

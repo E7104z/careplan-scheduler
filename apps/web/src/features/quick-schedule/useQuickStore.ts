@@ -37,7 +37,7 @@ export interface QuickStore {
  * a toast.
  */
 export function refusalPlace(action: StoreAction): "task" | "cell" | "toast" | "event" {
-  if (action.type === "placeEvent" || action.type === "recordAmendment") return "event";
+  if (action.type === "placeEvent" || action.type === "recordAmendment" || action.type === "changeDay") return "event";
   if (action.type === "togglePinDay" || action.type === "unpin") return "task";
   if (action.type === "setCell") return "cell";
   return "toast";

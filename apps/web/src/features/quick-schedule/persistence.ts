@@ -116,7 +116,14 @@ function isStoredState(value: unknown): value is StoredState {
     value.notes.every(isNote) &&
     typeof value.isExample === "boolean" &&
     isInt(value.rowsRead, 0) &&
-    (value.amendments === undefined || (Array.isArray(value.amendments) && value.amendments.every(isAmendment)))
+    (value.amendments === undefined || (Array.isArray(value.amendments) && value.amendments.every(isAmendment))) &&
+    (value.dayChanges === undefined ||
+      (Array.isArray(value.dayChanges) &&
+        value.dayChanges.every(
+          (change) =>
+            isRecord(change) && typeof change.date === "string" && ISO_DATE.test(change.date) &&
+            typeof change.taskId === "string" && isInt(change.minutes, 0, 1440),
+        )))
   );
 }
 

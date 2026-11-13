@@ -669,6 +669,49 @@ service on its own, but the participant lives one week. So:
     Takes effect Feb 1, 2026 (entered Jan 15, 2026; a decrease starts on the first of a month)".
   - The weekly grid, month view and one-service printout show the plan before any change. The
     participant calendar (below) shows the version in effect on each date.
+- **The participant calendar** (Coverage Phase 3; `ParticipantCalendar.tsx`,
+  `normalizeEvents.ts`, `calendarView.ts`, `balances.ts`, `DayChangeForm.tsx`, `dayChanges.ts`).
+  - **One list.** `normalizeEvents(plan, models, pack, onlyMonths?)` is one list of every
+    occurrence in the plan, each with its date, service, authorization, kind, minutes or
+    quantity and unit: each service's weekly pattern expanded to real dates by the engine (trims,
+    one-day changes and recorded care plan changes applied, each occurrence on the version in
+    effect that day), transportation on its day, and every dated event. Two authorizations are
+    never merged. **It is the only source the calendar, the list view and the whole-plan PDF read
+    from.** The screen asks for the month on view; the PDF for all of them.
+  - **The Month tab.** For a plan the person opened or built (not the example), once it has a
+    schedule. On the whole care plan: a nav "Week or month" with toggle buttons "Week" (the
+    default, the participant's week) and "Month" (the calendar in its place). On a plan of one
+    service: a button "Show the month calendar" / "Hide the month calendar" (`aria-expanded`).
+    The calendar and its code are in the dated-side chunk and load when it is first opened.
+  - **The panel** "The participant's month": previous and next ("Previous month on the
+    calendar", "Next month on the calendar") over every scheduled month and any month with an
+    event, opening on this month; toggle buttons "Calendar" and "Month as a list".
+  - **Calendar**: `role="grid"` named "<Month Year>, by date", Sunday to Saturday, one
+    `gridcell` per date. Each cell shows a band for each service with its minutes that day,
+    labeled by name and not only by color ("PC - Agency 150"), and a mark for each event:
+    "Visit", "Day care", "Meals", "Day" (a covered day), "Reminder", and "Change" where a care
+    plan change takes effect. Dates outside the plan and days without care are dashed. Each
+    cell's accessible name reads its date and contents ("Tuesday, May 12, 2026: PC - Agency 150
+    minutes; GHE, Nurse visit, 1 visit"; "Sunday, May 3, 2026: no care"; "... outside the
+    plan"). One cell is in the tab order; arrow keys move a day or a week, Home and End go to
+    the week's ends, the focus is visible, and Enter or Space chooses the date.
+  - **Month as a list**: the accessible alternative and the default below 860 px. A table
+    "<Month Year> as a list" with Date, Service, What, How much. A service's tasks on a date are
+    one row (their names, their minutes added up); transportation and each event have their
+    own. The grid's cells and the list's rows are the same items (a test compares them).
+  - **Authorization balances** beside it: each authorization with a figure for the month, in
+    its own unit: "226 units in May 2026 · 224 units scheduled · 2 units left", "62 meals in
+    November 2026 · 2 meals placed · 60 meals left". Then "Next nurse visit to place: General
+    Health Evaluation, May 2026" while one is waiting, and the shared respite figure when the
+    plan holds both respite lines (AUTH-09's own combined figure).
+  - **Change this day**: choosing a date shows a group "Change this day: <weekday>, <date>"
+    with each task scheduled that day and its minutes, and "Save this day". "This changes only
+    <date>. The weekly pattern and the authorization stay as they are. Enter 0 to take a task
+    off this day." It records a one-day change (`QuickState.dayChanges`, optional in storage),
+    which the engine reads as a calendar exception (SCH-11). It goes through the guard (5.7): a
+    change that would put the month over its units is refused there, "Not changed. That would
+    put <task> over its N units in <Month>." Setting the pattern's own minutes back removes the
+    change.
 
 ## 6. Accounts
 
