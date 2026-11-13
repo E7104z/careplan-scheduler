@@ -99,6 +99,8 @@ export interface ScheduleSheet {
   months: SheetMonth[];
   authorizedNote: string;
   cutNote: string | null;
+  /** A non-blocking warning about the whole plan (APP-SPEC 5.8); null on a service's own page. */
+  warning: string | null;
   checks: SheetCheck[];
   /** "Oct 21, 2026", or null: a line to write the date on. */
   reviewed: string | null;
@@ -263,6 +265,7 @@ export function buildScheduleSheet(state: QuickState, model: QuickModel, pack: R
     months,
     authorizedNote: authorizedNote(model, calculated),
     cutNote,
+    warning: null,
     checks,
     reviewed: state.reviewed !== null ? niceDate(state.reviewed) : null,
     footer: `Checked with CarePlan Scheduler under rule pack ${pack.id} on ${niceDate(today)}`,

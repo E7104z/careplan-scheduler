@@ -1,6 +1,7 @@
 import type { Dispatch } from "react";
 import type { RulePack, TaskDef } from "@careplan/engine";
 import { PaneSection } from "./PaneSection";
+import { newId } from "./ids";
 import type { QuickAction } from "./state";
 import { TASK_PICKER_ID, TaskPicker } from "./TaskPicker";
 import { TaskRow } from "./TaskRow";
@@ -28,9 +29,10 @@ function refusalFor(feedback: QuickFeedback | null, taskId: string): string | nu
 export function TaskList({ state, model, pack, feedback, dispatch, onFocusAfter }: TaskListProps) {
   const count = state.tasks.length;
   const add = (def: TaskDef) => {
-    // QS-04: focus moves to the new task's minutes (its id is the next one) once it's added.
-    onFocusAfter(`[data-minutes-for="qt-${state.nextId}"]`);
-    dispatch({ type: "addTask", taskCode: def.taskCode, name: def.name });
+    // QS-04: focus moves to the new task's minutes once it's added; its id is this new UUID.
+    const id = newId();
+    onFocusAfter(`[data-minutes-for="${id}"]`);
+    dispatch({ type: "addTask", taskCode: def.taskCode, name: def.name, id });
   };
 
   return (

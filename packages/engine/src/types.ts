@@ -1,9 +1,11 @@
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;            // 0 = Sunday
 export type Severity = "BLOCK" | "WARN" | "INFO" | "REVIEW";
 export type ProgramCode =
-  | "CDS" | "ILW" | "AGENCY_PC" | "APC" | "NURSE" | "HOMEMAKER" | "CHORE" | "RESPITE";
+  | "CDS" | "ILW" | "AGENCY_PC" | "APC" | "NURSE" | "HOMEMAKER" | "CHORE" | "RESPITE"
+  | "RCF_PC" | "RCF_APC";
 export type ServiceCode =
   | "T1019U2" | "T1019U6" | "T1019" | "T1019TF" | "T1001"
+  | "T1019U3" | "T1019U3TF"
   | "S5130" | "S5120" | "S5150" | "S5150TF";
 export type AuthState =
   | "active" | "future" | "partial" | "suspended" | "expired" | "pending_approval";
@@ -50,6 +52,35 @@ export interface ScheduleTemplate {
   start: string; end: string;
   entries: TemplateEntry[];
   rulePackVersion: string;
+}
+/** A dated one-time/intermittent occurrence (e.g. ADW Chore S5120), never a weekly template. */
+export interface DatedOccurrence {
+  id: string;
+  serviceAuthId: string;
+  date: string;   // YYYY-MM-DD
+  minutes: number;
+}
+/** A respite coverage block: a start/end span of care (Policy 3.50), never 15-minute task units. */
+export interface CoverageBlock {
+  id: string;
+  serviceAuthId: string;
+  start: string;  // local ISO "YYYY-MM-DDTHH:mm", America/Chicago
+  end: string;
+}
+/** A dated adult day care attendance event (ADW-03): attendance minutes plus its transport part. */
+export interface AdcAttendance {
+  id: string;
+  serviceAuthId: string;
+  date: string;              // YYYY-MM-DD
+  minutes: number;           // attendance minutes, whole, in 15-minute steps
+  transportMinutes: number;  // the transport part, whole minutes
+}
+/** A dated home delivered meals delivery (ADW-04): a whole number of meals, never minutes. */
+export interface HdmDelivery {
+  id: string;
+  serviceAuthId: string;
+  date: string;              // YYYY-MM-DD
+  meals: number;             // whole meals
 }
 export interface CalendarException {
   id: string; participantId: string; date: string;

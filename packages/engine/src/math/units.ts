@@ -1,6 +1,6 @@
 import { daysInMonth as daysInMonthFrom } from "./dates.js";
 import { factorFor, type DaysPerWeek } from "./factors.js";
-import type { ServiceAuthorization } from "../types.js";
+import type { MonthlyAuthorization, ServiceAuthorization } from "../types.js";
 
 export type DerivedMethod = "hcbs3c-roundup" | "workbook-trunc099" | "short-month";
 
@@ -71,4 +71,23 @@ export function derivedServiceMonthUnits(auth: ServiceAuthorization, year: numbe
     units += monthTaskUnits(task.minPerDay * task.daysPerWeek, task.daysPerWeek, days).units;
   }
   return units;
+}
+
+/**
+ * AUTH-09's combined monthly figure: the units Basic (S5150) and Advanced (S5150TF) Respite are
+ * authorized for in one month, summed across authorizations. Respite is a combined group (Policy
+ * 3.50): the 868-unit ceiling applies to the two services together, never to one service alone.
+ */
+export function combinedRespiteUnits(
+  authorizations: ServiceAuthorization[],
+  monthlyAuthorizations: MonthlyAuthorization[],
+  month: string,
+): number {
+  const authById = new Map(authorizations.map((auth) => [auth.id, auth]));
+  let total = 0;
+  for (const ma of monthlyAuthorizations) {
+    if (ma.month !== month) continue;
+    if (authById.get(ma.serviceAuthId)?.program === "RESPITE") total += ma.units;
+  }
+  return total;
 }

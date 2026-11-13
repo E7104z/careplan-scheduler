@@ -76,13 +76,15 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
   it("shows every service in one week, each task under its service", async () => {
     await openF();
     expect(within(weekPanel()).getByText("14 h 10 min a week, all services")).toBeInTheDocument();
+    expect(within(weekPanel()).getByText("Service days this week: 5")).toBeInTheDocument();
     expect(within(day("Monday")).getByText("PC - Agency")).toBeInTheDocument();
     expect(within(day("Monday")).getByText("Dietary")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("PC - CDS")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("Essential transportation")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("Total 4 h 5 min")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("HC")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
+    expect(within(day("Thursday")).getByText("HC")).toBeInTheDocument();
+    expect(within(day("Thursday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
+    expect(within(day("Saturday")).getByText("No service")).toBeInTheDocument();
     expect(within(day("Sunday")).getByText("No service")).toBeInTheDocument();
   });
 
@@ -103,7 +105,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
     expect(within(summary).getByText("HC · S5130")).toBeInTheDocument();
     expect(within(statusPanel()).getByText("Ready to use")).toBeInTheDocument();
 
-    // Move homemaker from Saturday to Wednesday: its care days are its own.
+    // Move homemaker onto Wednesday: its care days are its own.
     const careDays = screen.getByRole("group", { name: "Care days" });
     await user.click(within(careDays).getByRole("button", { name: "Wednesday" }));
     await user.click(within(careDays).getByRole("button", { name: "Saturday" }));

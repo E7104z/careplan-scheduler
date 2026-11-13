@@ -1,12 +1,12 @@
 import { Fragment, useId, type ReactNode } from "react";
-import { CircleCheck, CircleHelp } from "lucide-react";
+import { CircleCheck, CircleHelp, TriangleAlert } from "lucide-react";
 import type { ImportIssue } from "@careplan/import";
 import { cn } from "../../lib/cn";
 import { formatDuration, formatUnits, monthName, niceDate, weekdayName } from "../../lib/format";
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
 import { READ_SUMMARY_TITLE_ID } from "../import/ReadSummary";
-import { isUpcoming, planWeek, serviceName, type PlanDay } from "./carePlan";
+import { isUpcoming, planWeek, serviceDayWarning, serviceDays, serviceName, type PlanDay } from "./carePlan";
 import { checksumLines } from "./checksumText";
 import { monthBalance, monthFigures } from "./model";
 import { otherAmount, otherDetail, otherName, otherReason, otherService, planOthers } from "./others";
@@ -313,12 +313,20 @@ export function PlanWeekPanel({ plan, models }: PlanProps) {
   const week = planWeek(plan, models);
   const names = plan.services.map((state, index) => serviceName(state, models[index]!));
   const total = week.reduce((sum, day) => sum + day.minutes, 0);
+  const warning = serviceDayWarning(plan, models);
   return (
     <Panel title="The participant's week" meta={`${formatDuration(total)} a week, all services`} className="min-w-0">
       <p className="mb-3 text-sm text-ink-2">
         Every service on each day, under the service that authorizes it. Set each EVV visit window from that
         service's minutes. To move a task, open its service above.
       </p>
+      <p className="mb-3 text-sm font-semibold text-ink">Service days this week: {serviceDays(plan, models)}</p>
+      {warning ? (
+        <p role="note" className="mb-3 flex items-start gap-2 rounded-sm bg-warn-bg px-3.5 py-2.5 text-sm text-ink">
+          <TriangleAlert className="mt-0.5 h-4 w-4 flex-none text-warn" aria-hidden="true" />
+          <span>{warning}</span>
+        </p>
+      ) : null}
       <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         {week.map((day) => (
           <DayCard key={day.weekday} day={day} names={names} />

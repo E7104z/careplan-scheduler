@@ -84,7 +84,7 @@ describe("IMP-T10 a task that isn't in the rule pack", () => {
   const result = parseFusionText("300 units\tPet Care\t15\t7", PACK);
 
   it("keeps the Fusion name with no task code and still schedules it", () => {
-    expect(result.services[0]!.tasks).toEqual([
+    expect(result.services[0]!.tasks).toMatchObject([
       { name: "Pet Care", fusionName: "Pet Care", taskCode: null, minPerDay: 15, daysPerWeek: 7 },
     ]);
   });

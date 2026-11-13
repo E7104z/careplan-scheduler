@@ -81,9 +81,18 @@ describe("Quick Schedule: import panel and read summary", () => {
     expect(screen.getByRole("button", { name: "Hide what we read" })).toHaveAttribute("aria-expanded", "true");
     const table = screen.getByRole("table", { name: "What we read from Fusion" });
     expect(within(table).getByRole("columnheader", { name: "Units in October" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Fusion row" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Where" })).toBeInTheDocument();
     const bathing = within(table).getByRole("row", { name: /^Bathing/ });
-    // Bathing 45 x 7 in a 31-day month: 93 units (the figure the guard quotes).
-    expect(within(bathing).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["45", "Every day", "93"]);
+    // Bathing 45 x 7 in a 31-day month: 93 units (the figure the guard quotes). SOURCE-01: its
+    // row as read and its page/line come along.
+    expect(within(bathing).getAllByRole("cell").map((cell) => cell.textContent)).toEqual([
+      "Bathing 45 7",
+      "45",
+      "Every day",
+      "93",
+      expect.stringMatching(/^Page 1 · line \d+$/),
+    ]);
     expect(within(table).getByRole("row", { name: /^Essential transportation/ })).toHaveTextContent("23");
   });
 

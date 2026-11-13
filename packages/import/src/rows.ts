@@ -1,11 +1,12 @@
 import type { RulePack } from "@careplan/engine";
 import { matchTask } from "./taskMatch.js";
-import type { ImportedService, ImportedTask } from "./types.js";
+import type { ImportedService, ImportedTask, SourceRef } from "./types.js";
+import { newlinesIn } from "./provenance.js";
 
 export type UnreadReason = ImportedService["unread"][number]["reason"];
 
 export type ReadRow =
-  | { kind: "task"; raw: string; task: ImportedTask }
+  | { kind: "task"; task: ImportedTask }
   | { kind: "transport"; raw: string; unitsPerMonth: number; minutesPerMonth: number }
   | { kind: "unread"; raw: string; reason: UnreadReason };
 
@@ -80,7 +81,7 @@ function taskNumbers(parts: RowParts): { minPerDay: number; daysPerWeek: Importe
 }
 
 /** IMP-05 to IMP-08: one row of the table, in any of the clipboard shapes. Null for an empty chunk. */
-export function readRow(chunk: string, pack: RulePack): ReadRow | null {
+export function readRow(chunk: string, pack: RulePack, source: SourceRef): ReadRow | null {
   const raw = cutTail(chunk).replace(/^[\s|]+|[\s|]+$/g, "");
   if (!raw) return null;
   const parts = splitRow(raw);
@@ -98,12 +99,13 @@ export function readRow(chunk: string, pack: RulePack): ReadRow | null {
   if (!numbers) return { kind: "unread", raw, reason: "task-numbers" };
   return {
     kind: "task",
-    raw,
     task: {
       name: def ? def.name : parts.name,
       fusionName: parts.name,
       taskCode: def ? def.taskCode : null,
       ...numbers,
+      raw,
+      source,
     },
   };
 }
@@ -111,12 +113,16 @@ export function readRow(chunk: string, pack: RulePack): ReadRow | null {
 /**
  * IMP-05: split a service's text on `<units>\s*units`, using that service's own units so that
  * run-together text splits exactly (the match can only start where "units" follows), and read
- * each piece after the first as a row.
+ * each piece after the first as a row. `firstLine` is the 1-based line the region starts on.
  */
-export function readRows(region: string, units: number, pack: RulePack): ReadRow[] {
-  const pieces = region.split(new RegExp(`${units}\\s*units`, "gi")).slice(1);
-  return pieces.flatMap((piece) => {
-    const row = readRow(piece, pack);
+export function readRows(region: string, units: number, pack: RulePack, page: number, firstLine: number): ReadRow[] {
+  const marker = new RegExp(`${units}\\s*units`, "gi");
+  const matches = [...region.matchAll(marker)];
+  return matches.flatMap((match, i) => {
+    const start = match.index + match[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1]!.index : region.length;
+    const line = firstLine + newlinesIn(region.slice(0, match.index));
+    const row = readRow(region.slice(start, end), pack, { page, line });
     return row ? [row] : [];
   });
 }

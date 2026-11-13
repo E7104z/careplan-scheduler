@@ -146,16 +146,16 @@ Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (t
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
-Medications (alias "Self Admin of Meds"); Toileting; and the medically related household tasks
-Fusion lists under PC - Agency as "Med Rel HC Tasks" (Amendment B): Clean Bath; Clean Kitchen;
-Clean Living Area; Laundry; Make Bed/Change Linens; Shopping/Errands; Trash. These stay
-Homemaker tasks too. Homemaker — Clean Bath; Clean Kitchen;
-Clean Living Area; Essential Correspondence; Iron/Mend; Laundry (alias "Laundry (Home/Off
+Medications (alias "Self Admin of Meds"); Toileting; and, under the MED REL HC TASKS control
+row, the 11 household rows (3a B33–B63): Clean Bath; Clean Kitchen; Clean Living Area; Essential
+Correspondence (alias "Essential Correspond"); Iron/Mend; Laundry (alias "Laundry (Home/Off
 Site)"); Make Bed/Change Linens; Meals/Dishes; Shopping/Errands (alias
-"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. The three aliases are the names in
-Fusion's care plan report for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device; Bowel
-Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite — Basic
-Respite; Advanced Respite.
+"Shop/Errands/Correspond"); Trash; Wash Windows/Blinds. Each is also a Homemaker task, and each
+counts under agency PC when medically related, else under Homemaker — never both (3a N29/N66).
+Homemaker — the same 11 household rows. The aliases are the names in Fusion's care plan report
+for agency personal care (IMPORT-SPEC 1.3). APC — Aseptic Dressings; Assistive Transfer Device;
+Bowel Program; Catheter Hygiene; Non-Injectable Meds; Ostomy Hygiene; Passive ROM. Respite —
+Basic Respite; Advanced Respite.
 
 Service-pair overlap matrix (CON-02): `CDS+NURSE: allowed`; `RESPITE+any other: prohibited`;
 same code twice: prohibited (CON-01); every other pair: `unknown` (→ REVIEW).
@@ -204,7 +204,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | ID | Rule | Severity | Status | Source |
 |---|---|---|---|---|
 | AUTH-03 | Derived task units use F-2b; also compute F-2a; if they differ, emit REVIEW (edge case P-1). | INFO / REVIEW | PARTIAL | HCBS-3c (10/26) cell Q11; DHSS 4.00 Appendix 14a/14b cell M7 |
-| AUTH-05 | Derived month units use F-3 for in-home task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER). Other services are not prorated. | INFO | PARTIAL | INFO 05-25-03 (May 9, 2025); Fusion FAQ (Jun 4, 2025); DHSS 14a/14b cell D37 |
+| AUTH-05 | Derived month units use F-3 for task services (CDS, ILW, AGENCY_PC, APC, HOMEMAKER, and RCF_PC, RCF_APC, whose RCF/ALF care plans INFO 05-25-03 says Fusion prorates). Other services are not prorated. | INFO | PARTIAL | INFO 05-25-03 (May 9, 2025); Fusion FAQ (Jun 4, 2025); DHSS 14a/14b cell D37 |
 | AUTH-06 | Imported plan flagged `migratedFromWebTool` → WARN "per-month figures are derived". | WARN | VERIFIED | INFO 05-25-03 (May 9, 2025) |
 | AUTH-07 | If a derived month figure ≠ the imported Fusion figure → REVIEW; Fusion value kept. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 (P-02) |
 | AUTH-08 | Transport: keep authorized minutes, whole units, scheduled minutes, unallocated minutes. | INFO | VERIFIED | Policy 3.25 (01/26); HCBS-3c cell L88 |
@@ -236,7 +236,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
 | CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |
-| CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
+| CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. RCF_PC, RCF_APC → REVIEW (Policy 3.20 doesn't restate 3.05's aide restrictions; DSDS question 14). | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
 | CON-09 | ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN. | REVIEW / WARN | PARTIAL | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention |
 | CON-10 | Nurse visits: > 1 per date → BLOCK; > 26 in a six-month period → BLOCK. | BLOCK | VERIFIED | Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026) |
 | CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |

@@ -1,5 +1,6 @@
 import { type DaysPerWeek, type RulePack, type ServiceCode, type Weekday } from "@careplan/engine";
 import { addMonths, lastDayIso } from "./model.js";
+import { newId } from "./ids.js";
 import { refusalText, tryChange } from "./guard.js";
 import type { ManualTransport, QuickState, QuickTask } from "./types.js";
 
@@ -17,7 +18,7 @@ export interface ReducerResult {
 export type QuickAction =
   | { type: "setService"; code: ServiceCode }
   | { type: "setPlanStart"; month: string }
-  | { type: "addTask"; taskCode: string; name: string }
+  | { type: "addTask"; taskCode: string; name: string; id?: string }
   | { type: "removeTask"; taskId: string }
   | { type: "setMinutes"; taskId: string; minutes: number | null }
   | { type: "setDaysPerWeek"; taskId: string; days: DaysPerWeek }
@@ -150,7 +151,7 @@ export function reduce(state: QuickState, action: QuickAction, pack: RulePack): 
       // New tasks default to 15 min/day, every day, not pinned.
       return guard(state, pack, (next) => {
         next.tasks.push({
-          id: `qt-${next.nextId}`,
+          id: action.id ?? newId(),
           taskCode: action.taskCode,
           name: action.name,
           minPerDay: 15,
@@ -158,7 +159,6 @@ export function reduce(state: QuickState, action: QuickAction, pack: RulePack): 
           pinned: null,
           locked: false,
         });
-        next.nextId += 1;
       });
     }
     case "removeTask": {

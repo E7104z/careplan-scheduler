@@ -16,6 +16,10 @@ export function fitToAuthorization(
   months: string[],
 ): CalendarException[] {
   const daysPerWeek = new Map(auth.tasks.map((task) => [task.id, task.daysPerWeek]));
+  // The task's position in the authorization (the care plan's own order). SCH-17's final
+  // tie-break must not depend on the random spelling of a global task UUID (CP2-6): the same
+  // plan has to trim the same way every run, so ties resolve by the order the tasks were listed.
+  const taskOrder = new Map(auth.tasks.map((task, index) => [task.id, index]));
   const trims: CalendarException[] = [];
   for (const month of months) {
     // Months without a Fusion figure use derived units, which fit by construction.
@@ -32,14 +36,14 @@ export function fitToAuthorization(
     const dates = Object.keys(expanded).sort();
     for (let i = dates.length - 1; i >= 0 && over > 0; i--) {
       const date = dates[i]!;
-      // Daily (7-day) tasks first, then longer occurrences, then task id.
+      // Daily (7-day) tasks first, then longer occurrences, then the order the tasks were listed.
       const entries = Object.entries(expanded[date] ?? {})
         .filter(([, minutes]) => minutes > 0)
         .sort(
           ([idA, minA], [idB, minB]) =>
             (daysPerWeek.get(idB) ?? 0) - (daysPerWeek.get(idA) ?? 0) ||
             minB - minA ||
-            (idA < idB ? -1 : idA > idB ? 1 : 0),
+            (taskOrder.get(idA) ?? 0) - (taskOrder.get(idB) ?? 0),
         );
       for (const [taskId, minutes] of entries) {
         if (over <= 0) break;

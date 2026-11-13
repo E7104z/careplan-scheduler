@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { parseFusionText } from "@careplan/import";
 import { fromFusion } from "../../src/features/import/fromFusion";
-import { buildQuickModel, monthFigures } from "../../src/features/quick-schedule/model";
+import { buildQuickModel, combinedRespiteFigure, monthFigures } from "../../src/features/quick-schedule/model";
 import { manualState, reduce } from "../../src/features/quick-schedule/state";
 import type { QuickState } from "../../src/features/quick-schedule/types";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
@@ -143,7 +143,7 @@ describe("Quick Schedule model", () => {
         { id: "t4", taskCode: "LAUNDRY", name: "Laundry", minPerDay: 30, daysPerWeek: 2, pinned: null, locked: false },
         { id: "t5", taskCode: "KITCHEN", name: "Clean Kitchen", minPerDay: 10, daysPerWeek: 2, pinned: null, locked: false },
       ],
-      nextId: 6,
+      id: "auth-test-1",
       activeDays: [true, true, true, true, true, true, true],
       transport: { minPerTrip: 0, tripsPerWeek: 1, day: 1 },
       edits: {},
@@ -200,5 +200,31 @@ describe("Quick Schedule model", () => {
     const start = Date.now();
     buildQuickModel(state, MO_2026_07);
     expect(Date.now() - start).toBeLessThan(50);
+  });
+});
+
+describe("combinedRespiteFigure", () => {
+  function respite(code: "S5150" | "S5150TF", month: string, units: number) {
+    let state = reduce(manualState(TODAY), { type: "setService", code }, MO_2026_07).state;
+    state = reduce(state, { type: "setFusionUnits", month, units }, MO_2026_07).state;
+    return buildQuickModel(state, MO_2026_07);
+  }
+
+  it("combines Basic and Advanced into one figure with the shared 868 ceiling", () => {
+    const basic = respite("S5150", "2026-11", 500);
+    const advanced = respite("S5150TF", "2026-11", 500);
+    expect(combinedRespiteFigure([basic, advanced], "2026-11")).toEqual({ units: 1000, ceiling: 868 });
+  });
+
+  it("is null when the plan has only one respite service", () => {
+    expect(combinedRespiteFigure([respite("S5150", "2026-11", 500)], "2026-11")).toBeNull();
+  });
+
+  it("is null for a plan with no respite services", () => {
+    const pc = buildQuickModel(
+      reduce(manualState(TODAY), { type: "setService", code: "T1019" }, MO_2026_07).state,
+      MO_2026_07,
+    );
+    expect(combinedRespiteFigure([pc], "2026-11")).toBeNull();
   });
 });

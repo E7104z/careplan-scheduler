@@ -53,7 +53,7 @@ export const APPENDIX_1: readonly Appendix1Service[] = [
   s("MO_APC_AGENCY", "STATE_PLAN", "Advanced Personal Care", "T1019TF", "15min", null,
     "AUTO", "TASK_VISIT", "T1019TF", "300-available-home-and-community-based-1"),
   s("MO_APC_RCF", "STATE_PLAN", "Advanced Personal Care – RCF/ALF", "T1019U3 TF", "15min", null,
-    "AUTO", "FACILITY_TASK", null, "300-available-home-and-community-based-3"),
+    "AUTO", "FACILITY_TASK", "T1019U3TF", "300-available-home-and-community-based-3"),
   s("MO_RN_AGENCY", "STATE_PLAN", "Authorized Nurse Visits", "T1001", "visit", "1 visit/day",
     "APPOINTMENT", "VISIT_COUNT", "T1001", "300-available-home-and-community-based-2"),
   s("MO_RN_RCF", "STATE_PLAN", "Authorized Nurse Visits – RCF/ALF", "T1001U3", "visit", "1 visit/day",
@@ -61,7 +61,7 @@ export const APPENDIX_1: readonly Appendix1Service[] = [
   s("MO_PC_AGENCY", "STATE_PLAN", "Basic Personal Care – Agency Model", "T1019", "15min", "412 units/mo",
     "AUTO", "TASK_VISIT", "T1019", "300-available-home-and-community-based-0"),
   s("MO_PC_RCF", "STATE_PLAN", "Basic Personal Care – RCF/ALF", "T1019U3", "15min", "438 units/mo",
-    "AUTO", "FACILITY_TASK", null, "300-available-home-and-community-based-3"),
+    "AUTO", "FACILITY_TASK", "T1019U3", "300-available-home-and-community-based-3"),
   s("MO_CDS", "STATE_PLAN", "Personal Care Assistance – Consumer Directed Model", "T1019U2", "15min", "641 units/mo",
     "AUTO", "TASK_VISIT", "T1019U2", "300-available-home-and-community-based-4"),
   // Aged and Disabled Waiver

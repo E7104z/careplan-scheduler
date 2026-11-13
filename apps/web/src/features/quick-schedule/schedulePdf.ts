@@ -554,7 +554,7 @@ function monthLines(sheet: ScheduleSheet): MonthLine[] {
 
 /** Each month's authorized, scheduled and left units and the minutes cut at month end. */
 function stripHeight(p: Painter, sheet: ScheduleSheet): number {
-  const notes = [sheet.authorizedNote, sheet.cutNote].filter((note): note is string => note !== null);
+  const notes = [sheet.authorizedNote, sheet.cutNote, sheet.warning].filter((note): note is string => note !== null);
   const lines = notes.reduce((sum, note) => sum + p.wrap(note, "regular", 6.5, RIGHT - LEFT).length, 0);
   // The whole care plan's page has no months of its own (APP-SPEC 5.8): only its notes.
   const table = sheet.months.length > 0 ? 12 + monthLines(sheet).length * MONTH_ROW + 4 : 0;
@@ -592,7 +592,11 @@ function drawMonths(p: Painter, sheet: ScheduleSheet, top: number): number {
     y += lines.length * MONTH_ROW + 4;
   }
 
-  for (const [note, color] of [[sheet.authorizedNote, p.color["ink-3"]], [sheet.cutNote, p.color.warn]] as const) {
+  for (const [note, color] of [
+    [sheet.authorizedNote, p.color["ink-3"]],
+    [sheet.cutNote, p.color.warn],
+    [sheet.warning, p.color.warn],
+  ] as const) {
     if (note === null) continue;
     for (const line of p.wrap(note, "regular", 6.5, RIGHT - LEFT)) {
       p.text(line, LEFT, y, { size: 6.5, color });

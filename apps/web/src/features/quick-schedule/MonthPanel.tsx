@@ -7,7 +7,7 @@ import { Field } from "../../ui/Field";
 import { NumberField } from "../../ui/NumberField";
 import { Panel } from "../../ui/Panel";
 import { MonthBalance } from "./MonthBalance";
-import { addMonths, hasSchedule, monthFigures } from "./model";
+import { addMonths, combinedRespiteFigure, hasSchedule, monthFigures } from "./model";
 import { MonthTable } from "./MonthTable";
 import type { QuickAction } from "./state";
 import type { QuickModel, QuickState } from "./types";
@@ -17,6 +17,7 @@ const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 interface MonthPanelProps {
   state: QuickState;
   model: QuickModel;
+  models: QuickModel[];
   dispatch: Dispatch<QuickAction>;
 }
 
@@ -70,10 +71,11 @@ function FusionUnitsField({
  * APP-SPEC 5.4 month view: navigation limited to the plan's months, the unit meter, the by-hand
  * Fusion units field (QS-11), and a calendar that marks trimmed dates.
  */
-export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
+export function MonthPanel({ state, model, models, dispatch }: MonthPanelProps) {
   const month = state.viewMonth;
   const [year, monthNumber] = month.split("-").map(Number);
   const figures = monthFigures(model, month);
+  const combinedRespite = combinedRespiteFigure(models, month);
 
   const firstMonth = model.months[0] ?? month;
   const lastMonth = model.months[model.months.length - 1] ?? month;
@@ -180,7 +182,7 @@ export function MonthPanel({ state, model, dispatch }: MonthPanelProps) {
         <p className="text-ink-2">Add tasks to see this month's units.</p>
       ) : (
         <>
-          <MonthBalance model={model} month={month} figures={figures} />
+          <MonthBalance model={model} month={month} figures={figures} combinedRespite={combinedRespite} />
 
           {state.source === "manual" ? <FusionUnitsField state={state} month={month} dispatch={dispatch} /> : null}
 

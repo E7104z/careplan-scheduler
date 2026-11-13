@@ -1,4 +1,5 @@
 import {
+  combinedRespiteUnits,
   composeWeek,
   daysInMonth,
   derivedServiceMonthUnits,
@@ -83,7 +84,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   // Step 1: valid tasks -> AuthorizedTask; unmatched Fusion tasks keep taskCode FUSION:<name>.
   const tasks: AuthorizedTask[] = state.tasks.filter(validTask).map((task) => ({
     id: task.id,
-    serviceAuthId: "quick",
+    serviceAuthId: state.id,
     taskCode: task.taskCode ?? `FUSION:${task.name}`,
     name: task.name,
     minPerDay: task.minPerDay,
@@ -157,8 +158,8 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
 
   // Step 6: the single authorization this page schedules: the part of the plan still to come.
   const auth: ServiceAuthorization = {
-    id: "quick",
-    participantId: "quick",
+    id: state.id,
+    participantId: state.id,
     program: svc.program,
     serviceCode: svc.code,
     start: scheduleStart,
@@ -178,7 +179,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   // Step 7: monthly figures. Each month's own figure (QS-11 by hand, or Fusion's care plan
   // report, IMP-17); else the care plan screen's one figure, prorated to each full month (IMP-10).
   const fusionFigure = (month: string, units: number): MonthlyAuthorization => ({
-    serviceAuthId: "quick", month, units, source: "fusion", revision: 1,
+    serviceAuthId: state.id, month, units, source: "fusion", revision: 1,
   });
   const ownFigures = Object.entries(state.fusion)
     .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
@@ -193,8 +194,8 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
 
   // Step 8: trims come from the pattern, never from a person's cell changes (SCH-17).
   const pattern: ScheduleTemplate = {
-    id: "quick-template",
-    participantId: "quick",
+    id: `${state.id}-template`,
+    participantId: state.id,
     start: auth.start,
     end: auth.end,
     entries: composed.entries,
@@ -316,4 +317,23 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
     trims,
     trimmedMinutes,
   };
+}
+
+/**
+ * APP-SPEC 5.8: the combined Basic + Advanced respite figure for a month, or null when the plan
+ * doesn't hold both. The figure (and its 868 ceiling) come from the engine's AUTH-09 math, never
+ * re-added here, so the number shown matches the BLOCK the engine emits.
+ */
+export function combinedRespiteFigure(
+  models: QuickModel[],
+  month: string,
+): { units: number; ceiling: number } | null {
+  const respites = models.filter((model) => model.svc.combinedCeilingGroup === "RESPITE");
+  const hasBasic = respites.some((model) => model.svc.code === "S5150");
+  const hasAdvanced = respites.some((model) => model.svc.code === "S5150TF");
+  if (!hasBasic || !hasAdvanced) return null;
+  const authorizations = respites.map((model) => model.auth);
+  const monthly = respites.flatMap((model) => model.monthlyAuthorizations);
+  const ceiling = respites[0]!.svc.monthlyCeiling ?? 0;
+  return { units: combinedRespiteUnits(authorizations, monthly, month), ceiling };
 }

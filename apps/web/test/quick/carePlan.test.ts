@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { addPage, emptyImportFlow, next } from "../../src/features/import/importFlow";
-import { activeIndex, isUpcoming, planWeek, singlePlan, weekMinutes } from "../../src/features/quick-schedule/carePlan";
+import { activeIndex, isUpcoming, maxServiceDays, planWeek, serviceDayWarning, serviceDays, singlePlan, weekMinutes } from "../../src/features/quick-schedule/carePlan";
 import { buildQuickModel } from "../../src/features/quick-schedule/model";
-import { exampleStateA } from "../../src/features/quick-schedule/state";
+import { exampleStateA, exampleStateB } from "../../src/features/quick-schedule/state";
 import type { CarePlan } from "../../src/features/quick-schedule/types";
 import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
+import fixtureP from "@fixtures/fusion/P-TEST-APC-PC-4DAY.txt?raw";
 
 // APP-SPEC 5.8 acceptance (AC-28): fixture F, a care plan report with agency personal care, CDS
 // essential transportation, homemaker and two General Health Evaluations, becomes one schedule
@@ -16,6 +17,12 @@ const PACK = MO_2026_07;
 
 function planF(today = TODAY): CarePlan {
   const outcome = next(addPage(emptyImportFlow(), fixtureF), PACK, today);
+  if (outcome.kind !== "ready") throw new Error(`Expected a ready outcome, got ${JSON.stringify(outcome.issues)}`);
+  return outcome.plan;
+}
+
+function planP(today = TODAY): CarePlan {
+  const outcome = next(addPage(emptyImportFlow(), fixtureP), PACK, today);
   if (outcome.kind !== "ready") throw new Error(`Expected a ready outcome, got ${JSON.stringify(outcome.issues)}`);
   return outcome.plan;
 }
@@ -69,21 +76,22 @@ describe("AC-28 fixture F: one schedule for the participant", () => {
     expect(models.flatMap((model) => model.results).filter((result) => result.severity === "BLOCK")).toEqual([]);
   });
 
-  it("spreads the week: agency Monday to Friday, then the quietest days for the others", () => {
+  it("keeps every service on one shared set of care days, not spread across the week", () => {
     const week = planWeek(plan, models);
-    // Sunday to Saturday.
+    // Sunday to Saturday: agency Monday to Friday; transportation and homemaker stay inside those days.
     expect(week.map((day) => day.byService)).toEqual([
       [0, 0, 0],
       [160, 0, 0],
       [160, 0, 0],
       [140, 0, 0],
-      [130, 0, 0],
+      [130, 0, 15],
       [125, 120, 0],
-      [0, 0, 15],
+      [0, 0, 0],
     ]);
     expect(week.reduce((sum, day) => sum + day.minutes, 0)).toBe(715 + 120 + 15);
     expect(week[5]!.items.at(-1)).toEqual({ service: 1, name: "Essential transportation", minutes: 120, transport: true });
-    expect(week[6]!.items).toEqual([{ service: 2, name: "Wash Windows/Blinds", minutes: 15, transport: false }]);
+    expect(week[4]!.items.at(-1)).toEqual({ service: 2, name: "Wash Windows/Blinds", minutes: 15, transport: false });
+    expect(serviceDays(plan, models)).toBe(5);
   });
 
   it("lists both General Health Evaluations by month, outside the week", () => {
@@ -132,5 +140,71 @@ describe("a plan of one service", () => {
   it("weekMinutes adds the transportation to its day", () => {
     const plan = planF();
     expect(weekMinutes(plan.services[1]!, buildQuickModel(plan.services[1]!, PACK))).toEqual([0, 0, 0, 0, 0, 120, 0]);
+  });
+});
+
+describe("AC-28 APC + PC-Agency: two four-day services share the same days", () => {
+  const plan = planP();
+  const models = plan.services.map((state) => buildQuickModel(state, PACK));
+
+  it("reads both authorizations in order", () => {
+    expect(plan.services.map((state) => [state.serviceLabel, state.serviceCode, state.pa])).toEqual([
+      ["APC", "T1019TF", "20260000000041"],
+      ["PC - Agency", "T1019", "20260000000042"],
+    ]);
+  });
+
+  it("reconciles each authorization with Fusion: 114 and 336 units", () => {
+    expect(models.map((model) => [model.checksum?.fusion, model.checksum?.matches])).toEqual([
+      [114, true],
+      [336, true],
+    ]);
+  });
+
+  it("puts both services on the same four days, 355 minutes a day, nothing the other three", () => {
+    const week = planWeek(plan, models);
+    expect(week.map((day) => day.minutes)).toEqual([0, 355, 355, 355, 355, 0, 0]);
+    expect(week.reduce((sum, day) => sum + day.minutes, 0)).toBe(1420);
+    expect(serviceDays(plan, models)).toBe(4);
+    expect(maxServiceDays(models)).toBe(4);
+  });
+
+  it("has no Must-fix result in either service", () => {
+    expect(models.flatMap((model) => model.results).filter((result) => result.severity === "BLOCK")).toEqual([]);
+  });
+});
+
+describe("service days stay within the largest days-per-week", () => {
+  it("for every client with a weekly schedule", () => {
+    const cases: [string, CarePlan][] = [
+      ["fixture F", planF()],
+      ["APC + PC-Agency", planP()],
+      ["example A", singlePlan(exampleStateA(TODAY))],
+      ["example B", singlePlan(exampleStateB(TODAY))],
+    ];
+    for (const [label, plan] of cases) {
+      const models = plan.services.map((state) => buildQuickModel(state, PACK));
+      expect(serviceDays(plan, models), label).toBeLessThanOrEqual(maxServiceDays(models));
+    }
+  });
+});
+
+describe("service day warning", () => {
+  it("is quiet when the week fits the plan's largest days-a-week", () => {
+    const plan = planF();
+    const models = plan.services.map((state) => buildQuickModel(state, PACK));
+    expect(serviceDayWarning(plan, models)).toBeNull();
+  });
+
+  it("warns when the week has more service days than the plan's largest days-a-week", () => {
+    const plan = planF();
+    // Move CDS transportation onto Saturday: six service days, still five planned.
+    plan.services[1]!.transport.day = 6;
+    const models = plan.services.map((state) => buildQuickModel(state, PACK));
+    expect(serviceDays(plan, models)).toBe(6);
+    expect(maxServiceDays(models)).toBe(5);
+    expect(serviceDayWarning(plan, models)).toBe(
+      "This week has more service days than the plan's 5 days a week. Check each service's care days.",
+    );
   });
 });

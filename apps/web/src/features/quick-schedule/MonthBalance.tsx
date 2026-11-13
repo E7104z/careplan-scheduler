@@ -46,7 +46,18 @@ function Figure({ term, value, note, tone }: { term: string; value: string; note
  * billing is visible), the meter, and, when the month's units run out, exactly which tasks are cut
  * on which dates and what to do about it (INFO 09-25-02).
  */
-export function MonthBalance({ model, month, figures }: { model: QuickModel; month: string; figures: MonthFigures }) {
+export function MonthBalance({
+  model,
+  month,
+  figures,
+  combinedRespite,
+}: {
+  model: QuickModel;
+  month: string;
+  figures: MonthFigures;
+  /** The combined Basic + Advanced figure (engine AUTH-09), shown only on a respite service. */
+  combinedRespite?: { units: number; ceiling: number } | null;
+}) {
   const available = figures.authorizedUnits - figures.transportUnits;
   const cap = Math.max(figures.taskBudgetMinutes, figures.scheduledTaskMinutes, 1);
   const fill = (Math.min(figures.scheduledTaskMinutes, figures.taskBudgetMinutes) / cap) * 100;
@@ -80,6 +91,14 @@ export function MonthBalance({ model, month, figures }: { model: QuickModel; mon
           tone={leftMinutes < 0 ? "block" : undefined}
         />
       </dl>
+      {combinedRespite != null && model.svc.combinedCeilingGroup === "RESPITE" ? (
+        <p className="text-sm text-ink">
+          Combined respite (Basic + Advanced):{" "}
+          <strong className="font-bold">
+            {combinedRespite.units} of {combinedRespite.ceiling} units
+          </strong>
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm text-ink">
           <strong className="font-bold">{formatUnits(figures.scheduledTaskMinutes)}</strong> scheduled for tasks of{" "}

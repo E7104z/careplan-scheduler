@@ -111,6 +111,12 @@ describe("conflict rules", () => {
     expect(ruleCON03RespiteOverlap([respite, cds]).some((r) => r.severity === "BLOCK")).toBe(true);
   });
 
+  it("CON-03 BLOCK for a Basic respite block overlapping an Advanced respite block", () => {
+    const basic = visit({ id: "v-basic", serviceCode: "S5150", start: "2026-10-05T13:00", end: "2026-10-05T17:00" });
+    const advanced = visit({ id: "v-adv", serviceCode: "S5150TF", start: "2026-10-05T14:00", end: "2026-10-05T15:00" });
+    expect(ruleCON03RespiteOverlap([basic, advanced]).some((r) => r.severity === "BLOCK")).toBe(true);
+  });
+
   it("TC-32: CON-04 BLOCK for caregiver overlap across participants", () => {
     const a = visit({ id: "v-1", participantId: "P-1", caregiverId: "C-A", serviceCode: "T1019U2", start: "2026-10-05T09:00", end: "2026-10-05T11:00" });
     const b = visit({ id: "v-2", participantId: "P-2", caregiverId: "C-A", serviceCode: "T1019U2", start: "2026-10-05T10:00", end: "2026-10-05T12:00" });

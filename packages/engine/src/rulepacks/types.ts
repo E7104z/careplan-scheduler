@@ -61,7 +61,13 @@ export interface StateParity3aPack {
   hdmSource: string;
   /** Advanced Personal Care with one task: its minutes in steps of this many (WS-R04). */
   apcSingleTaskStep: number;
-  adultDayCare: { minuteStep: number; maxMinutesPerDay: number; maxDaysPerWeek: number };
+  adultDayCare: {
+    minuteStep: number;
+    maxMinutesPerDay: number;
+    maxDaysPerWeek: number;
+    /** ≤120 minutes/day transportation (3.00 Adult Day Care, 300-available-home-and-community-based-6). */
+    maxTransportMinutesPerDay: number;
+  };
   limitsSource: string;
 }
 

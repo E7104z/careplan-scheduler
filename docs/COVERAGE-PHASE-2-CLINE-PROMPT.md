@@ -294,3 +294,25 @@ items above plus the amendment groundwork (CP2-7) and the agency regression (CP2
 reconciliation (now: #7/#8/#9/#10 merged, main green); regression testing (existing schedules
 open, no composer bug, manual edits stay placed); real-case validation (fixture F end to end);
 security and privacy (tenant isolation, no PHI in diagnostics, BAA decision before real data).
+
+---
+
+## Review decisions
+
+**CP2-5 follow-up (Nov 1, 2026).** Settled from primary sources after the CP2-5 review:
+
+1. **Facility task set (Policy 3.20, rev. Mar 2026).** Basic RCF/ALF PC offers 3.20's tasks:
+   Bathing, Dressing/Grooming, Essential Correspondence, Dietary, Mobility/Transfer/Position,
+   Self-Admin of Medications, Toileting, and of the 3a's household rows only Clean Living Area and
+   Laundry. 3.20's Medically Related Household Tasks "clean the resident's living area and
+   launder the resident's clothes and linens"; the facility covers the rest. Nothing is
+   auto-assumed: a by-hand plan adds tasks itself. RCF/ALF APC keeps the home APC set, including
+   the transfer device (Policy 3.10 covers RCF/ALF; 3.20 omits it, audit §9 Q15).
+2. **CON-07 on RCF_PC/RCF_APC → REVIEW**, and CON-17 asks for missing relationship data. 3.05's
+   aide restrictions aren't restated in 3.20, so neither a BLOCK nor a silent pass (audit §9 Q14).
+3. **AUTH-05 prorates RCF_PC/RCF_APC.** INFO 05-25-03 says RCF/ALF care plans get prorated
+   monthly units once reauthorized in Fusion.
+4. **Import.** A care plan report's T1019U3 or T1019U3 TF block is scheduled, not kept. The
+   month row reads a spaced modifier ("T1019U3 TF", as Appendix 1 prints it) and the code is
+   resolved through Appendix 1; before this, the advanced code asked "which service" and could be
+   picked as home APC (INV-04). The RCF/ALF nurse visit (T1001U3) is still kept.

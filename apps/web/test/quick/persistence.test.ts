@@ -59,6 +59,16 @@ describe("Quick Schedule persistence", () => {
     expect(loadQuickState()).toBeNull();
   });
 
+  it("JOIN-03: a service saved before task UUIDs loads with a fresh authorization id", () => {
+    storedWith((saved) => {
+      delete saved.id;
+    });
+    const loaded = loadQuickState();
+    expect(loaded).not.toBeNull();
+    expect(loaded!.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(() => buildQuickModel(loaded!, MO_2026_07)).not.toThrow();
+  });
+
   it("throwing storage -> null", () => {
     vi.spyOn(sessionStorage, "getItem").mockImplementation(() => {
       throw new Error("storage denied");

@@ -1,4 +1,4 @@
-import { hcbs3cTaskUnitsFromWeekly, workbookTaskUnits } from "../math/units.js";
+import { combinedRespiteUnits, hcbs3cTaskUnitsFromWeekly, workbookTaskUnits } from "../math/units.js";
 import { MO_2026_07 } from "../rulepacks/mo-2026-07.js";
 import { serviceByCode } from "../rulepacks/lookup.js";
 import type {
@@ -34,7 +34,8 @@ export function ruleAUTH03DerivedTaskUnits(
   return results;
 }
 
-const PRORATED_PROGRAMS = new Set(["CDS", "ILW", "AGENCY_PC", "APC", "HOMEMAKER"]);
+// INFO 05-25-03 names RCF/ALF care plans among those Fusion prorates by days in the month.
+const PRORATED_PROGRAMS = new Set(["CDS", "ILW", "AGENCY_PC", "APC", "HOMEMAKER", "RCF_PC", "RCF_APC"]);
 
 /**
  * @rule AUTH-05
@@ -120,17 +121,9 @@ export function ruleAUTH09Ceiling(
   const results: ValidationResult[] = [];
   const authById = new Map(authorizations.map((a) => [a.id, a]));
 
-  const respiteByMonth = new Map<string, number>();
-  for (const ma of monthlyAuthorizations) {
-    const auth = authById.get(ma.serviceAuthId);
-    if (!auth) continue;
-    const service = serviceByCode(MO_2026_07, auth.serviceCode);
-    if (service?.combinedCeilingGroup === "RESPITE") {
-      respiteByMonth.set(ma.month, (respiteByMonth.get(ma.month) ?? 0) + ma.units);
-    }
-  }
   const respiteCeiling = serviceByCode(MO_2026_07, "S5150")?.monthlyCeiling ?? 0;
-  for (const [month, total] of respiteByMonth) {
+  for (const month of new Set(monthlyAuthorizations.map((ma) => ma.month))) {
+    const total = combinedRespiteUnits(authorizations, monthlyAuthorizations, month);
     if (total > respiteCeiling) {
       results.push({
         ruleId: "AUTH-09",

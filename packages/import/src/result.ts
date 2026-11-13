@@ -23,6 +23,8 @@ export interface ResultParts {
   duplicates: ImportIssue[];
   /** `not-scheduled` notes for services left out, one per label (IMP-18). */
   skipped: ImportIssue[];
+  /** Where the participant, plan and total cost were read (SOURCE-01). */
+  sources: ImportResult["sources"];
 }
 
 export type ServiceBase = Omit<ImportedService, "serviceCode" | "tasks" | "transport" | "unread">;
@@ -53,6 +55,7 @@ export function buildService(base: ServiceBase, rows: ReadRow[], duplicates: Imp
     transport: null,
     unread: [],
     monthly: base.monthly,
+    source: base.source,
   };
   for (const row of rows) {
     if (row.kind === "unread") {
@@ -178,5 +181,6 @@ export function buildResult(parts: ResultParts, leading: ImportIssue[] = []): Im
     visits: parts.visits,
     others: parts.others,
     issues,
+    sources: parts.sources,
   };
 }

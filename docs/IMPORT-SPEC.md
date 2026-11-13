@@ -196,7 +196,7 @@ export interface PdfTextItem { str: string; x: number; y: number; width: number;
 | which services | every service in the plan, each its own state, in Fusion's order (APP-SPEC 5.8) |
 | serviceCode, plan, headerUnits | from the service and IMP-13; on the care plan report, the plan is the service's own authorization dates |
 | tasks | every imported task, ids `qt-1…`, not pinned |
-| care days | the first *d* days of Monday, Tuesday, … Sunday, where *d* is the largest days-per-week of any task (5 → Mon–Fri; 7 → every day), as in Scheduler Lite. A service after the first takes the *d* quietest days of the week built so far; one with only transportation, the quietest weekday (APP-SPEC 5.8) |
+| care days | one shared set for the whole client, sized to *d* = the largest days-per-week across the client's services: the first *d* days of Monday, Tuesday, … Sunday (5 → Mon–Fri; 7 → every day), as in Scheduler Lite. Every service uses that one set. A service with fewer days takes the lightest subset of it, and one with only transportation takes one weekday from it. Supersedes the earlier rule that a service after the first takes the *d* quietest days of the week built so far (APP-SPEC 5.8) |
 | monthly figures | from the care plan report, each month's authorized units (`fusion`, by month; two periods in one month add up), used instead of IMP-10's prorated header units for full months |
 | schedule months | from this month (`fromMonth`, the month it was built) or the plan's first month, whichever is later, to the plan's end; the plan's own dates are kept as read |
 | transportation | minutes per month from Fusion; usual day = the last care day in that order; weekly hint = `floor(floor(minutes/15) / 5) × 15` minutes |

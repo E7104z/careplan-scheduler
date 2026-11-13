@@ -3,17 +3,18 @@ import { readBanner } from "./banner.js";
 import { normalize } from "./normalize.js";
 import { readPaging } from "./paging.js";
 import { isReport, readReport } from "./report.js";
+import { lineAt } from "./provenance.js";
 import { buildResult, buildService, type ResultParts, type ServiceBase } from "./result.js";
 import { mostCommonUnits, readRows } from "./rows.js";
 import { readHeaders } from "./serviceHeader.js";
 import type { ImportedService, ImportIssue, ImportResult } from "./types.js";
 
 /** Read one paste into the participant, paging and services it holds, without working out issues. */
-export function readPaste(text: string, pack: RulePack): ResultParts {
+export function readPaste(text: string, pack: RulePack, page = 1): ResultParts {
   const t = normalize(text);
-  if (isReport(t)) return readReport(t, pack);
+  if (isReport(t)) return readReport(t, pack, page);
   const banner = readBanner(t);
-  const headers = readHeaders(t);
+  const headers = readHeaders(t, page);
   const duplicates: ImportIssue[] = [];
   const services: ImportedService[] = [];
 
@@ -21,21 +22,25 @@ export function readPaste(text: string, pack: RulePack): ResultParts {
     // IMP-04: rows after a group row, up to the next group row, belong to it.
     headers.forEach((header, i) => {
       const region = t.slice(header.textEnd, headers[i + 1]?.index ?? t.length);
-      services.push(buildService({ ...header, monthly: null }, readRows(region, header.units, pack), duplicates));
+      services.push(buildService({ ...header, monthly: null }, readRows(region, header.units, pack, page, lineAt(t, header.textEnd)), duplicates));
     });
   } else {
     // IMP-05: no group row, so the most frequent "<n> units" gives the units.
     const units = mostCommonUnits(t);
     if (units !== null) {
       const bodyStart = banner ? t.indexOf("\n", t.search(/\(DCN:/)) : 0;
+      const safeStart = Math.max(0, bodyStart);
       const base: ServiceBase = {
         label: null, provider: null, phone: null,
         start: banner ? banner.start : null, end: banner ? banner.end : null,
         units, cost: null, pa: null, monthly: null,
+        source: { page, line: lineAt(t, safeStart) + (safeStart > 0 ? 1 : 0) },
       };
-      services.push(buildService(base, readRows(t.slice(Math.max(0, bodyStart)), units, pack), duplicates));
+      services.push(buildService(base, readRows(t.slice(safeStart), units, pack, page, lineAt(t, safeStart)), duplicates));
     }
   }
+
+  const bannerRef = banner ? { page, line: lineAt(t, banner.index) } : null;
 
   return {
     participant: banner ? { name: banner.name, dcn: banner.dcn } : null,
@@ -47,6 +52,11 @@ export function readPaste(text: string, pack: RulePack): ResultParts {
     others: [],
     duplicates,
     skipped: [],
+    sources: {
+      participant: bannerRef,
+      plan: bannerRef,
+      totalCost: banner?.totalCost ? bannerRef : null,
+    },
   };
 }
 

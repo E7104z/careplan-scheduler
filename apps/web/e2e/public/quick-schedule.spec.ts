@@ -60,7 +60,7 @@ test("AC-03: B at 440 units: December 2025 is cut at the end, with the tasks lis
   await expect(page.getByText("This month's tasks need more than Fusion's 440 units")).toBeVisible();
   await expect(page.getByText("320 minutes early, starting Dec 30, 2025")).toBeVisible();
   await expect(
-    page.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min"),
+    page.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Dressing/Grooming 15 min, Wash Dishes 5 min"),
   ).toBeVisible();
   const dec31 = page.getByText(/^Wednesday 31: \d+ minutes, 195 minutes trimmed because the month's units run out$/);
   await expect(dec31).toHaveCount(1);
@@ -414,7 +414,7 @@ test("AC-28: a care plan report with several services is one schedule for the pa
   await expect(authorizations).toContainText("40 units in");
   await expect(authorizations).toContainText("5 units in");
   const week = page.locator("section", { has: page.getByRole("heading", { name: "The participant's week" }) });
-  await expect(week.getByRole("region", { name: "Saturday" })).toContainText("Wash Windows/Blinds");
+  await expect(week.getByRole("region", { name: "Thursday" })).toContainText("Wash Windows/Blinds");
   await expect(week.getByRole("region", { name: "Friday" })).toContainText("Essential transportation");
 
   // The nurse visits, by month. On Nov 20, 2025 both are still to come.
