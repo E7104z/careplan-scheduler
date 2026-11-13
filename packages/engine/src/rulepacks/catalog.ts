@@ -151,7 +151,7 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   },
   {
     id: "CON-04", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "APPROVED",
-    rule: "Same caregiver, overlapping visits for different participants → BLOCK.",
+    rule: "Same caregiver, overlapping visits → BLOCK (across participants, or two different services for one participant).",
     source: "Product decision approved Oct 20, 2026",
   },
   {

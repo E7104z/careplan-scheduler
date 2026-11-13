@@ -341,8 +341,11 @@ Both modes:
    person's changes are never silently cut.
 9. `results = validatePlan({ pack, authorizations: [auth], monthlyAuthorizations,
    template (with entries), exceptions: trims, months })`, or `[]` with no valid tasks.
-   Quick Schedule doesn't schedule visits, so it runs the plan rules (ENGINE-SPEC Amendment B)
-   and CON-09 on the expanded template, never the visit rules (SCH-14, the other CON rules).
+   The plan rules and CON-09 on the expanded template run here (ENGINE-SPEC Amendment B). The
+   visit rules (CON-01 to CON-04, CON-06, CON-07, CON-16 and CON-17) run at the plan level on the
+   visits the start times give and the caregivers, under Visit checks (5.8), not per service.
+   CON-05 (a caregiver over 40 hours in a workweek) needs the agency's workweek start and arrives
+   with agency mode (CP4-9).
 10. `checksum` (from Fusion): IMP-15, over the full months of Fusion's plan (computed before
    step 7, which uses it).
 11. `monthFigures(model, ym)`: `expandMonth(template, trims, …)`; authorized = Fusion or
@@ -443,9 +446,11 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   mo-2026-07". A card about a task has "Show in week" (scroll to and highlight the row 2 s).
 - SCH-08 results with `refs.taskId` use the copy key `SCH-08/task`.
 - No "No problems found" while any Needs review group exists.
-- Quick Schedule runs the plan rules and CON-09 on its weekly pattern (5.3 step 9). The SCH-14
-  and other CON rows below are for schedules with visits (Phase 3), so "Referral date is
-  missing" (CON-13) never shows here.
+- Quick Schedule runs the plan rules and CON-09 on its weekly pattern (5.3 step 9). Once a
+  service has a visit start time (5.8 Visit checks), the visit rules CON-01 to CON-04, CON-06,
+  CON-07, CON-16 and CON-17 run on the built visits and caregivers (CON-05, over 40 hours, needs
+  the agency's workweek start and arrives with CP4-9). CON-13 (a referral date) still never shows,
+  since Quick Schedule has no referral date.
 
 Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity in
 `RULE_CATALOG` has an entry (AUTH-13, SCH-15 and SCH-17 emit nothing and are exempt).

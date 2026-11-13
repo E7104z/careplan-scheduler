@@ -1,7 +1,7 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import type { AmendmentDraft } from "./amendments.js";
 import type { EventRequest } from "./planEvents.js";
-import type { CarePlan, DayChange, PlanCaregiver } from "./types.js";
+import type { CarePlan, DayChange, PlanCaregiver, PlanWaiver } from "./types.js";
 
 /**
  * Changes to the plan's dated side (Coverage Phase 3 on): events on the calendar. The code that
@@ -27,7 +27,11 @@ export type PlanExtraAction =
   | { type: "updateCaregiver"; id: string; patch: Partial<Omit<PlanCaregiver, "id">> }
   | { type: "removeCaregiver"; id: string }
   | { type: "assignCaregiver"; service: number; id: string; on: boolean }
-  | { type: "setSfcCaregiver"; otherId: string; role: "primary" | "backup"; id: string | null };
+  | { type: "setSfcCaregiver"; otherId: string; role: "primary" | "backup"; id: string | null }
+  /** Waiver enrollments (Coverage Phase 4, CON-16): add, change or take one off. Refused if they'd overlap. */
+  | { type: "addWaiver" }
+  | { type: "updateWaiver"; index: number; patch: Partial<PlanWaiver> }
+  | { type: "removeWaiver"; index: number };
 
 export interface PlanExtraChange {
   plan: CarePlan;
@@ -39,6 +43,7 @@ export type PlanExtraReducer = (plan: CarePlan, action: PlanExtraAction, pack: R
 const EXTRA_TYPES: ReadonlySet<string> = new Set<PlanExtraAction["type"]>([
   "placeEvent", "removeEvent", "recordAmendment", "removeAmendment", "changeDay", "setStartTime",
   "addCaregiver", "updateCaregiver", "removeCaregiver", "assignCaregiver", "setSfcCaregiver",
+  "addWaiver", "updateWaiver", "removeWaiver",
 ]);
 
 export function isPlanExtraAction(action: { type: string }): action is PlanExtraAction {

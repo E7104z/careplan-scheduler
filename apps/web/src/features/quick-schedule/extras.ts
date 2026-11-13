@@ -5,6 +5,7 @@ import { buildQuickModel } from "./model.js";
 import { applyEvent, dropEvent } from "./planEvents.js";
 import { registerPlanExtras } from "./planExtraStore.js";
 import { guardedPlanChange, setStartTime } from "./visits.js";
+import { addWaiver, removeWaiver, updateWaiver } from "./waivers.js";
 
 // The dated side of Quick Schedule (Coverage Phase 3 on), as one chunk: loaded with import() only
 // for a plan that has visits or kept authorizations to place. Loading it registers how its
@@ -22,6 +23,10 @@ registerPlanExtras((plan, action, pack) => {
   if (action.type === "updateCaregiver") return guardedPlanChange(plan, updateCaregiver(plan, action.id, action.patch), pack, models());
   if (action.type === "assignCaregiver") return guardedPlanChange(plan, assignCaregiver(plan, action.service, action.id, action.on), pack, models());
   if (action.type === "setSfcCaregiver") return { plan: setSfcCaregiver(plan, action.otherId, action.role, action.id) };
+  // Waivers: an enrollment the person enters; adding or changing one that overlaps another is refused.
+  if (action.type === "addWaiver") return guardedPlanChange(plan, addWaiver(plan), pack, models());
+  if (action.type === "updateWaiver") return guardedPlanChange(plan, updateWaiver(plan, action.index, action.patch), pack, models());
+  if (action.type === "removeWaiver") return { plan: removeWaiver(plan, action.index) };
   return { plan: removeAmendment(plan, action.service, action.amendmentId) };
 });
 
@@ -32,3 +37,4 @@ export { ParticipantCalendar } from "./ParticipantCalendar";
 export { VisitTimes } from "./VisitTimes";
 export { PlanChecks } from "./PlanChecks";
 export { CaregiversPanel } from "./CaregiversPanel";
+export { WaiversPanel } from "./WaiversPanel";

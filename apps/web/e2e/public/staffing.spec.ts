@@ -106,3 +106,32 @@ test("CP4-2: caregivers are entered, never guessed; a name is in no storage and 
   await expect(again.getByText("Caregiver A")).toHaveCount(0);
   await expect(again.getByRole("checkbox", { name: "PC - Agency" }).first()).toBeChecked();
 });
+
+test("CP4-3: waiver enrollments are entered, and overlapping ones are refused", async ({ page, isMobile }) => {
+  await openF(page);
+  const waivers = panel(page, "Waivers");
+  await expect(waivers.getByText("None entered")).toBeVisible();
+
+  await waivers.getByRole("button", { name: "Add a waiver" }).click();
+  await expect(waivers.getByText("1 entered")).toBeVisible();
+  await waivers.getByLabel("Waiver", { exact: true }).selectOption("ILW");
+  await expect(waivers.getByLabel("Waiver", { exact: true })).toHaveValue("ILW");
+
+  // A second enrollment on the same dates overlaps the first and is refused.
+  await waivers.getByRole("button", { name: "Add a waiver" }).click();
+  await expect(waivers.getByRole("alert")).toContainText("Not changed. Two waiver enrollments overlap.");
+  await expect(waivers.getByText("1 entered")).toBeVisible();
+  await analyze(page);
+  if (isMobile) {
+    await expectNoPageScroll(page);
+    await expectTouchTargets(page);
+  }
+
+  // A reload keeps the one enrollment, with no name or DCN in storage.
+  await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes('"waiver":"ILW"'));
+  const stored = await page.evaluate(() => JSON.stringify({ ...sessionStorage, ...localStorage }));
+  expect(stored).not.toContain("SAMPLE PARTICIPANT");
+  await page.reload();
+  await expect(panel(page, "Waivers").getByText("1 entered")).toBeVisible();
+  await expect(panel(page, "Waivers").getByLabel("Waiver", { exact: true })).toHaveValue("ILW");
+});

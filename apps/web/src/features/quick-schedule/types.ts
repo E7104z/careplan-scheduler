@@ -13,6 +13,7 @@ import type {
   ServiceDef,
   Severity,
   TemplateEntry,
+  WaiverCode,
   Weekday,
 } from "@careplan/engine";
 import type { ImportIssue, SourceRef } from "@careplan/import";
@@ -95,6 +96,19 @@ export interface PlanCaregiver {
   agencyEmployee: boolean | null;
   nurseLicense: boolean | null;
   fcsrRegistered: boolean | null;
+}
+
+/**
+ * A waiver this participant is enrolled in (Coverage Phase 4, CON-16), entered by the person and
+ * never inferred from the services. Checked for overlap; a waiver service without a covering
+ * enrollment is asked for (REVIEW).
+ */
+export interface PlanWaiver {
+  waiver: WaiverCode;
+  /** YYYY-MM-DD the enrollment begins. */
+  start: string;
+  /** YYYY-MM-DD the enrollment ends. */
+  end: string;
 }
 
 /** APP-SPEC 5.6. `identity` lives in memory only and is never persisted. */
@@ -200,6 +214,8 @@ export interface CarePlan {
   events?: PlanEvent[];
   /** The plan's caregivers (Coverage Phase 4); their names are never persisted. Absent in plans saved before them. */
   caregivers?: PlanCaregiver[];
+  /** Waivers the participant is enrolled in, with dates (Coverage Phase 4, CON-16). Absent in plans saved before them. */
+  waivers?: PlanWaiver[];
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

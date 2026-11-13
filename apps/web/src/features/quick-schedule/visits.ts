@@ -3,8 +3,10 @@ import {
   ruleCON01SameServiceOverlap,
   ruleCON02DifferentServiceOverlap,
   ruleCON03RespiteOverlap,
+  ruleCON04CaregiverOverlap,
   ruleCON06AttendantRelationship,
   ruleCON07AgencyAide,
+  ruleCON16WaiverEnrollments,
   ruleCON17QualificationData,
   weekdayOf,
   type RulePack,
@@ -18,6 +20,7 @@ import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
+import { engineEnrollments } from "./waivers.js";
 
 export { PARTICIPANT_ID };
 
@@ -93,12 +96,15 @@ export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: Rul
   const assigned = [...visits, ...assignmentVisits(plan, models)];
   const authorizations = models.map((model) => ({ ...model.auth, participantId: PARTICIPANT_ID }));
   const caregivers = engineCaregivers(plan);
+  const enrollments = engineEnrollments(plan);
   return [
     ...ruleCON01SameServiceOverlap(visits, services),
     ...ruleCON02DifferentServiceOverlap(visits, pack, services),
     ...ruleCON03RespiteOverlap(visits, services),
+    ...ruleCON04CaregiverOverlap(visits),
     ...ruleCON06AttendantRelationship(authorizations, caregivers, assigned),
     ...ruleCON07AgencyAide(authorizations, caregivers, assigned),
+    ...ruleCON16WaiverEnrollments(enrollments, visits),
     ...ruleCON17QualificationData(authorizations, caregivers, assigned),
   ];
 }

@@ -10,6 +10,7 @@ const Calendar = lazy(() => import("./extras").then((extras) => ({ default: extr
 const Times = lazy(() => import("./extras").then((extras) => ({ default: extras.VisitTimes })));
 const Checks = lazy(() => import("./extras").then((extras) => ({ default: extras.PlanChecks })));
 const Caregivers = lazy(() => import("./extras").then((extras) => ({ default: extras.CaregiversPanel })));
+const Waivers = lazy(() => import("./extras").then((extras) => ({ default: extras.WaiversPanel })));
 
 export function VisitsSlot(props: ComponentProps<typeof Visits>) {
   return (
@@ -63,6 +64,14 @@ export function CaregiversSlot(props: ComponentProps<typeof Caregivers>) {
   return (
     <Suspense fallback={null}>
       <Caregivers {...props} />
+    </Suspense>
+  );
+}
+
+export function WaiversSlot(props: ComponentProps<typeof Waivers>) {
+  return (
+    <Suspense fallback={null}>
+      <Waivers {...props} />
     </Suspense>
   );
 }

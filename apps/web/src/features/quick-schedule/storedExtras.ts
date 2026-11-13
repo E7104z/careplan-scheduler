@@ -10,6 +10,7 @@ const EVENT_KINDS = new Set(["NURSE_VISIT", "ADC_DAY", "MEAL_DELIVERY", "SFC_DAY
 const RELATIONSHIPS = new Set([
   "spouse", "legal_guardian", "parent", "sibling", "child", "stepchild", "grandparent", "grandchild", "other_family", "none",
 ]);
+const WAIVER_CODES = new Set(["ILW", "ADW", "ADCW", "SFCW"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -74,6 +75,17 @@ function isStartTimes(value: unknown): boolean {
   );
 }
 
+/** A waiver enrollment (Coverage Phase 4) as the person entered it: a code and its dates. */
+function isWaiver(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.waiver === "string" &&
+    WAIVER_CODES.has(value.waiver) &&
+    typeof value.start === "string" && ISO_DATE.test(value.start) &&
+    typeof value.end === "string" && ISO_DATE.test(value.end)
+  );
+}
+
 /**
  * A caregiver (Coverage Phase 4) as storage may hold one: an id and the qualifications the person
  * entered. A stored caregiver with a `name` is refused: names live in memory only, like the
@@ -105,7 +117,8 @@ export function stateExtrasValid(value: Record<string, unknown>): boolean {
 export function planExtrasValid(value: Record<string, unknown>): boolean {
   return (
     isOptional(value.events, (list) => Array.isArray(list) && list.every(isEvent)) &&
-    isOptional(value.caregivers, (list) => Array.isArray(list) && list.every(isCaregiver))
+    isOptional(value.caregivers, (list) => Array.isArray(list) && list.every(isCaregiver)) &&
+    isOptional(value.waivers, (list) => Array.isArray(list) && list.every(isWaiver))
   );
 }
 

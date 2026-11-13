@@ -172,16 +172,20 @@ export function ruleCON04CaregiverOverlap(visits: Visit[]): ValidationResult[] {
     for (let j = i + 1; j < visits.length; j++) {
       const a = visits[i]!;
       const b = visits[j]!;
-      if (a.caregiverId !== b.caregiverId) continue;
-      if (a.participantId === b.participantId) continue;
-      if (overlaps(a, b)) {
-        results.push({
-          ruleId: "CON-04",
-          severity: "BLOCK",
-          message: `Caregiver ${a.caregiverId} overlaps across participants`,
-          refs: { visitId: a.id },
-        });
-      }
+      // Same caregiver, and a real one (a visit with no caregiver assigned yet can't be double-booked).
+      if (a.caregiverId === "" || a.caregiverId !== b.caregiverId) continue;
+      // Same service for one participant is CON-01's overlap; across participants it is still a double-booking.
+      if (a.participantId === b.participantId && a.serviceCode === b.serviceCode) continue;
+      if (!overlaps(a, b)) continue;
+      results.push({
+        ruleId: "CON-04",
+        severity: "BLOCK",
+        message:
+          a.participantId === b.participantId
+            ? `Caregiver ${a.caregiverId} is booked in two visits at once`
+            : `Caregiver ${a.caregiverId} overlaps across participants`,
+        refs: { visitId: a.id },
+      });
     }
   }
   return results;

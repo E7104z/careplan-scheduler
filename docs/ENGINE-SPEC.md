@@ -293,7 +293,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-01 | Same service code, same participant, overlapping visits: CDS/ILW → BLOCK; agency codes → WARN. A scheduled service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked"; it never passes on missing data. | BLOCK / WARN / REVIEW | PARTIAL | CDS policy clarification Q5 |
 | CON-02 | Different services overlapping: matrix `allowed` → none; `prohibited` → BLOCK; `unknown` → REVIEW. With two or more services, one with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | per matrix | PARTIAL | CDS policy clarification Q5; Policy 3.50 (rev. Jul 2026) |
 | CON-03 | Respite overlapping any other service → BLOCK. With respite and another service in the plan, a service with no clock times → REVIEW "No clock times yet, so overlaps can't be checked". | BLOCK / REVIEW | VERIFIED | Policy 3.50 (rev. Jul 2026) |
-| CON-04 | Same caregiver, overlapping visits for different participants → BLOCK. | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
+| CON-04 | Same caregiver, overlapping visits → BLOCK (across participants, or two different services for one participant). | BLOCK | APPROVED | Product decision approved Oct 20, 2026 |
 | CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |
 | CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. RCF_PC, RCF_APC → REVIEW (Policy 3.20 doesn't restate 3.05's aide restrictions; DSDS question 14). | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
@@ -358,6 +358,7 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-31 | CDS "Bathing" and AGENCY_PC "Bathing"; override only the CDS task id | agency Bathing unchanged |
 | TC-32 | caregiver A: P-1 09:00–11:00, P-2 10:00–12:00 same date | BLOCK CON-04 |
 | TC-33 | caregiver 42 h in workweek | WARN CON-05 only |
+| TC-34 | caregiver A: two services for P-1, 09:00–11:00 and 10:00–12:00 same date | BLOCK CON-04 |
 | TC-35 | ILW attendant `fcsrRegistered` undefined | REVIEW CON-17 |
 | TC-37 | 7-day task, 61 weekly minutes (10×6 + 1) | F-2b 18; F-2a 19; REVIEW AUTH-03 |
 
