@@ -49,6 +49,17 @@ a prompt below disagree, the correction wins.
    A group's branch is cut from the previous group's branch, and its pull request says so.
 6. One test (`carePlan.test.ts`, "a service that ended earlier") failed only on a Windows checkout
    (the fixture comes out with CRLF line endings). Its pattern now reads either ending.
+7. **Later on Nov 13: Phase 4 split in two.** PR #17 merged `coverage-phase-4` (CP4-1 to CP4-5,
+   so also everything in #14, #15 and #16) into `main`. CP4-6 to CP4-8 are on
+   `coverage-phase-4-checks`, cut from that `main`. PRs #15 and #16 are left open but add
+   nothing `main` lacks.
+8. **CON-05 isn't on the schedule yet, on purpose.** CP4-3 left it out because its workweek
+   start is the agency's tenant setting, and running it on public pages pulled luxon into
+   their bundle (APP-SPEC 5.3 step 9). It arrives with CP4-9. **If CP4-9 is skipped**, CON-05
+   must still run in Quick Schedule, on one participant's visits, in the lazy extras chunk,
+   with a workweek start the person enters (no default, since an FLSA workweek is the
+   employer's to fix). Record that in APP-SPEC 5.3 step 9, so a skipped CP4-9 never drops the
+   40-hour check silently.
 
 ## 1. Order and branches
 
