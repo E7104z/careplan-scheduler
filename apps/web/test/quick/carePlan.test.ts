@@ -118,7 +118,7 @@ describe("AC-28 fixture F: one schedule for the participant", () => {
 describe("a service that ended earlier is left out of the plan", () => {
   // Homemaker authorized February to June only.
   const text = fixtureF.replace(
-    /(HC\tN\/A[\s\S]*?)(07\/01\/2026\t07\/31\/2026\tS5130\t5\n08[\s\S]*?10\/31\/2026\tS5130\t5\n)/,
+    /(HC\tN\/A[\s\S]*?)(07\/01\/2026\t07\/31\/2026\tS5130\t5\r?\n08[\s\S]*?10\/31\/2026\tS5130\t5\r?\n)/,
     "$1",
   );
   const outcome = next(addPage(emptyImportFlow(), text), PACK, TODAY);
