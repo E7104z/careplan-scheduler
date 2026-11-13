@@ -1,5 +1,6 @@
 import { collection, doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import { getDb } from "../auth/firebase";
+import { BAA_VERSION } from "./baaText";
 import type { AuthActor } from "./types";
 
 // APP-SPEC 6.3: one batched write creates the tenant, its founding owner member and
@@ -38,4 +39,16 @@ export async function createAgency(account: AuthActor, name: string, workweekSta
 /** Owners change only the two editable fields (APP-SPEC 6.3). */
 export async function updateAgency(tenantId: string, changes: { name: string; workweekStart: number }): Promise<void> {
   await updateDoc(doc(getDb(), "tenants", tenantId), changes);
+}
+
+/**
+ * An owner accepts the BAA, recording the version, who accepted, and when (PHASE-3-SPEC §3).
+ * firestore.rules allows this only for an owner and only when the three fields arrive together.
+ */
+export async function acceptBaa(tenantId: string, account: AuthActor): Promise<void> {
+  await updateDoc(doc(getDb(), "tenants", tenantId), {
+    baaVersion: BAA_VERSION,
+    baaAcceptedBy: account.uid,
+    baaAcceptedAt: serverTimestamp(),
+  });
 }

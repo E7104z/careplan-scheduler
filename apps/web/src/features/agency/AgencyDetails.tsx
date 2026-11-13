@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router";
+import { niceDateFromMillis } from "../../lib/format";
 import { usePageTitle } from "../../lib/usePageTitle";
 import { Button } from "../../ui/Button";
 import { Field } from "../../ui/Field";
@@ -17,6 +19,12 @@ export function AgencyDetails() {
   const { state, reload } = useAgency();
   const toast = useToast();
   const canEdit = state.role === "owner";
+  const baaAcceptedAt = state.tenant?.baaAcceptedAt ?? null;
+  const baaVersion = state.tenant?.baaVersion ?? "";
+  const baaStatus =
+    baaAcceptedAt !== null && baaVersion !== ""
+      ? `Accepted on ${niceDateFromMillis(baaAcceptedAt)} · version ${baaVersion}`
+      : "Not accepted yet";
   const [name, setName] = useState(state.tenant?.name ?? "");
   const [workweekStart, setWorkweekStart] = useState(state.tenant?.workweekStart ?? 0);
   const [nameProblem, setNameProblem] = useState<string | undefined>();
@@ -104,6 +112,15 @@ export function AgencyDetails() {
             <p className="text-sm text-ink-2">Only an owner can change agency details.</p>
           )}
         </form>
+      </Panel>
+      <Panel title="Business associate agreement" meta={baaStatus}>
+        <p className="text-sm text-ink-2">
+          Your agency must have a signed business associate agreement on file. You can review the
+          agreement and its acceptance status here.
+        </p>
+        <Link to="/app/agency/baa" className="mt-3 inline-block rounded-sm font-medium text-brand hover:underline">
+          Review the agreement
+        </Link>
       </Panel>
     </div>
   );

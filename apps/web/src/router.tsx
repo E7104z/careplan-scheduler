@@ -30,6 +30,7 @@ const Home = lazy(() => import("./pages/Home").then((module) => ({ default: modu
 const AgencyDetails = lazy(() =>
   import("./features/agency/AgencyDetails").then((module) => ({ default: module.AgencyDetails })),
 );
+const Baa = lazy(() => import("./features/agency/Baa").then((module) => ({ default: module.Baa })));
 const Team = lazy(() => import("./features/agency/Team").then((module) => ({ default: module.Team })));
 const NewAgency = lazy(() => import("./features/agency/NewAgency").then((module) => ({ default: module.NewAgency })));
 const Join = lazy(() => import("./features/agency/Join").then((module) => ({ default: module.Join })));
@@ -86,6 +87,7 @@ export const routes = [
           { path: "account", element: <Account /> },
           { path: "quick", element: <RequireMembership><QuickSchedule /></RequireMembership> },
           { path: "agency", element: <RequireMembership><AgencyDetails /></RequireMembership> },
+          { path: "agency/baa", element: <RequireMembership><Baa /></RequireMembership> },
           { path: "agency/members", element: <RequireMembership><Team /></RequireMembership> },
           { path: "new-agency", element: <RequireNoMembership><NewAgency /></RequireNoMembership> },
         ],

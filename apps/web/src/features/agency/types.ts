@@ -11,12 +11,18 @@ export interface AuthActor {
   emailVerified: boolean;
 }
 
-/** `tenants/{id}` document data (APP-SPEC 7.2). */
+/** `tenants/{id}` document data (APP-SPEC 7.2), plus the BAA fields from PHASE-3-SPEC §3. */
 export interface Tenant {
   name: string;
   state: string;
   timeZone: string;
   workweekStart: number;
+  /** Set once an owner accepts the BAA; empty until then. */
+  baaVersion?: string;
+  /** The owner's uid that accepted the BAA. */
+  baaAcceptedBy?: string;
+  /** Acceptance time in epoch milliseconds (null while the server timestamp is pending). */
+  baaAcceptedAt?: number | null;
 }
 
 /** One of the person's agency memberships, with the agency's name for the switcher. */

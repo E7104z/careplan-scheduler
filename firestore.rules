@@ -62,9 +62,15 @@ service cloud.firestore {
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
         && getAfter(memberPath(tenantId, request.auth.uid)).data.role == 'owner';
-      allow update: if isOwner(tenantId)
-        && changedOnly(['name', 'workweekStart'])
-        && validTenantFields(request.resource.data);
+      allow update: if isOwner(tenantId) && (
+        (changedOnly(['name', 'workweekStart']) && validTenantFields(request.resource.data))
+        || (changedOnly(['baaVersion', 'baaAcceptedBy', 'baaAcceptedAt'])
+            && request.resource.data.baaVersion is string
+            && request.resource.data.baaVersion.size() >= 1
+            && request.resource.data.baaVersion.size() <= 20
+            && request.resource.data.baaAcceptedBy == request.auth.uid
+            && request.resource.data.baaAcceptedAt == request.time)
+      );
       allow delete: if false;
 
       match /members/{uid} {
