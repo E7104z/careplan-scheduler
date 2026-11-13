@@ -3,6 +3,7 @@ import type {
   AuthorizedTask,
   Caregiver,
   CalendarException,
+  CoverageBlock,
   DaysPerWeek,
   MonthlyAuthorization,
   PlanEvent,
@@ -149,6 +150,12 @@ export interface QuickState {
   caregiverIds?: string[];
   /** Optional visit start time by weekday ("0" Sunday to "6" Saturday), as "HH:mm" in America/Chicago (Coverage Phase 4). */
   startTimes?: Record<string, string>;
+  /**
+   * Coverage blocks for a COVERAGE_SHIFT service (Basic and Advanced Respite, Policy 3.50): dated
+   * start/end spans of care. The span is the scheduled duration; any activities inside it are
+   * descriptions and are never added to it (Coverage Phase 4).
+   */
+  coverage?: CoverageBlock[];
 }
 
 /** A visit authorization read from Fusion's care plan report, such as a General Health Evaluation. */

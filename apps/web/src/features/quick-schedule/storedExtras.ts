@@ -75,6 +75,16 @@ function isStartTimes(value: unknown): boolean {
   );
 }
 
+function isCoverageBlock(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.serviceAuthId === "string" &&
+    typeof value.start === "string" && LOCAL_TIME.test(value.start) &&
+    typeof value.end === "string" && LOCAL_TIME.test(value.end)
+  );
+}
+
 /** A waiver enrollment (Coverage Phase 4) as the person entered it: a code and its dates. */
 function isWaiver(value: unknown): boolean {
   return (
@@ -109,6 +119,7 @@ export function stateExtrasValid(value: Record<string, unknown>): boolean {
     isOptional(value.amendments, (list) => Array.isArray(list) && list.every(isAmendment)) &&
     isOptional(value.dayChanges, (list) => Array.isArray(list) && list.every(isDayChange)) &&
     isOptional(value.startTimes, isStartTimes) &&
+    isOptional(value.coverage, (list) => Array.isArray(list) && list.every(isCoverageBlock)) &&
     isOptional(value.caregiverIds, isStringList)
   );
 }

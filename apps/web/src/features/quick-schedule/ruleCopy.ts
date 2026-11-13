@@ -214,6 +214,19 @@ const CON_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "Add the caregiver's relationship and qualifications so we can check eligibility.",
   },
+  "SFC-01/BLOCK": {
+    title: "This service overlaps the family caregiver authorization",
+    whatToDo:
+      "A participant can't get the structured family caregiver waiver and another HCBS service at the same time. End one authorization before the other starts.",
+  },
+  "SFC-01/REVIEW": {
+    title: "This authorization can't be checked against family caregiving",
+    whatToDo: "Its dates or classification are missing. Check them against the care plan.",
+  },
+  "SFC-02/BLOCK": {
+    title: "More than one primary family caregiver",
+    whatToDo: "Structured family caregiving takes one live-in primary caregiver and a qualified substitute.",
+  },
 };
 
 const STATE_FORMULA_COPY: Record<string, RuleCopy> = {

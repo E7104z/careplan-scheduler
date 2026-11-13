@@ -302,6 +302,8 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25) |
 | CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
+| SFC-01 | SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked. | BLOCK / REVIEW | VERIFIED | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
+| SFC-02 | More than one primary caregiver on an SFCW authorization → BLOCK. | BLOCK | VERIFIED | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
 
 ---
 

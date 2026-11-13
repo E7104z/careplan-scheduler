@@ -20,6 +20,7 @@ import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
+import { sfcResults } from "./sfc.js";
 import { engineEnrollments } from "./waivers.js";
 
 export { PARTICIPANT_ID };
@@ -51,10 +52,13 @@ export function scheduledServices(plan: CarePlan, models: QuickModel[]): Schedul
  * care day, one visit on each such date, from the start time for that date's scheduled minutes
  * (tasks and transportation, from the one occurrence list). The end is computed in America/Chicago
  * by the engine, so a visit past midnight and a clock-change day are right. A service or a day
- * with no start time produces no visit.
+ * with no start time produces no visit. A COVERAGE_SHIFT service (respite) contributes its
+ * coverage blocks: their start/end span is the visit, so the span, not any task, is its duration.
  */
 export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack): Visit[] {
-  if (!plan.services.some((state) => Object.keys(state.startTimes ?? {}).length > 0)) return [];
+  const hasStartTimes = plan.services.some((state) => Object.keys(state.startTimes ?? {}).length > 0);
+  const hasCoverage = plan.services.some((state) => (state.coverage ?? []).length > 0);
+  if (!hasStartTimes && !hasCoverage) return [];
   const days = new Map<string, { service: number; date: string; minutes: number; taskIds: string[] }>();
   for (const occurrence of normalizeEvents(plan, models, pack)) {
     if (occurrence.kind !== "TASK" && occurrence.kind !== "TRANSPORT") continue;
@@ -79,6 +83,15 @@ export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack
       start, end: addMinutesLocal(start, day.minutes), taskIds: day.taskIds,
     });
   }
+  // Coverage blocks: a span of care is itself the visit (Policy 3.50); activities add nothing.
+  plan.services.forEach((state, service) => {
+    for (const block of state.coverage ?? []) {
+      visits.push({
+        id: block.id, participantId: PARTICIPANT_ID, caregiverId: assignedTo(plan, service)[0] ?? "",
+        serviceCode: state.serviceCode, start: block.start, end: block.end, taskIds: [],
+      });
+    }
+  });
   return visits.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
 }
 
@@ -106,6 +119,7 @@ export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: Rul
     ...ruleCON07AgencyAide(authorizations, caregivers, assigned),
     ...ruleCON16WaiverEnrollments(enrollments, visits),
     ...ruleCON17QualificationData(authorizations, caregivers, assigned),
+    ...sfcResults(plan),
   ];
 }
 

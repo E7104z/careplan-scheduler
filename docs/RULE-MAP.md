@@ -60,6 +60,8 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | CON-13 | `packages/engine/src/rules/conflicts.ts` | `ruleCON13FirstVisit` | `packages/engine/test/rules-con.test.ts` | — (custom) | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | `packages/engine/src/rules/conflicts.ts` | `ruleCON16WaiverEnrollments` | `packages/engine/test/rules-con.test.ts` | TC-18, TC-29, TC-30 | Policy 3.05 (04/25) |
 | CON-17 | `packages/engine/src/rules/conflicts.ts` | `ruleCON17QualificationData` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-35, FIX-2 | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
+| SFC-01 | `packages/engine/src/rules/sfc.ts` | `ruleSFC01HcbsExclusivity` | `packages/engine/test/sfc.test.ts` | SFC-01 | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
+| SFC-02 | `packages/engine/src/rules/sfc.ts` | `ruleSFC02SinglePrimary` | `packages/engine/test/sfc.test.ts` | SFC-02 | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
 
 ## Catalog
 

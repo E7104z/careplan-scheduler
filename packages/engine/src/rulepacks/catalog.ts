@@ -194,6 +194,16 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     rule: "Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW.",
     source: "Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration)",
   },
+  {
+    id: "SFC-01", area: "Conflicts and eligibility", severities: ["BLOCK", "REVIEW"], status: "VERIFIED",
+    rule: "SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked.",
+    source: "Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026)",
+  },
+  {
+    id: "SFC-02", area: "Conflicts and eligibility", severities: ["BLOCK"], status: "VERIFIED",
+    rule: "More than one primary caregiver on an SFCW authorization → BLOCK.",
+    source: "Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026)",
+  },
 
   // State parity (src/stateparity/rules.ts; Amendment C).
   {
