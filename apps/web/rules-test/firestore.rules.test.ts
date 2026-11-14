@@ -1,4 +1,5 @@
-// Firestore security rules tests R-01 to R-18 (APP-SPEC section 8), one `it` per expectation.
+// Firestore security rules tests R-01 to R-28 (APP-SPEC section 8 and PHASE-3-SPEC section 7),
+// one `it` per expectation.
 // Runs against the Firestore emulator: `npm run test:rules` inside `firebase emulators:exec`.
 // The accept cases (R-09 to R-12) all send the same full batch, so each denial comes from the
 // one thing that case changes, not from a missing write.
@@ -42,6 +43,43 @@ const memberDoc = (db: Db, tenantId: string, uid: string) =>
   db.collection("tenants").doc(tenantId).collection("members").doc(uid);
 const inviteDoc = (db: Db, inviteId: string) => db.collection("invites").doc(inviteId);
 const userDoc = (db: Db, uid: string) => db.collection("users").doc(uid);
+const configDoc = (db: Db) => db.collection("config").doc("phiStorage");
+const participantDoc = (db: Db, pid: string) =>
+  db.collection("tenants").doc(TENANT).collection("participants").doc(pid);
+const planDoc = (db: Db, pid: string, planId: string) =>
+  participantDoc(db, pid).collection("plans").doc(planId);
+
+const participantFields = (by: string) => ({
+  displayName: "P-TEST-01",
+  createdAt: serverTimestamp(),
+  createdBy: by,
+  updatedAt: serverTimestamp(),
+  updatedBy: by,
+});
+
+const planFields = (by: string) => ({
+  name: "P-TEST-PLAN-01",
+  carePlan: { version: "cps.quick.v3" },
+  savedAt: serverTimestamp(),
+  savedBy: by,
+});
+
+/** Opens (or leaves closed) the two halves of the participant-write gate, bypassing rules. */
+async function seedGate(options: { baa?: boolean; phiStorage?: boolean }) {
+  await env.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    if (options.baa) {
+      await tenantDoc(db, TENANT).update({
+        baaVersion: "1.0",
+        baaAcceptedBy: OWNER.uid,
+        baaAcceptedAt: serverTimestamp(),
+      });
+    }
+    if (options.phiStorage) {
+      await configDoc(db).set({ enabled: true });
+    }
+  });
+}
 
 let env: RulesTestEnvironment;
 
@@ -321,5 +359,75 @@ describe("R-19 and R-20 accepting the business associate agreement", () => {
   it("R-20 denies an acceptance time that is not the server time", async () => {
     await seedTenant(TENANT, TENANT_NAME);
     await assertFails(acceptBaa(verified(OWNER), OWNER.uid, inDays(1)));
+  });
+});
+
+describe("R-21 to R-28 saved participants, plans and the deployment gate", () => {
+  it("R-21 denies a participant write when PHI storage is not enabled", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true }); // phiStorage flag absent -> closed
+    await assertFails(participantDoc(verified(OWNER), "p-test-1").set(participantFields(OWNER.uid)));
+  });
+
+  it("R-21 denies a participant write when the BAA is not accepted", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ phiStorage: true }); // baaVersion absent -> closed
+    await assertFails(participantDoc(verified(OWNER), "p-test-1").set(participantFields(OWNER.uid)));
+  });
+
+  it("R-22 allows an owner to create a participant when both gates are open", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(participantDoc(verified(OWNER), "p-test-1").set(participantFields(OWNER.uid)));
+  });
+
+  it("R-22 allows a scheduler to create a participant when both gates are open", async () => {
+    await seedTenant(TENANT, TENANT_NAME, [{ person: SCHEDULER, role: "scheduler" }]);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(participantDoc(verified(SCHEDULER), "p-test-1").set(participantFields(SCHEDULER.uid)));
+  });
+
+  it("R-23 denies a viewer creating a participant", async () => {
+    await seedTenant(TENANT, TENANT_NAME, [{ person: SCHEDULER, role: "viewer" }]);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(participantDoc(verified(SCHEDULER), "p-test-1").set(participantFields(SCHEDULER.uid)));
+  });
+
+  it("R-23 denies a non-member reading a participant", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(participantDoc(verified(OTHER), "p-test-1").get());
+  });
+
+  it("R-24 allows a member to read a participant", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(participantDoc(verified(OWNER), "p-test-1").set(participantFields(OWNER.uid)));
+    await assertSucceeds(participantDoc(verified(OWNER), "p-test-1").get());
+  });
+
+  it("R-25 denies a client writing the PHI-storage deployment flag", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await assertFails(configDoc(verified(OWNER)).set({ enabled: true }));
+  });
+
+  it("R-26 denies a participant document that carries a DCN", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(
+      participantDoc(verified(OWNER), "p-test-1").set({ ...participantFields(OWNER.uid), dcn: "123456789" }),
+    );
+  });
+
+  it("R-27 allows a plan save when both gates are open", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(planDoc(verified(OWNER), "p-test-1", "plan-1").set(planFields(OWNER.uid)));
+  });
+
+  it("R-28 denies a plan save when the gate is closed", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true }); // phiStorage off
+    await assertFails(planDoc(verified(OWNER), "p-test-1", "plan-1").set(planFields(OWNER.uid)));
   });
 });

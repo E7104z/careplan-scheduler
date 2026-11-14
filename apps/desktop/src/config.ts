@@ -1,8 +1,8 @@
 /**
- * The live site. The desktop app is one window onto it (D-1), so every Vercel deploy updates the
+ * The live site. The desktop app is one window onto it (D-1), so every Firebase Hosting deploy updates the
  * app, and sign-in, the rules and Quick Schedule behave exactly as on the web.
  */
-export const APP_URL = "https://careplan-scheduler.vercel.app";
+export const APP_URL = "https://care-plan-scheduler.web.app";
 
 /** Help → Open privacy page. */
 export const PRIVACY_URL = `${APP_URL}/privacy`;
@@ -26,7 +26,7 @@ function parse(url: string): URL | null {
 
 /**
  * D-3: what may load inside the app: https URLs whose host is the site's or one of Google
- * sign-in's, exactly (so not a lookalike such as careplan-scheduler.vercel.app.evil.com, another
+ * sign-in's, exactly (so not a lookalike such as care-plan-scheduler.web.app.evil.com, another
  * port, or a URL with a user name or password in it). Anything that isn't a URL is refused.
  */
 export function isAllowedNavigation(url: string): boolean {

@@ -54,14 +54,15 @@ Branch `phase-3/baa`. Commit: `feat: customer BAA with owner-only acceptance`.
 Branch `phase-3/app-check`. Commit: `feat: App Check with reCAPTCHA Enterprise`.
 
 **Read first:** `docs/PHASE-3-SPEC.md` §2 P3-04, §4; `src/features/auth/firebase.ts`,
-`src/features/auth/AuthProvider.tsx`, `scripts/check-bundle.mjs`, `vercel.json`,
+`src/features/auth/AuthProvider.tsx`, `scripts/check-bundle.mjs`, `firebase.json`,
 `apps/web/.env`, `apps/web/.env.emulator`, APP-SPEC §7.1, §10.
 
 **Task:** Add `VITE_FIREBASE_APPCHECK_SITE_KEY` to both env files (empty in emulator). Add
 `getAppCheckInstance()` to `firebase.ts` that initializes `ReCAPTCHAEnterpriseProvider` only
 when the key is non-empty. Wire it so Firebase calls in the app obtain the App Check token;
 keep the module out of the public bundle. If the reCAPTCHA enterprise script needs it, extend
-the CSP in `vercel.json`. Add a unit test that the provider is not initialized without a key.
+the CSP in `firebase.json` (hosting `headers`). Add a unit test that the provider is not
+initialized without a key.
 Do not hardcode or commit a real site key.
 
 **Finish:** `npx tsc --noEmit`, `npx vitest run`, `npm run build`, `npm run check:bundle` (or
@@ -93,15 +94,17 @@ delete of an audit doc are denied.
 
 Branch `phase-3/participants`. Commit: `feat: saved participants and plans`.
 
-**Read first:** `docs/PHASE-3-SPEC.md` §2 P3-07/P3-08 (resolve P3-08 first), §6;
+**Read first:** `docs/PHASE-3-SPEC.md` §2 P3-07/P3-08/P3-10, §6;
 `docs/PHASE-3-UNIFIED-SCHEDULE.md`; `src/features/quick-schedule/*` (state model, the guard,
-the `CarePlan` shape); `firestore.rules`.
+the `CarePlan` shape); `firestore.rules` (the participants/plans and `config/phiStorage` rules are
+already applied).
 
-**Task:** After the founder resolves P3-08, add the `participants` and `plans` collections with
-the BAA gate in rules; `features/participants/` service modules; `/app/participants` and
-`/app/participants/:pid` pages; and "Save plan" from in-app Quick Schedule. Reuse the engine and
-the Quick Schedule guard; never re-implement schedule math. Every change still passes the
-guard (APP-SPEC 5.7, rule 19a).
+**Task:** Add `features/participants/` service modules; `/app/participants` and
+`/app/participants/:pid` pages; and "Save plan" from in-app Quick Schedule. P3-08 is resolved:
+store `displayName` (no `dcn`), use the random document id as the internal participant id. Writes
+are gated by both the tenant `baaVersion` and `config/phiStorage.enabled` (the rules enforce this).
+Reuse the engine and the Quick Schedule guard; never re-implement schedule math. Every change still
+passes the guard (APP-SPEC 5.7, rule 19a). Build and test with synthetic participants only.
 
 **Finish:** the five commands above.
 

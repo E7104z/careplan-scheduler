@@ -30,7 +30,7 @@ merges.
 | Item | Finding |
 |---|---|
 | Branches | `origin/main` at `445fe3f` (PR #6 merged). Open: PR #5 (`phase-3-worksheet`, the DSDS workbooks and worksheet view), PR #7 (`fix-report-service-table`), PR #8 (`unified-care-plan`, includes #7; CI green). This branch is cut from #8. |
-| Deployment | Vercel builds `apps/web` (`vercel.json`); the deployed commit was not checked from here. Merge order keeps it safe: #7, #8, then this branch. |
+| Deployment | Firebase Hosting builds and serves `apps/web` (`firebase.json`); Vercel is removed. The deployed commit was not checked from here. Merge order keeps it safe: #7, #8, then this branch. |
 | `npm run typecheck` | passes |
 | `npm test` | 858 pass: engine 256, import 125, desktop 15, web 462 |
 | `npm run build` | passes; `/quick` page 165.8 KB gzip of its 180 KB budget |
@@ -280,10 +280,13 @@ app), and clock times arrive with Phase 4.
 - **Evidence:** Appendix 14a/14b XLSX bytes for WORKBOOK-01 parity.
 
 ### Security and environment (runs across phases)
-Quick Schedule stays local (browser only, no upload, name and DCN never stored). Before any
-agency uses real participant data in agency mode, confirm business associate agreements
-with Google (Firebase) and Vercel, or keep PHI out of hosted storage. That decision belongs to
-the owner and their compliance advisor; this audit doesn't assume it's settled.
+Quick Schedule stays local (browser only, no upload, name and DCN never stored). Agency mode is a
+cloud product on covered Google Cloud infrastructure (Firebase Hosting + Firestore/Auth, no
+Vercel) — owner decision 2026-11-13 (PHASE-3-SPEC P3-08/P3-10). Saved participants store
+`displayName` only (no DCN), with random internal ids. Live PHI stays disabled until the Google
+Cloud BAA is executed, every service's coverage is verified and the security review is done; the
+`config/phiStorage.enabled` deployment flag (set only by the Admin SDK) keeps participant writes
+closed in the meantime.
 
 ### Outside Appendix 1 (not in scope until researched)
 Medically Complex Adult Waiver, Brain Injury Waiver, DMH developmental disabilities waivers,
@@ -328,7 +331,7 @@ Fusion material).
 | ILW-02 | 49 hours: REVIEW even when diagnostics pass | PASS: CON-09 REVIEW on any ILW or respite time, with both figures; BLOCK only over 49 h in every reading of the week (CP4-6). EVIDENCE E-02 stays open | `engine/test/rules-con09.test.ts` ("ILW-02"); `apps/web/test/quick/weeklyHours.test.ts` ("ILW-02") |
 | DATES-01 | Mid-month, suspension, expiry, future, DST, overnight | PARTIAL, narrowed: mid-month start, expiry, future start and the DST weeks PASS on the calendar path; overnight and DST minutes PASS in the engine (SCH-15); a visit in a suspension is BLOCK in the engine (SCH-14). Not on the schedule yet: clock times (Phase 4). EVIDENCE E-17: how Fusion shows a suspension, which Quick Schedule has no way to read | `apps/web/test/quick/phase3-acceptance.test.ts` ("DATES-01 on the calendar path"); `engine/test/calendar.test.ts`, `rules-auth-sch.test.ts` |
 | STAFF-01 | Caregiver double-booked; over 40 h | PASS in the engine (CON-04, CON-05) | Phase 4 |
-| SEC-01 | No upload without action; no PHI in diagnostics; tenant isolation | PARTIAL: IMP-16 privacy test, Firestore rules tests; BAA open | section 7 |
+| SEC-01 | No upload without action; no PHI in diagnostics; tenant isolation | PARTIAL: IMP-16 privacy test, Firestore rules tests; participant gate (R-21–R-28) built, live PHI disabled until Google Cloud BAA executed | section 7 |
 | EXPORT-01 | PDF, print, CSV, XLSX agree | PARTIAL: PDF and print share one sheet and name kept authorizations; CSV/XLSX to build | Phase 5 |
 | SOURCE-01 | Rules cite a dated source; version on results | PASS | `catalog.test.ts`, `sources.test.ts`, AUTH-13 |
 | WORKBOOK-01 | 14a/14b parity | EVIDENCE | E-12 |

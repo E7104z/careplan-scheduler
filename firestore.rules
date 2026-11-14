@@ -18,6 +18,26 @@ service cloud.firestore {
         && d.workweekStart is int && d.workweekStart >= 0 && d.workweekStart <= 6;
     }
 
+    // PHASE-3-SPEC P3-08 and the deployment gate (section 6): a participant write needs
+    // BOTH the customer BAA accepted on the tenant AND the deployment-level PHI-storage flag.
+    // `config/phiStorage` can only be set by the Admin SDK / Cloud Functions, never by a client,
+    // so `baaVersion` alone (a field an owner can type) does not unlock PHI storage.
+    function phiStoragePath() { return /databases/$(database)/documents/config/phiStorage; }
+    function tenantHasBaa(t) {
+      let d = get(tenantPath(t)).data;
+      return 'baaVersion' in d && d.baaVersion is string && d.baaVersion.size() >= 1;
+    }
+    function phiStorageEnabled() {
+      return exists(phiStoragePath()) && get(phiStoragePath()).data.enabled == true;
+    }
+    function canWriteParticipants(t) {
+      return isMember(t)
+        && (get(memberPath(t, request.auth.uid)).data.role == 'owner'
+            || get(memberPath(t, request.auth.uid)).data.role == 'scheduler')
+        && tenantHasBaa(t)
+        && phiStorageEnabled();
+    }
+
     function foundingOwner(t, u) {
       return !exists(tenantPath(t))
         && getAfter(tenantPath(t)).data.createdBy == u
@@ -134,6 +154,66 @@ service cloud.firestore {
           && existsAfter(memberPath(resource.data.tenantId, request.auth.uid))));
 
       allow delete: if false;
+    }
+
+    // Deployment-level PHI gate (PHASE-3-SPEC section 6). No client can flip this flag;
+    // the Admin SDK (which bypasses rules) or Cloud Functions sets it only after the Google
+    // Cloud BAA is executed and the security review is done.
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Saved participants and their plans (PHASE-3-SPEC P3-07, P3-08, section 6). P3-08: store
+    // displayName (no DCN initially); the internal participant id is the random document id.
+    match /tenants/{tenantId}/participants/{participantId} {
+      allow read: if isMember(tenantId);
+      allow create: if canWriteParticipants(tenantId)
+        && request.resource.data.keys().hasOnly(['displayName', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 1
+        && request.resource.data.displayName.size() <= 120
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow update: if canWriteParticipants(tenantId)
+        && request.resource.data.keys().hasOnly(['displayName', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 1
+        && request.resource.data.displayName.size() <= 120
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner(tenantId) && tenantHasBaa(tenantId) && phiStorageEnabled();
+
+      match /plans/{planId} {
+        allow read: if isMember(tenantId);
+        allow create: if canWriteParticipants(tenantId)
+          && request.resource.data.keys().hasOnly(['name', 'carePlan', 'planStart', 'planEnd', 'checksum', 'savedAt', 'savedBy'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 160
+          && request.resource.data.carePlan is map
+          && request.resource.data.savedBy == request.auth.uid
+          && request.resource.data.savedAt == request.time
+          && (!('planStart' in request.resource.data) || request.resource.data.planStart is string)
+          && (!('planEnd' in request.resource.data) || request.resource.data.planEnd is string)
+          && (!('checksum' in request.resource.data) || request.resource.data.checksum is string);
+        allow update: if canWriteParticipants(tenantId)
+          && request.resource.data.keys().hasOnly(['name', 'carePlan', 'planStart', 'planEnd', 'checksum', 'savedAt', 'savedBy'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() >= 1
+          && request.resource.data.name.size() <= 160
+          && request.resource.data.carePlan is map
+          && request.resource.data.savedBy == request.auth.uid
+          && request.resource.data.savedAt == request.time
+          && (!('planStart' in request.resource.data) || request.resource.data.planStart is string)
+          && (!('planEnd' in request.resource.data) || request.resource.data.planEnd is string)
+          && (!('checksum' in request.resource.data) || request.resource.data.checksum is string);
+        allow delete: if isOwner(tenantId) && tenantHasBaa(tenantId) && phiStorageEnabled();
+      }
     }
 
     // Everything else is closed.

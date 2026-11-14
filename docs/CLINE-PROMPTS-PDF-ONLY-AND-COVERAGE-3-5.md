@@ -37,12 +37,13 @@ a prompt below disagree, the correction wins.
    `docs/PHASE-3-CLINE-PROMPTS.md` are the agency track (BAA, App Check, audit log and MFA, saved
    participants, billing). "Coverage Phase 3" in this file is the participant calendar. They do
    not depend on each other, except for CP4-9 below.
-3. **CP4-9's gate is narrower than "BAA decision made".** The customer BAA and its owner-only
-   acceptance are merged (PR #13, PHASE-3-SPEC P3-03). What is still open is the Google Cloud BAA
-   (PHASE-3-SPEC section 1) and P3-08 (name and DCN in storage), both the owner's. CP4-9 stays
-   gated on them. When it is built it uses PHASE-3-SPEC's `tenants/{t}/participants/{pid}` path
-   and its rule that nothing is written before `baaVersion` exists; it does not design a second
-   participants collection.
+3. **CP4-9's gate is resolved (owner decision, 2026-11-13).** The Google Cloud BAA and P3-08 are
+   decided: a cloud-based product on covered Google Cloud infrastructure (Firebase Hosting +
+   Firestore/Auth, no Vercel), storing `displayName` but not the DCN, with random internal
+   participant ids. CP4-9 and Phase 3 Prompt 4 may be built with synthetic data, but live
+   participant persistence stays disabled until the Google Cloud BAA is executed, every service's
+   coverage is verified, and the security review is done. It uses PHASE-3-SPEC's
+   `tenants/{t}/participants/{pid}` path and its rules (BAA plus `config/phiStorage.enabled`).
 4. **`.clinerules` rule 19 names `cps.quick.v2`; the key in use is `cps.quick.v3`** (v2 still
    loads). PDF-2 corrects the rule text while it is editing `.clinerules`.
 5. **Branches are stacked when the previous pull request is not merged yet.** The owner merges.
@@ -697,11 +698,12 @@ Finish: standard finish with e2e. Commit: `feat(web): combined PC and CDS cap fl
 
 ## Prompt CP4-9: Agency worker load across participants (GATED)
 
-**Do not start this prompt until the owner writes "BAA decision made" in the conversation.** The
-audit's security note says hosted storage of participant data needs business associate agreements
-with Google (Firebase) and Vercel, or PHI kept out of hosted storage, and that decision belongs to
-the owner and a compliance advisor. If the owner's answer is "keep participant data out of hosted
-storage", skip this prompt and record in the audit that cross-participant checks are not offered.
+**Owner decision made (2026-11-13): build this with synthetic data.** Store per participant the
+`displayName` only (P3-08: no DCN, random internal id); the participant document is
+`tenants/{t}/participants/{pid}` under PHASE-3-SPEC. Hosting is Firebase Hosting (no Vercel).
+Live PHI stays disabled until the Google Cloud BAA is executed, service coverage is verified and
+the security review is done — enforced by the `config/phiStorage.enabled` deployment flag, which no
+client can set. Build and test against the emulator with synthetic participants.
 
 Read first: `firestore.rules`, `apps/web/rules-test/`, `docs/APP-SPEC.md` section 7.2 (Collections), `docs/ENGINE-SPEC.md` CON-04 and CON-05.
 
