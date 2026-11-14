@@ -21,9 +21,13 @@ describe("Quick Schedule rule copy", () => {
   });
 
   it("never says \"worksheet\" or mentions cost or rates in user-facing copy", () => {
+    // "Cost maximum" names a policy limit (CAP-01, Manual 4.20), not a cost: allowed by that name only.
     for (const [key, copy] of Object.entries(RULE_COPY)) {
-      expect(`${copy.title} ${copy.whatToDo}`, key).not.toMatch(/worksheet|\bcosts?\b|\brates?\b|\$/i);
+      expect(`${copy.title} ${copy.whatToDo}`.replace(/\bcost maximum\b/gi, "limit"), key).not.toMatch(/worksheet|\bcosts?\b|\brates?\b|\$/i);
     }
+    // And it carries no figure: no dollar amount or rate.
+    const cap = RULE_COPY["CAP-01/REVIEW"]!;
+    expect(`${cap.title} ${cap.whatToDo}`).not.toMatch(/\d+\.\d\d|\$/);
   });
 
   it("uses the task-level copy for SCH-08 with a taskId", () => {

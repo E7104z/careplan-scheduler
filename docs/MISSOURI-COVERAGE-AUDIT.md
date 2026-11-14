@@ -325,7 +325,7 @@ Fusion material).
 | ADW-05 | Chore one-time, no weekly template | PARTIAL: the engine places one-time and intermittent chore occurrences (PASS, CP2-1); Quick Schedule still shows chore as a weekly pattern | `engine/test/oneTime.test.ts` ("placeOneTimeOccurrences (ADW-05)"); the app wiring is still to build |
 | SFC-01 | A day is a day, not 96 units; no concurrent HCBS | PARTIAL: a covered day is one day, covered once, never units or minutes (PASS on the calendar); no concurrent HCBS is Phase 4 | `otherEvents.test.ts` ("SFC-01"); `engine/test/events.test.ts`; Phase 4 (CP4-4) |
 | ILW-01 | CDS and ILW separate, shared tasks, projected switch | PARTIAL: AUTH-11 | Phase 4 |
-| ILW-02 | 49 hours: REVIEW even when diagnostics pass | PARTIAL: CON-09 REVIEW only above 49 h | Phase 4; EVIDENCE E-02 |
+| ILW-02 | 49 hours: REVIEW even when diagnostics pass | PASS: CON-09 REVIEW on any ILW or respite time, with both figures; BLOCK only over 49 h in every reading of the week (CP4-6). EVIDENCE E-02 stays open | `engine/test/rules-con09.test.ts` ("ILW-02"); `apps/web/test/quick/weeklyHours.test.ts` ("ILW-02") |
 | DATES-01 | Mid-month, suspension, expiry, future, DST, overnight | PARTIAL, narrowed: mid-month start, expiry, future start and the DST weeks PASS on the calendar path; overnight and DST minutes PASS in the engine (SCH-15); a visit in a suspension is BLOCK in the engine (SCH-14). Not on the schedule yet: clock times (Phase 4). EVIDENCE E-17: how Fusion shows a suspension, which Quick Schedule has no way to read | `apps/web/test/quick/phase3-acceptance.test.ts` ("DATES-01 on the calendar path"); `engine/test/calendar.test.ts`, `rules-auth-sch.test.ts` |
 | STAFF-01 | Caregiver double-booked; over 40 h | PASS in the engine (CON-04, CON-05) | Phase 4 |
 | SEC-01 | No upload without action; no PHI in diagnostics; tenant isolation | PARTIAL: IMP-16 privacy test, Firestore rules tests; BAA open | section 7 |
@@ -371,3 +371,23 @@ when the email goes:
    app opens unchanged.
 5. **Scope stopped at Phase 1.** Phases 2-5 change scheduling behavior and need the owner's
    approval of this plan first, as the request asks.
+6. **CDS task rules and program checks (CP4-7, Nov 13, 2026).** Severities follow the policy
+   text read that day at health.mo.gov. BLOCK only where it states the exclusion outright:
+   Policy 3.25 (rev. Jan 2026) "No time can be authorized for" stand-by, prompting, cueing,
+   respite or waiting (CDS-01, CDS-02, for a task label that is only that), and its "not eligible
+   for CDS" for NF/RCF/ALF residents (CDS-05) and DMH self-directed services (PRG-02); Policy
+   4.35.3 (rev. May 2023) for PACE (PRG-01); Policy 4.35.1 for DD Shared Living, Residential
+   Habilitation and ISL against State Plan personal care (PRG-02). REVIEW where the plan can't
+   show the fact: a label that only mentions those words, a therapy or skilled-care label
+   (CDS-03), NEMT coverage of a CDS trip (CDS-04) and whether State Plan care is used up before
+   DD waiver personal assistance (PRG-03). The prompt's "DMH residential limits State Plan PC"
+   is stronger in 4.35.1 ("not eligible"), so PRG-02 is BLOCK.
+7. **Cost cap and backup coverage (CP4-8, Nov 13, 2026).** CAP-01's words are Manual 4.20's
+   (rev. Jul 2025): agency model PC and CDS together may not exceed 60% of the cost maximum; APC
+   and RN visits can take it past 60%, only to 100%; over 100% with ADW or ILW needs Bureau of
+   Federal Programs approval. Advanced PC with CDS isn't flagged, since 4.20 lets APC exceed 60%.
+   For backup coverage, 4.15 sets the COOP priority risk indicator per participant, which
+   orders participants (agency mode, CP4-9). In Quick Schedule's one participant it can't order
+   uncovered tasks, so the person enters a priority for each task and the list follows it. The
+   40-hour check for a replacement uses every seven days that include the date, because Quick
+   Schedule has no agency workweek (CON-05 waits for CP4-9).

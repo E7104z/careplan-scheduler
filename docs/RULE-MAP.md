@@ -55,13 +55,22 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 | CON-05 | `packages/engine/src/rules/conflicts.ts` | `ruleCON05CaregiverHours` | `packages/engine/test/rules-con.test.ts` | TC-33 | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | `packages/engine/src/rules/conflicts.ts` | `ruleCON06AttendantRelationship` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-14, FIX-2 | Policy 3.25 (01/26) |
 | CON-07 | `packages/engine/src/rules/conflicts.ts` | `ruleCON07AgencyAide` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts`, `packages/engine/test/facility-rules.test.ts` | TC-13, FIX-2, RCF/ALF REVIEW | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
-| CON-09 | `packages/engine/src/rules/conflicts.ts` | `ruleCON09WeeklyHours`; on the expanded template via `validatePlan` (Amendment B) | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/calendar.test.ts`, `packages/engine/test/review-fixes.test.ts`, `packages/engine/test/validate.test.ts` | TC-11, TC-25, TC-26, FIX-4 | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention |
+| CON-09 | `packages/engine/src/rules/weeklyHours.ts` | `ruleCON09WeeklyHours`; on the expanded template via `validatePlan` (Amendment B) | `packages/engine/test/rules-con09.test.ts`, `packages/engine/test/rules-con.test.ts`, `packages/engine/test/calendar.test.ts`, `packages/engine/test/review-fixes.test.ts`, `packages/engine/test/validate.test.ts` | TC-11, TC-25, TC-26, FIX-4, ILW-02 | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); which seven days make the week is open (audit E-02) |
 | CON-10 | `packages/engine/src/rules/conflicts.ts` | `ruleCON10NurseVisits` | `packages/engine/test/rules-con.test.ts` | TC-15 | Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026) |
 | CON-13 | `packages/engine/src/rules/conflicts.ts` | `ruleCON13FirstVisit` | `packages/engine/test/rules-con.test.ts` | — (custom) | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | `packages/engine/src/rules/conflicts.ts` | `ruleCON16WaiverEnrollments` | `packages/engine/test/rules-con.test.ts` | TC-18, TC-29, TC-30 | Policy 3.05 (04/25) |
 | CON-17 | `packages/engine/src/rules/conflicts.ts` | `ruleCON17QualificationData` | `packages/engine/test/rules-con.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-35, FIX-2 | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
 | SFC-01 | `packages/engine/src/rules/sfc.ts` | `ruleSFC01HcbsExclusivity` | `packages/engine/test/sfc.test.ts` | SFC-01 | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
 | SFC-02 | `packages/engine/src/rules/sfc.ts` | `ruleSFC02SinglePrimary` | `packages/engine/test/sfc.test.ts` | SFC-02 | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
+| CDS-01 | `packages/engine/src/rules/cds.ts` | `ruleCDS01PromptingCueing` | `packages/engine/test/cds-programs.test.ts` | CDS-01 | Policy 3.25 (rev. Jan 2026); Policy 4.35.1 (read Nov 13, 2026) |
+| CDS-02 | `packages/engine/src/rules/cds.ts` | `ruleCDS02WaitingTime` | `packages/engine/test/cds-programs.test.ts` | CDS-02 | Policy 3.25 (rev. Jan 2026) |
+| CDS-03 | `packages/engine/src/rules/cds.ts` | `ruleCDS03LicensedTasks` | `packages/engine/test/cds-programs.test.ts` | CDS-03 | Policy 3.25 (rev. Jan 2026) |
+| CDS-04 | `packages/engine/src/rules/cds.ts` | `ruleCDS04NemtTrips` | `packages/engine/test/cds-programs.test.ts` | CDS-04 | Policy 3.25 (rev. Jan 2026) |
+| CDS-05 | `packages/engine/src/rules/cds.ts` | `ruleCDS05FacilityResidents` | `packages/engine/test/cds-programs.test.ts` | CDS-05 | Policy 3.25 (rev. Jan 2026) |
+| PRG-01 | `packages/engine/src/rules/programs.ts` | `rulePRG01Pace` | `packages/engine/test/cds-programs.test.ts` | PRG-01 | Policy 4.35.3 (rev. May 2023) |
+| PRG-02 | `packages/engine/src/rules/programs.ts` | `rulePRG02DmhPrograms` | `packages/engine/test/cds-programs.test.ts` | PRG-02 | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
+| PRG-03 | `packages/engine/src/rules/programs.ts` | `rulePRG03FundingSequence` | `packages/engine/test/cds-programs.test.ts` | PRG-03 | Policy 4.35.1 (read Nov 13, 2026) |
+| CAP-01 | `packages/engine/src/rules/cap.ts` | `ruleCAP01CombinedCostCap` | `packages/engine/test/cap.test.ts` | CAP-01 | HCBS Manual 4.20 (rev. Jul 2025); Policy 3.25 (rev. Jan 2026) |
 
 ## Catalog
 

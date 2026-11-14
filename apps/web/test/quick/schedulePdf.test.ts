@@ -114,7 +114,7 @@ describe("printed schedule: the PDF", () => {
       "TEST HOME CARE LLC", "20250000000002", "Ready to use",
       "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
       "Assistance with Toileting", "Wash Dishes", "Essential transportation", "Visit length", "5 h 15 min", "3 h 55 min",
-      "15 + 10 min", "25 h 25 min", "1,465", "Follows every rule we check, for all 11 months.",
+      "15 + 10 min", "25 h 25 min", "1,465", "Follows every rule we check. 1 item is worth a look in", "Check CDS transportation against NEMT",
       "Units by month", "Dec 2025", "Oct 2026", "461 + 5 min", "Reviewed with the participant", "Date",
       "Checked with CarePlan Scheduler under rule pack mo-2026-07 on Nov 20, 2025",
       "Set each EVV visit window to its visit length.",

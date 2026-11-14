@@ -488,14 +488,25 @@ Copy table (`ruleCopy.ts`, `RULE_COPY`). A test checks every rule ID × severity
 | CON-06 | REVIEW | Check this attendant's relationship | A spouse or guardian as ILW attendant needs review. |
 | CON-07 | BLOCK | This aide can't serve this participant | A close family member or a non-employee can't provide this agency service. |
 | CON-07 | REVIEW | Check this Chore worker's relationship | Family members providing Chore need review. |
-| CON-09 | REVIEW | Over 49 hours in a Sunday–Saturday week | ILW and Respite are limited to 49 hours a week. Review this week. |
-| CON-09 | WARN | Over 49 hours in a 7-day stretch | A 7-day window crossing two weeks goes over 49 hours. |
+| CON-09 | BLOCK | Over 49 hours a week, whichever day the week starts | ILW, and Basic and Advanced Respite together, are limited to 49 hours a week. Take time off some days. |
+| CON-09 | REVIEW | Check the 49-hour week | DHSS hasn't confirmed which seven days make the week for the 49-hour limit. Check the care plan. |
 | CON-10 | BLOCK | Too many nurse visits | Nurse visits are limited to one a day and 26 in six months. |
 | CON-13 | WARN | First visit is late | Agency personal care should start within 10 days of the referral. |
 | CON-13 | REVIEW | Referral date is missing | Enter the date the referral was received. |
 | CON-16 | BLOCK | Two waiver enrollments overlap | A participant can't be in two waivers on the same dates. |
 | CON-16 | REVIEW | No waiver enrollment on file | This waiver service needs an enrollment record. |
 | CON-17 | REVIEW | Caregiver details are missing | Add the caregiver's relationship and qualifications so we can check eligibility. |
+| CDS-01 | BLOCK | Prompting or stand-by can't be a CDS task | No CDS time can be authorized for stand-by, prompting or cueing on its own. Check this task against the care plan. |
+| CDS-01 | REVIEW | Check the prompting in this CDS task | Prompting and cueing can be part of a hands-on task, but they can't be time on their own. Check that the minutes are for hands-on help. |
+| CDS-02 | BLOCK | Waiting or respite can't be CDS time | No CDS time can be authorized for respite or for waiting for the participant at an appointment. Check this task against the care plan. |
+| CDS-02 | REVIEW | Check the waiting time in this CDS task | Respite, and waiting for the participant at an appointment, can't be CDS time. Check what this task's minutes cover. |
+| CDS-03 | REVIEW | Check this CDS task isn't skilled care | CDS can't include a task a licensed professional must do or train, such as skilled nursing or therapy a physician ordered. Check this task against the care plan. |
+| CDS-04 | REVIEW | Check CDS transportation against NEMT | Trips to medical appointments that NEMT covers can't be CDS transportation. To check a trip, call NEMT at 1-866-269-5927. |
+| CDS-05 | BLOCK | CDS can't be given to an RCF or ALF resident | People who live in a nursing facility, RCF or ALF aren't eligible for CDS. End CDS before the facility care starts. |
+| PRG-01 | BLOCK | HCBS can't be given during PACE | A participant enrolled in PACE isn't eligible for any HCBS service. Check the PACE dates against the care plan. |
+| PRG-02 | BLOCK | This DMH program rules out this personal care | DD Shared Living, Residential Habilitation and Individualized Supportive Living rule out State Plan personal care. DMH self-directed services rule out CDS and ILW. Check the program dates against the care plan. |
+| CAP-01 | REVIEW | Combined State Plan personal care and CDS are subject to the 60% cost maximum | Together they can't go over 60% of the participant's cost maximum. Advanced Personal Care and nurse visits can take the plan past 60%, up to 100%. Over 100% with the ADW or ILW needs approval from the Bureau of Federal Programs. |
+| PRG-03 | REVIEW | State Plan personal care comes before DD waiver personal assistance | State Plan personal care must be used up before a comparable DD waiver service. Check with the participant's DD support coordinator. |
 
 Unknown rule ID or severity: the engine message is the title and "Rule <id>" the detail; log
 nothing.
@@ -784,6 +795,47 @@ service on its own, but the participant lives one week. So:
     would add a Must-fix result is refused in the panel (`role="alert"`) and nothing changes:
     "Not changed. This attendant can't be paid for this participant. A spouse or legal guardian
     can't be the CDS attendant."
+- **Other programs** (CP4-7; `ProgramsPanel.tsx`, `programs.ts`). A panel "Other programs" (meta
+  "None entered" or "N entered") beside Waivers, for a plan the person opened or built:
+  "Optional. Enter PACE or a Department of Mental Health program this participant is in, with
+  its dates. It is checked against the care plan, never guessed." Button "Add a program"; each
+  row has "Program" (PACE; DD Shared Living; DD Residential Habilitation; DD Individualized
+  Supportive Living; DMH self-directed services; DD waiver personal assistant services), "Start
+  date", "End date" and "Remove program". Stored as optional `CarePlan.programs`.
+  - **Checks.** PRG-01 (PACE rules out every HCBS service, Policy 4.35.3), PRG-02 (DD
+    residential services rule out State Plan personal care, and DMH self-directed services rule
+    out CDS and ILW, Policies 4.35.1 and 3.25) and PRG-03 (State Plan personal care before DD
+    waiver personal assistance, REVIEW) run under Visit checks, with CDS-05 (CDS beside RCF/ALF
+    personal care on the plan). CDS-01 to CDS-04 read one CDS authorization's task labels and
+    transportation, so they are that service's own Checks.
+  - **Not guarded.** An entered program is a fact about the participant, not a change to the
+    schedule, so it is always recorded; refusing it would hide why the plan can't be used. What
+    it rules out shows as "Must fix before you use this schedule" under Visit checks.
+- **Cost cap** (CP4-8, CAP-01, Manual 4.20). With Agency Basic Personal Care (`T1019`) and CDS
+  (`T1019U2`) on overlapping dates, Visit checks shows one "Needs review" line naming both. The
+  scheduler holds no costs, so it is never a balance and never a block.
+- **Backup coverage** (CP4-8; `BackupPanel.tsx`, `backup.ts`; Manual 4.15 and 4.20). A panel
+  "Backup coverage" (meta "Nothing uncovered" or "N uncovered"). With no caregivers: "Add
+  caregivers and visit times first. Then mark a caregiver away to see the visits left uncovered
+  and who can cover them." Otherwise "Caregiver", "First day away", "Last day away" and "Mark
+  away" (dates that aren't dates, or a last day before the first, are refused in the panel).
+  - **Uncovered visits** are the built visits (5.8 Visits) whose caregiver is away that day. Each
+    shows the service, date and start time, and "Priority of <task> if missed" (Not entered /
+    High / Medium / Low) for each task. The list is ordered by the highest priority entered for
+    any of a visit's tasks, then date and time; tasks within a visit go highest first. Priority
+    is only what the person enters: DSDS's COOP risk indicator is set per participant at
+    assessment, and in a one-participant schedule it can't order tasks, so the person ranks them.
+  - **Replacements.** "Replacement for <service> on <date>" offers only caregivers who can cover
+    the visit: not away that day, not booked at that time and not barred by a rule (the guard's
+    own check, so CON-04, CON-06 and CON-07), with the details CON-17 needs entered, and not over
+    40 hours in any seven days that include the date. The rest are listed as "Not offered:
+    Caregiver 3. Booked at that time." With none offered: "No caregiver on this plan can cover
+    this visit. Use the participant's backup plan." "Use this caregiver" records the choice as a
+    `CalendarException` of kind "substitute" (taskId "", minutesDelta 0) through the guard; the
+    visit then takes that caregiver. Each is listed with "Undo". Nothing is assigned until the
+    person chooses, and the authorization, its tasks and its minutes never change.
+  - Stored as optional `CarePlan.backup` (`unavailable`, `substitutes`, `priorities` by task
+    id), with caregiver ids only, never names.
 
 ## 6. Accounts
 

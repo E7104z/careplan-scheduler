@@ -39,7 +39,8 @@ describe("no start times: overlaps can't be checked, and that is never a pass", 
     const models = modelsOf(plan);
     expect(buildVisits(plan, models, PACK)).toEqual([]);
     expect(scheduledServices(plan, models).map((service) => service.hasClockTimes)).toEqual([false, false, false]);
-    const results = planVisitResults(plan, models, PACK);
+    // The overlap rules; CAP-01, which F's PC - Agency and PC - CDS also raise, is in backup.test.ts.
+    const results = planVisitResults(plan, models, PACK).filter((result) => result.ruleId !== "CAP-01");
     expect(results.every((result) => result.severity === "REVIEW")).toBe(true);
     expect(new Set(results.map((result) => result.ruleId))).toEqual(new Set(["CON-01", "CON-02"]));
     expect(results.every((result) => result.message === "No clock times yet, so overlaps can't be checked")).toBe(true);
@@ -47,7 +48,7 @@ describe("no start times: overlaps can't be checked, and that is never a pass", 
     expect(planCheckLines(results, plan, models)).toEqual([
       {
         severity: "REVIEW", text: "No clock times yet, so overlaps can't be checked", whatToDo: "",
-        ruleIds: ["CON-01", "CON-02"], services: ["PC - Agency", "PC - CDS", "HC"], count: 6,
+        ruleIds: ["CON-01", "CON-02"], details: [], services: ["PC - Agency", "PC - CDS", "HC"], count: 6,
       },
     ]);
   });
@@ -59,7 +60,8 @@ describe("no start times: overlaps can't be checked, and that is never a pass", 
     expect(scheduledServices(one, modelsOf(one))[0]!.hasClockTimes).toBe(days.length === 1);
     const all = timed(plan, 0, "09:00");
     expect(scheduledServices(all, modelsOf(all)).map((service) => service.hasClockTimes)).toEqual([true, false, false]);
-    expect(planVisitResults(all, modelsOf(all), PACK).some((result) => result.refs.serviceAuthId === all.services[0]!.id)).toBe(false);
+    const overlaps = planVisitResults(all, modelsOf(all), PACK).filter((result) => result.ruleId !== "CAP-01");
+    expect(overlaps.some((result) => result.refs.serviceAuthId === all.services[0]!.id)).toBe(false);
   });
 });
 

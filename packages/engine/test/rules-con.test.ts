@@ -171,23 +171,23 @@ describe("conflict rules", () => {
     expect(ruleCON07AgencyAide([a], [c], [v]).some((r) => r.severity === "BLOCK")).toBe(true);
   });
 
-  it("TC-11: CON-09 no result at exactly 49 h across a month boundary", () => {
+  it("TC-11: CON-09 exactly 49 h across a month boundary is REVIEW only, never BLOCK (E-02)", () => {
     const daily: Record<string, number> = {
       "2029-01-28": 420, "2029-01-29": 420, "2029-01-30": 420, "2029-01-31": 420,
       "2029-02-01": 420, "2029-02-02": 420, "2029-02-03": 420,
     };
-    expect(ruleCON09WeeklyHours(daily)).toEqual([]);
+    expect(ruleCON09WeeklyHours(daily).map((r) => r.severity)).toEqual(["REVIEW"]);
   });
 
-  it("TC-25: CON-09 REVIEW when a Sunday-Saturday week exceeds 49 h", () => {
+  it("TC-25: CON-09 REVIEW, not BLOCK, when the only week over 49 h crosses a year end", () => {
     const daily: Record<string, number> = {
       "2026-12-27": 450, "2026-12-28": 450, "2026-12-29": 450, "2026-12-30": 450,
       "2026-12-31": 450, "2027-01-01": 450, "2027-01-02": 450,
     };
-    expect(ruleCON09WeeklyHours(daily).some((r) => r.severity === "REVIEW")).toBe(true);
+    expect(ruleCON09WeeklyHours(daily).map((r) => r.severity)).toEqual(["REVIEW"]);
   });
 
-  it("TC-26: CON-09 WARN only for a rolling 7-day window over 49 h", () => {
+  it("TC-26: CON-09 a rolling 7-day window over 49 h is REVIEW with both figures, not WARN", () => {
     const daily: Record<string, number> = {
       "2026-12-27": 285, "2026-12-28": 285, "2026-12-29": 285, "2026-12-30": 285,
       "2026-12-31": 600, "2027-01-01": 600, "2027-01-02": 600,
@@ -195,8 +195,9 @@ describe("conflict rules", () => {
       "2027-01-07": 180, "2027-01-08": 180, "2027-01-09": 180,
     };
     const results = ruleCON09WeeklyHours(daily);
-    expect(results.some((r) => r.severity === "WARN")).toBe(true);
-    expect(results.some((r) => r.severity === "REVIEW")).toBe(false);
+    expect(results.map((r) => r.severity)).toEqual(["REVIEW"]);
+    expect(results[0]!.message).toContain("week 49 h");
+    expect(results[0]!.message).toContain("stretch 70 h");
   });
 
   it("TC-15: CON-10 BLOCK for two nurse visits on one date", () => {

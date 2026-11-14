@@ -245,8 +245,8 @@ result with the rule-pack version (AUTH-13) and orders them BLOCK, REVIEW, WARN,
 AUTH-12 and SCH-02, SCH-03, SCH-08, SCH-11, SCH-12, NUR-01 (with the optional
 `authorizedStarts`: each authorization's own first date, when the schedule starts later), plus CON-09 on the expanded template: each
 ILW or Respite authorization's task minutes on each date (template plus exceptions), checked as
-visits would be, keeping only the Sunday–Saturday week results (REVIEW; a repeating week makes
-every rolling 7-day window equal its week or less), with `refs.month` the week's first month.
+visits would be (one REVIEW with both figures, and BLOCK when over 49 h in every reading of the
+week), with `refs.serviceAuthId` the authorization's id.
 For a plan with no visits its other results are `validateSchedule`'s without the visit rules
 (SCH-14 and every CON rule), in the same order.
 It is for a plan that is not scheduled as visits (Quick Schedule): run on no visits, CON-13
@@ -297,13 +297,22 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 | CON-05 | Caregiver > 40 h in the tenant's workweek → WARN. | WARN | APPROVED | FLSA; product decision approved Oct 20, 2026 |
 | CON-06 | CDS attendant is spouse or legal guardian → BLOCK; for ILW → REVIEW. | BLOCK / REVIEW | VERIFIED (CDS) | Policy 3.25 (01/26) |
 | CON-07 | AGENCY_PC, APC, HOMEMAKER, RESPITE aide is parent, sibling, child, stepchild, spouse, grandparent or grandchild → BLOCK; not an agency employee → BLOCK. CHORE → REVIEW. RCF_PC, RCF_APC → REVIEW (Policy 3.20 doesn't restate 3.05's aide restrictions; DSDS question 14). | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25); Policy 3.10 (03/25); Policy 3.20 (rev. Mar 2026); Policy 3.45 (Nov 2021); Policy 3.50 (rev. Jul 2026) |
-| CON-09 | ILW and Respite: any Sunday–Saturday week > 49 h → REVIEW; any rolling 7-day window > 49 h → WARN. | REVIEW / WARN | PARTIAL | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention |
+| CON-09 | ILW and Respite (Basic and Advanced combined): any scheduled time → one REVIEW showing the highest Sunday–Saturday week and the highest rolling 7-day stretch, since DHSS hasn't defined the week (E-02); > 49 h in every reading (seven days from each weekday, inside one month) → BLOCK. | BLOCK / REVIEW | PARTIAL | HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); which seven days make the week is open (audit E-02) |
 | CON-10 | Nurse visits: > 1 per date → BLOCK; > 26 in a six-month period → BLOCK. | BLOCK | VERIFIED | Policy 3.15 (04/26) as updated by HCBS 08-26-01; 3.00 Appendix 1 (rev. Jul 2026) |
 | CON-13 | AGENCY_PC first visit > 10 calendar days after `receivedDate` → WARN; missing `receivedDate` → REVIEW. | WARN / REVIEW | VERIFIED | 13 CSR 70-91.010(1)(B)1; CDS policy clarification Q2 |
 | CON-16 | Two waiver enrollments with overlapping date ranges → BLOCK; sequential is fine; ILW/RESPITE/HOMEMAKER/CHORE scheduled with no enrollment record → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.05 (04/25) |
 | CON-17 | Missing qualification data needed by CON-06/07, nurse licence for NURSE, FCSR for ILW → REVIEW. | REVIEW | PARTIAL | Policies 3.05, 3.10, 3.15, 3.25; Policy 3.55 (FCSR registration) |
 | SFC-01 | SFCW authorization overlapping another HCBS State Plan or waiver authorization → BLOCK; unknown dates or classification → REVIEW; a non-HCBS service is not blocked. | BLOCK / REVIEW | VERIFIED | Policy 3.60 (rev. Jul 2026); HCBS 01-26-01 (Jan 20, 2026); Appendix 2g (rev. Jun 2026) |
 | SFC-02 | More than one primary caregiver on an SFCW authorization → BLOCK. | BLOCK | VERIFIED | Policy 3.60 (rev. Jul 2026); Appendix 2g (rev. Jun 2026) |
+| CDS-01 | A CDS task whose label is only stand-by, prompting, cueing or encouragement → BLOCK; a CDS task label that mentions one alongside another task → REVIEW (it may be a component of that task). Read only from the label the plan prints. | BLOCK / REVIEW | VERIFIED | Policy 3.25 (rev. Jan 2026); Policy 4.35.1 (read Nov 13, 2026) |
+| CDS-02 | A CDS task whose label is only waiting time or respite → BLOCK; a CDS task label that mentions waiting or respite alongside another task → REVIEW. | BLOCK / REVIEW | VERIFIED | Policy 3.25 (rev. Jan 2026) |
+| CDS-03 | A CDS task label naming therapy, skilled or licensed care, or a physician → REVIEW: tasks a licensed professional must perform or train are excluded, and a label can't show who must. | REVIEW | PARTIAL | Policy 3.25 (rev. Jan 2026) |
+| CDS-04 | A CDS authorization with transportation minutes → REVIEW: trips to medical appointments NEMT covers are not CDS transportation, and which trips NEMT covers isn't on the plan. | REVIEW | PARTIAL | Policy 3.25 (rev. Jan 2026) |
+| CDS-05 | CDS on dates that overlap RCF/ALF personal care (RCF_PC, RCF_APC) on the same plan → BLOCK on the CDS authorization; the setting is known only from the plan. | BLOCK | VERIFIED | Policy 3.25 (rev. Jan 2026) |
+| PRG-01 | A PACE enrollment the person entered that overlaps an HCBS authorization → BLOCK on each overlapping authorization. Never inferred. | BLOCK | VERIFIED | Policy 4.35.3 (rev. May 2023) |
+| PRG-02 | An entered DD Shared Living, Residential Habilitation or Individualized Supportive Living enrollment overlapping State Plan personal care (CDS, AGENCY_PC, APC, RCF_PC, RCF_APC) → BLOCK; an entered DMH self-directed enrollment overlapping CDS or ILW → BLOCK. One result per authorization. | BLOCK | VERIFIED | Policy 4.35.1 (read Nov 13, 2026); Policy 3.25 (rev. Jan 2026) |
+| PRG-03 | An entered DD waiver personal assistant enrollment → REVIEW: State Plan personal care must be used up before that comparable waiver service, and whether it is isn't on the plan. | REVIEW | PARTIAL | Policy 4.35.1 (read Nov 13, 2026) |
+| CAP-01 | Agency Basic Personal Care (T1019) and CDS (T1019U2) on overlapping dates → REVIEW on each: together they may not exceed 60% of the cost maximum; APC and RN visits can take it to 100%; over 100% with an HCBS waiver needs Bureau of Federal Programs approval. The scheduler holds no costs, so this is a flag, never a balance or a block. | REVIEW | VERIFIED | HCBS Manual 4.20 (rev. Jul 2025); Policy 3.25 (rev. Jan 2026) |
 
 ---
 
@@ -339,7 +348,7 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-08 | (a) two CDS visits overlap; (b) CDS + NURSE overlap; (c) AGENCY_PC + HOMEMAKER overlap | (a) BLOCK CON-01; (b) none; (c) REVIEW CON-02 |
 | TC-09 | composer: active Sun/Tue/Thu/Sat; override Bathing → Sun/Tue/Thu | entries only on 0,2,4,6; Bathing on 0,2,4 |
 | TC-10 | 420 min/day daily, 31-day month, imported State Plan 500, ILW 368; then ILW missing | switch day 18 (24 SP + 4 ILW); days 19–31 ILW; without ILW: no projection |
-| TC-11 | ILW 420 min/day Sun 2029-01-28 – Sat 2029-02-03 | week total 49 h, no REVIEW; window not reset on Feb 1 |
+| TC-11 | ILW 420 min/day Sun 2029-01-28 – Sat 2029-02-03 | week total 49 h: CON-09 REVIEW only (no BLOCK); window not reset on Feb 1 |
 | TC-12 | all months 2026–2036 | max occurrences of k weekdays = 5,10,15,19,23,27,31 |
 | TC-13 | AGENCY_PC aide is grandchild | BLOCK CON-07 |
 | TC-14 | CDS attendant: child → ok; spouse → BLOCK CON-06 |
@@ -351,8 +360,8 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-21 | authorization start 2026-10-15, no imported Oct figure | no visits before Oct 15; REVIEW SCH-12 |
 | TC-22 | authorization end 2026-10-20; visit 2026-10-21 | BLOCK SCH-14 |
 | TC-24 | suspension 2026-10-05..2026-10-12; visit 2026-10-07 | BLOCK SCH-14 |
-| TC-25 | ILW 450 min/day Sun 2026-12-27 – Sat 2027-01-02 | 52.5 h → REVIEW CON-09 |
-| TC-26 | wk1 Sun–Wed 285 min, Thu–Sat 600; wk2 Sun–Wed 600, Thu–Sat 180 | each Sun–Sat week 49 h; Thu–Wed window 70 h → WARN CON-09 |
+| TC-25 | ILW 450 min/day Sun 2026-12-27 – Sat 2027-01-02 | 52.5 h, but only in a week crossing the year end → REVIEW CON-09, no BLOCK |
+| TC-26 | wk1 Sun–Wed 285 min, Thu–Sat 600; wk2 Sun–Wed 600, Thu–Sat 180 | each Sun–Sat week 49 h; Thu–Wed window 70 h → REVIEW CON-09 naming both figures (no WARN) |
 | TC-27 | visit 2026-10-31T22:00 → 2026-11-01T06:00 | 540 min: 120 on Oct 31, 420 on Nov 1 |
 | TC-28 | visit 2027-03-13T22:00 → 2027-03-14T06:00 | 420 min: 120 on Mar 13, 300 on Mar 14 |
 | TC-29 | ADW ends 2026-10-10, ILW starts 2026-10-11; then ADW ends 2026-10-12 | first ok; second BLOCK CON-16 |

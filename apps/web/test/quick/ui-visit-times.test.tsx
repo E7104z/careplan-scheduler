@@ -23,8 +23,10 @@ describe("Visit checks and start times (APP-SPEC 5.8, Coverage Phase 4)", () => 
   it("a plan as opened says overlaps can't be checked yet: needs review, never a pass", async () => {
     await openF();
     const checks = section("Visit checks");
-    expect(within(checks).getByText("1 needs review")).toBeInTheDocument();
-    expect(within(checks).getByText("Needs review")).toBeInTheDocument();
+    // The overlap review, and CAP-01 (CP4-8) for F's PC - Agency with PC - CDS.
+    expect(within(checks).getByText("2 need review")).toBeInTheDocument();
+    expect(within(checks).getAllByText("Needs review")).toHaveLength(2);
+    expect(within(checks).getByText("Combined State Plan personal care and CDS are subject to the 60% cost maximum")).toBeInTheDocument();
     expect(within(checks).getByText("No clock times yet, so overlaps can't be checked")).toBeInTheDocument();
     expect(within(checks).getByText("PC - Agency, PC - CDS, HC · CON-01, CON-02")).toBeInTheDocument();
     expect(within(checks).queryByText(/Every visit rule we can check/)).not.toBeInTheDocument();

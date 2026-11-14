@@ -18,6 +18,9 @@ import type {
   Weekday,
 } from "@careplan/engine";
 import type { ImportIssue, SourceRef } from "@careplan/import";
+import type { PlanBackup, PlanProgram } from "./planExtraTypes.js";
+
+export type { CoopPriority, PlanBackup, PlanProgram, Unavailability } from "./planExtraTypes.js";
 
 export interface Plan {
   start: string;
@@ -223,6 +226,10 @@ export interface CarePlan {
   caregivers?: PlanCaregiver[];
   /** Waivers the participant is enrolled in, with dates (Coverage Phase 4, CON-16). Absent in plans saved before them. */
   waivers?: PlanWaiver[];
+  /** Programs outside DSDS the participant is in, with dates (CP4-7, PRG-01 to PRG-03). Absent in plans saved before them. */
+  programs?: PlanProgram[];
+  /** Backup coverage (CP4-8): who is away, chosen replacements, task priorities. Absent in plans saved before it. */
+  backup?: PlanBackup;
   /** Notes about the plan as a whole: visits left out of the week, a partial copy, a service that ended. */
   notes: ImportIssue[];
   /** "plan": the whole care plan; a number: that service, to see in detail and change. */

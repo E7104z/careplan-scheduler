@@ -35,9 +35,10 @@ describe("printed schedule: what it says", () => {
       { label: "Provider", value: "TEST HOME CARE LLC" },
       { label: "Prior authorization", value: "20250000000002" },
     ]);
+    // B has CDS transportation, so CDS-04 (CP4-7) asks for a look at NEMT trips.
     expect(sheet.status).toEqual({
       title: "Ready to use",
-      detail: "Follows every rule we check, for all 11 months.",
+      detail: "Follows every rule we check. 1 item is worth a look in Checks.",
       blocked: false,
     });
     expect(sheet.footer).toBe("Checked with CarePlan Scheduler under rule pack mo-2026-07 on Nov 20, 2025");
@@ -78,7 +79,7 @@ describe("printed schedule: what it says", () => {
     expect(sheet.months[2]).toMatchObject({ label: "Feb 2026", authorized: "434" });
     expect(sheet.authorizedNote).toBe("Authorized is Fusion's figure, counted for each month's days as Fusion does.");
     expect(sheet.cutNote).toBeNull();
-    expect(sheet.checks).toEqual([]);
+    expect(sheet.checks.map((check) => [check.label, check.title])).toEqual([["Needs review", "Check CDS transportation against NEMT"]]);
   });
 
   it("B at 440 units: the months cut at the end, from which date, and what to do", () => {

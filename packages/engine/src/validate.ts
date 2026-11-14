@@ -29,19 +29,20 @@ import {
   ruleCON05CaregiverHours,
   ruleCON06AttendantRelationship,
   ruleCON07AgencyAide,
-  ruleCON09WeeklyHours,
   ruleCON10NurseVisits,
   ruleCON13FirstVisit,
   ruleCON16WaiverEnrollments,
   ruleCON17QualificationData,
-  type WeeklyHourGroup,
 } from "./rules/conflicts.js";
+import { ruleCON09WeeklyHours, type WeeklyHourGroup } from "./rules/weeklyHours.js";
+import { cdsTaskResults, settingAndProgramResults } from "./eligibility.js";
 import type { RulePack } from "./rulepacks/types.js";
 import type {
   CalendarException,
   Caregiver,
   MonthlyAuthorization,
   ProgramCode,
+  ProgramEnrollment,
   ScheduleTemplate,
   ServiceAuthorization,
   ServiceCode,
@@ -73,6 +74,8 @@ export interface ValidateScheduleInput extends ValidatePlanInput {
   caregivers: Caregiver[];
   enrollments: WaiverEnrollment[];
   tenantWorkweekStart: Weekday;
+  /** Programs outside DSDS the person entered (CP4-7: PRG-01 to PRG-03); none when absent. */
+  programs?: ProgramEnrollment[];
 }
 
 /** A validation result stamped with the rule-pack version it was validated under. */
@@ -169,7 +172,7 @@ function weeklyHoursDailyMinutes(visits: Visit[]): WeeklyHourMinutes[] {
   return [...byScope.values()];
 }
 
-/** The rules that read only the plan: authorization (AUTH-*) and template (SCH-02 to SCH-12). */
+/** The rules that read only the plan: authorization (AUTH-*), CDS tasks (CDS-01 to CDS-04) and template (SCH-02 to SCH-12). */
 function planRules(input: ValidatePlanInput): ValidationResult[] {
   const { authorizations, monthlyAuthorizations, template, exceptions, months } = input;
   const tasks = authorizations.flatMap((auth) => auth.tasks);
@@ -196,6 +199,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
     results.push(...ruleAUTH11ProjectIlwSwitch(dailyUnits, statePlanUnits, ilwUnits));
   }
   results.push(...ruleAUTH12PendingApproval(authorizations));
+  results.push(...cdsTaskResults(authorizations));
 
   // Schedule rules (SCH-*) on the template
   results.push(...ruleSCH02TemplateDays(template, tasks));
@@ -207,7 +211,7 @@ function planRules(input: ValidatePlanInput): ValidationResult[] {
   return results;
 }
 
-/** The rules that read visits, caregivers and enrollments: SCH-14 and every CON rule. */
+/** The rules that read visits, caregivers and enrollments: SCH-14, every CON rule, CDS-05 and PRG-01 to PRG-03. */
 function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   const { pack, authorizations, visits, caregivers, enrollments, tenantWorkweekStart } = input;
   const results: ValidationResult[] = [];
@@ -228,14 +232,14 @@ function visitRules(input: ValidateScheduleInput): ValidationResult[] {
   results.push(...ruleCON13FirstVisit(authorizations, visits));
   results.push(...ruleCON16WaiverEnrollments(enrollments, visits));
   results.push(...ruleCON17QualificationData(authorizations, caregivers, visits));
+  results.push(...settingAndProgramResults(authorizations, input.programs ?? []));
   return results;
 }
 
 /**
  * CON-09 on the expanded template, for a plan with no visits (Amendment B): the task minutes each
- * ILW or Respite authorization's template puts on each date, checked as visits would be. The
- * template repeats every week, so each rolling 7-day window equals its Sunday–Saturday week (or
- * less, where a month-end trim shortens it): only the week results are kept.
+ * ILW or Respite authorization's template puts on each date, checked as visits would be, with the
+ * authorization's id on each result.
  */
 function templateWeeklyHours(input: ValidatePlanInput): ValidationResult[] {
   const { authorizations, template, exceptions, months } = input;
@@ -252,11 +256,7 @@ function templateWeeklyHours(input: ValidatePlanInput): ValidationResult[] {
       }
     }
     for (const result of ruleCON09WeeklyHours(daily)) {
-      if (result.severity !== "REVIEW") continue;
-      results.push({
-        ...result,
-        refs: { ...result.refs, serviceAuthId: auth.id, month: (result.refs.date ?? "").slice(0, 7) },
-      });
+      results.push({ ...result, refs: { ...result.refs, serviceAuthId: auth.id } });
     }
   }
   return results;

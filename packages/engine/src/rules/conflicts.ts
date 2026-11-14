@@ -1,6 +1,5 @@
 import { addDays, daysFromCivil, parseYmd, weekdayOf } from "../math/dates.js";
 import { splitByDate } from "../calendar/time.js";
-import { rollingWindows, sundayWeeks } from "../calendar/weeks.js";
 import { MO_2026_07 } from "../rulepacks/mo-2026-07.js";
 import { serviceByCode } from "../rulepacks/lookup.js";
 import type { RulePack } from "../rulepacks/types.js";
@@ -295,44 +294,6 @@ export function ruleCON07AgencyAide(
           refs: { serviceAuthId: auth.id },
         });
       }
-    }
-  }
-  return results;
-}
-
-/** CON-09 limit groups: ILW alone; Respite Basic and Advanced combined. */
-export type WeeklyHourGroup = "ILW" | "RESPITE";
-
-/**
- * @rule CON-09
- * @source HCBS 06-26-01; Policy 3.50 (rev. Jul 2026); Sunday-Saturday week is a product convention
- */
-export function ruleCON09WeeklyHours(
-  dailyMinutes: Record<string, number>,
-  scope?: { participantId: string; group: WeeklyHourGroup },
-): ValidationResult[] {
-  const results: ValidationResult[] = [];
-  const limit = 49 * 60;
-  const prefix = scope ? `${scope.participantId} ${scope.group}: ` : "";
-  const participantRef = scope ? { participantId: scope.participantId } : {};
-  for (const week of sundayWeeks(dailyMinutes)) {
-    if (week.minutes > limit) {
-      results.push({
-        ruleId: "CON-09",
-        severity: "REVIEW",
-        message: `${prefix}Sunday-Saturday week ${week.weekStart} exceeds 49 h (${week.minutes} min)`,
-        refs: { date: week.weekStart, ...participantRef },
-      });
-    }
-  }
-  for (const window of rollingWindows(dailyMinutes)) {
-    if (window.minutes > limit) {
-      results.push({
-        ruleId: "CON-09",
-        severity: "WARN",
-        message: `${prefix}Rolling 7-day window ${window.start}..${window.end} exceeds 49 h (${window.minutes} min)`,
-        refs: { date: window.start, ...participantRef },
-      });
     }
   }
   return results;

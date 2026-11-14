@@ -7,6 +7,8 @@ import { registerPlanExtras } from "./planExtraStore.js";
 import { addCoverageBlock, removeCoverageBlock } from "./coverage.js";
 import { guardedPlanChange, setStartTime } from "./visits.js";
 import { addWaiver, removeWaiver, updateWaiver } from "./waivers.js";
+import { addProgram, removeProgram, updateProgram } from "./programs.js";
+import { chooseReplacement, markUnavailable, removeUnavailable, setTaskPriority, undoReplacement } from "./backup.js";
 
 // The dated side of Quick Schedule (Coverage Phase 3 on), as one chunk: loaded with import() only
 // for a plan that has visits or kept authorizations to place. Loading it registers how its
@@ -28,6 +30,18 @@ registerPlanExtras((plan, action, pack) => {
   if (action.type === "addWaiver") return guardedPlanChange(plan, addWaiver(plan), pack, models());
   if (action.type === "updateWaiver") return guardedPlanChange(plan, updateWaiver(plan, action.index, action.patch), pack, models());
   if (action.type === "removeWaiver") return { plan: removeWaiver(plan, action.index) };
+  // Other programs (CP4-7): a fact about the participant, not a schedule change, so always
+  // recorded; a program that rules out a service shows as Must fix under Visit checks.
+  if (action.type === "addProgram") return { plan: addProgram(plan) };
+  if (action.type === "updateProgram") return { plan: updateProgram(plan, action.index, action.patch) };
+  if (action.type === "removeProgram") return { plan: removeProgram(plan, action.index) };
+  // Backup coverage (CP4-8): an absence and a priority are what the person entered; a replacement
+  // is their choice, recorded only through the guard, and never made for them.
+  if (action.type === "markUnavailable") return markUnavailable(plan, action.caregiverId, action.start, action.end);
+  if (action.type === "removeUnavailable") return { plan: removeUnavailable(plan, action.id) };
+  if (action.type === "setTaskPriority") return { plan: setTaskPriority(plan, action.taskId, action.priority) };
+  if (action.type === "chooseReplacement") return chooseReplacement(plan, models(), pack, action.visitId, action.caregiverId);
+  if (action.type === "undoReplacement") return { plan: undoReplacement(plan, action.id) };
   // Respite coverage blocks (Policy 3.50): the span is the care; adding one a rule forbids is refused.
   if (action.type === "addCoverageBlock") return addCoverageBlock(plan, action.service, action.date, action.start, action.end, pack, models());
   if (action.type === "removeCoverageBlock") return removeCoverageBlock(plan, action.service, action.blockId);
@@ -42,4 +56,6 @@ export { VisitTimes } from "./VisitTimes";
 export { PlanChecks } from "./PlanChecks";
 export { CaregiversPanel } from "./CaregiversPanel";
 export { WaiversPanel } from "./WaiversPanel";
+export { ProgramsPanel } from "./ProgramsPanel";
+export { BackupPanel } from "./BackupPanel";
 export { CoverageBlocks } from "./CoverageBlocks.js";

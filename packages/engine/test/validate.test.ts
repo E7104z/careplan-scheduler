@@ -187,7 +187,7 @@ describe("validatePlan", () => {
     expect(validatePlan(plan).length).toBeGreaterThan(0);
   });
 
-  it("CON-09 on the expanded template: an ILW week over 49 hours needs review, 49 hours doesn't (Amendment B)", () => {
+  it("CON-09 on the expanded template: ILW always needs review; over 49 hours every week is BLOCK (Amendment B, E-02)", () => {
     const ilw = (minPerDay: number): ValidatePlanInput => ({
       pack: MO_2026_07,
       authorizations: [
@@ -205,16 +205,20 @@ describe("validatePlan", () => {
       exceptions: [],
       months: ["2026-11", "2026-12"],
     });
-    // 420 min a day = 49 hours a week exactly.
-    expect(validatePlan(ilw(420)).filter((r) => r.ruleId === "CON-09")).toEqual([]);
-    // 430 min a day = 50 h 10 min a week: every whole Sunday–Saturday week of Nov and Dec 2026.
+    // 420 min a day = 49 hours a week exactly: the REVIEW only, with both figures.
+    const exact = validatePlan(ilw(420)).filter((r) => r.ruleId === "CON-09");
+    expect(exact).toEqual([
+      expect.objectContaining({
+        severity: "REVIEW",
+        message: "Highest Sunday-Saturday week 49 h (week of 2026-11-01); highest 7-day stretch 49 h (2026-11-01 to 2026-11-07)",
+        refs: { serviceAuthId: "auth-1" },
+      }),
+    ]);
+    // 430 min a day = 50 h 10 min in any seven days of Nov and Dec 2026: BLOCK, and the REVIEW.
     const over = validatePlan(ilw(430)).filter((r) => r.ruleId === "CON-09");
-    expect(over.length).toBe(8);
-    expect(over.every((r) => r.severity === "REVIEW")).toBe(true);
-    expect(over[0]).toMatchObject({
-      message: "Sunday-Saturday week 2026-11-01 exceeds 49 h (3010 min)",
-      refs: { date: "2026-11-01", month: "2026-11", serviceAuthId: "auth-1" },
-    });
+    expect(over.map((r) => r.severity)).toEqual(["BLOCK", "REVIEW"]);
+    expect(over[0]!.refs).toEqual({ serviceAuthId: "auth-1" });
+    expect(over[1]!.message).toContain("50 h 10 min");
   });
 });
 

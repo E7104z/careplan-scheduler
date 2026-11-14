@@ -8,6 +8,11 @@ import {
   ruleCON07AgencyAide,
   ruleCON16WaiverEnrollments,
   ruleCON17QualificationData,
+  ruleCAP01CombinedCostCap,
+  ruleCDS05FacilityResidents,
+  rulePRG01Pace,
+  rulePRG02DmhPrograms,
+  rulePRG03FundingSequence,
   weekdayOf,
   type RulePack,
   type ScheduledService,
@@ -18,8 +23,10 @@ import {
 import { assignedTo, assignmentVisits, engineCaregivers, PARTICIPANT_ID } from "./caregivers.js";
 import { weekMinutes } from "./carePlan.js";
 import { normalizeEvents } from "./normalizeEvents.js";
+import { enginePrograms } from "./programs.js";
 import { copyFor } from "./ruleCopy.js";
 import type { CarePlan, QuickModel, QuickState } from "./types.js";
+import { respiteWeeklyHours } from "./respiteHours.js";
 import { sfcResults } from "./sfc.js";
 import { engineEnrollments } from "./waivers.js";
 
@@ -56,6 +63,10 @@ export function scheduledServices(plan: CarePlan, models: QuickModel[]): Schedul
  * coverage blocks: their start/end span is the visit, so the span, not any task, is its duration.
  */
 export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack): Visit[] {
+  // Backup coverage (CP4-8): a recorded substitute gives that date's care for that service.
+  const substitutes = new Map((plan.backup?.substitutes ?? []).map((sub) => [`${sub.serviceAuthId ?? ""}|${sub.date}`, sub.caregiverId ?? ""]));
+  const caregiverOn = (service: number, date: string): string =>
+    substitutes.get(`${plan.services[service]!.id}|${date}`) ?? assignedTo(plan, service)[0] ?? "";
   const hasStartTimes = plan.services.some((state) => Object.keys(state.startTimes ?? {}).length > 0);
   const hasCoverage = plan.services.some((state) => (state.coverage ?? []).length > 0);
   if (!hasStartTimes && !hasCoverage) return [];
@@ -78,8 +89,8 @@ export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack
     if (time === null || day.minutes <= 0) continue;
     const start = `${day.date}T${time}`;
     visits.push({
-      // Each visit takes the service's first assigned caregiver; "" while none is assigned.
-      id: `${state.id}:${day.date}`, participantId: PARTICIPANT_ID, caregiverId: assignedTo(plan, day.service)[0] ?? "", serviceCode: state.serviceCode,
+      // Each visit takes the service's first assigned caregiver, or that date's substitute; "" while none is assigned.
+      id: `${state.id}:${day.date}`, participantId: PARTICIPANT_ID, caregiverId: caregiverOn(day.service, day.date), serviceCode: state.serviceCode,
       start, end: addMinutesLocal(start, day.minutes), taskIds: day.taskIds,
     });
   }
@@ -87,7 +98,7 @@ export function buildVisits(plan: CarePlan, models: QuickModel[], pack: RulePack
   plan.services.forEach((state, service) => {
     for (const block of state.coverage ?? []) {
       visits.push({
-        id: block.id, participantId: PARTICIPANT_ID, caregiverId: assignedTo(plan, service)[0] ?? "",
+        id: block.id, participantId: PARTICIPANT_ID, caregiverId: caregiverOn(service, block.start.slice(0, 10)),
         serviceCode: state.serviceCode, start: block.start, end: block.end, taskIds: [],
       });
     }
@@ -119,6 +130,14 @@ export function planVisitResults(plan: CarePlan, models: QuickModel[], pack: Rul
     ...ruleCON07AgencyAide(authorizations, caregivers, assigned),
     ...ruleCON16WaiverEnrollments(enrollments, visits),
     ...ruleCON17QualificationData(authorizations, caregivers, assigned),
+    ...respiteWeeklyHours(plan),
+    // Setting and program compatibility (CP4-7), from the plan's services and the programs entered.
+    ...ruleCDS05FacilityResidents(authorizations),
+    ...rulePRG01Pace(authorizations, enginePrograms(plan)),
+    ...rulePRG02DmhPrograms(authorizations, enginePrograms(plan)),
+    ...rulePRG03FundingSequence(authorizations, enginePrograms(plan)),
+    // The combined Agency PC + CDS 60% cost maximum (Manual 4.20): one flag on the plan, never a balance.
+    ...ruleCAP01CombinedCostCap(authorizations),
     ...sfcResults(plan),
   ];
 }
