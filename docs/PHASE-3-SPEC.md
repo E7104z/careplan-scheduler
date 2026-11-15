@@ -13,7 +13,8 @@ Phase 3, in the founder's fixed order:
 
 | Item | Founder action | Gates |
 |---|---|---|
-| Google Cloud BAA | Sign Google's BAA for Firebase before any PHI is stored | Prompt 4 |
+| Google Cloud BAA | Sign Google's BAA for Firebase; verify every Firebase/Google service in use is covered before any live PHI is stored | Production PHI (not the build) |
+| Hosting | Serve the app from Firebase Hosting (Google Cloud, covered). No Vercel. (Founder decision 2026-11-13, P3-10.) | Prompt 4 |
 | Customer BAA | Counsel reviews `docs/legal/business-associate-agreement.md` | Prompt 1 |
 | App Check | Provision a reCAPTCHA Enterprise key; enable App Check enforcement in the console | Prompt 2 |
 | MFA | Upgrade Firebase Auth to Identity Platform (Google Cloud) | Prompt 3 |
@@ -30,8 +31,9 @@ Phase 3, in the founder's fixed order:
 | P3-05 | MFA is TOTP (authenticator apps) via Identity Platform. Owners toggle `security.mfaRequired` per agency; when on, every member must enroll before entering `/app`. | Free, no SMS provider; matches HIPAA guidance. |
 | P3-06 | The audit log is a top-level, append-only `auditLog` collection. Clients write only their own events; no update or delete; name and DCN never appear in an event. | Immutable trail; the no-PHI-in-diagnostics rule stays. |
 | P3-07 | Saved participants and plans live under the tenant: `tenants/{t}/participants/{pid}` and `tenants/{t}/participants/{pid}/plans/{planId}`. A plan serializes the Quick Schedule `CarePlan` (APP-SPEC 5.3/5.8). | Participant is the scheduling entity (PHASE-3-UNIFIED-SCHEDULE). |
-| P3-08 | **OPEN — participant name and DCN in storage.** APP-SPEC D-16 and IMPORT-SPEC I-3 say name and DCN never go to Firestore. Phase 3 is the point that changes for saved participants. Proposed: store `displayName` and `dcn`, tenant-scoped, gated by P3-03; confirm before Prompt 4 builds. | A scheduling product must identify the participant; this is a founder/legal call. |
+| P3-08 | **RESOLVED (founder 2026-11-13) — participant identity in storage.** Store `displayName` in tenant-scoped storage once compliance prerequisites are met; do **not** persist the participant's DCN initially; use randomly generated internal participant ids (the Firestore document id); never place PHI in URLs, logs, analytics or unapproved third-party services. | A roster needs the name to be usable; the DCN is not required to schedule. |
 | P3-09 | Billing readiness adds a plan gate and a Billing screen but no provider integration until the provider is chosen. | Never build an integration the founder hasn't chosen. |
+| P3-10 | **RESOLVED (founder 2026-11-13) — hosting.** Serve the app from Firebase Hosting (Google Cloud, BAA-covered); drop Vercel. Verify every Firebase/Google service against the BAA; complete tenant-isolation, access-control, audit-logging, encryption, backup and security-risk reviews before live PHI. | One covered vendor, no separate Vercel HIPAA add-on; lower recurring compliance cost. |
 
 ## 3. BAA (Prompt 1)
 
@@ -81,15 +83,19 @@ Phase 3, in the founder's fixed order:
 
 ## 6. Saved participants and plans (Prompt 4)
 
-- Gate: creating a participant requires the tenant to have `baaVersion` (P3-03), enforced in
-  rules. Build only after the founder resolves P3-08.
-- `tenants/{t}/participants/{pid}`: `displayName`, `dcn` (both per P3-08), `createdAt`,
-  `createdBy`, `updatedAt`, `updatedBy`.
+- Gate: a participant write requires the tenant to have `baaVersion` (P3-03) **and** the
+  deployment-level `config/phiStorage.enabled` flag (P3-10). `config/phiStorage` is set only by
+  the Admin SDK / Cloud Functions after the Google Cloud BAA is executed and the security review
+  is done — never by a client — so accepting the customer BAA alone does not enable PHI storage.
+- `tenants/{t}/participants/{pid}`: `displayName` (P3-08; no `dcn`), `createdAt`, `createdBy`,
+  `updatedAt`, `updatedBy`. The internal participant id is the random document id.
 - `tenants/{t}/participants/{pid}/plans/{planId}`: the serialized `CarePlan` plus `name`,
   `planStart`, `planEnd`, `checksum`, `savedAt`, `savedBy`.
 - UI: a Participants list (`/app/participants`), a participant detail with their saved plans,
   and "Save plan" from Quick Schedule inside `/app` writing the current `CarePlan` under the
   chosen participant. Everything stays behind the Quick Schedule guard (APP-SPEC 5.7).
+- Build and test with synthetic participants only; live participant persistence stays disabled
+  until the BAAs are executed, service coverage is verified and the security review is complete.
 
 ## 7. `firestore.rules` additions (verbatim; each prompt applies its own)
 
@@ -106,6 +112,13 @@ Tenant update (Prompt 1) — replace the existing `allow update` with:
             && request.resource.data.baaAcceptedAt == request.time)
       );
 ```
+
+Participant gate and collections (Prompt 4, P3-08/P3-10) — a participant/plan write needs the
+tenant `baaVersion` **and** `config/phiStorage.enabled` (set only by the Admin SDK, never a
+client); the participant stores `displayName` only (no `dcn`) and its internal id is the document
+id. The full text is applied in `firestore.rules` (helpers `tenantHasBaa`, `phiStorageEnabled`,
+`canWriteParticipants`; matches `config/{docId}`, `tenants/{tenantId}/participants/{participantId}`
+and its nested `plans/{planId}`).
 
 ## 8. Routes added
 
@@ -126,4 +139,5 @@ Tenant update (Prompt 1) — replace the existing `allow update` with:
 | P3-AC-04 | Audit events are append-only; a delete/update fails; no event contains a name or DCN. |
 | P3-AC-05 | A member of an MFA-required agency without TOTP cannot reach `/app` until enrolled. |
 | P3-AC-06 | A participant and its plan save, reload and re-open; nothing is written until the BAA is accepted. |
+| P3-AC-07 | Rules tests R-21–R-28 pass: a participant/plan write is denied without the BAA or without `phiStorage.enabled`, denied for a viewer, denied with a `dcn` field, and a client cannot write `config/phiStorage`. |
 

@@ -1,8 +1,8 @@
 # CarePlan Scheduler for Windows
 
 A Windows app for CarePlan Scheduler. It's one window onto the live site,
-<https://careplan-scheduler.vercel.app>: no schedule logic, no storage of its own and no copy of
-the web app (`.clinerules` D-1). Every Vercel deploy updates it, and sign-in, the rules and Quick
+<https://care-plan-scheduler.web.app>: no schedule logic, no storage of its own and no copy of
+the web app (`.clinerules` D-1). Every Firebase Hosting deploy updates it, and sign-in, the rules and Quick
 Schedule behave exactly as on the web.
 
 ## Build the installer on Windows

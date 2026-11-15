@@ -1,0 +1,29 @@
+name: Deploy
+
+# Ships the static app to Firebase Hosting (Google Cloud, the covered host — PHASE-3-SPEC P3-10).
+# This workflow does NOT deploy firestore.rules and does NOT enable live PHI storage: those stay
+# deliberate owner steps. Participant writes remain blocked until config/phiStorage.enabled is set
+# by the Admin SDK after the Google Cloud BAA is executed and the security review is complete.
+#
+# Owner setup before this can run:
+#   1. `firebase login:ci` and add the token as the `FIREBASE_TOKEN` repository secret.
+#   2. Remove the Vercel GitHub app so Vercel stops deploying this repo.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build -w @careplan/web
+      - name: Deploy hosting to Firebase
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx firebase-tools deploy --only hosting --project care-plan-scheduler --non-interactive

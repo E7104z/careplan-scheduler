@@ -14,18 +14,18 @@ import {
 
 describe("APP_URL", () => {
   it("is the production site, and the privacy page is on it", () => {
-    expect(APP_URL).toBe("https://careplan-scheduler.vercel.app");
-    expect(PRIVACY_URL).toBe("https://careplan-scheduler.vercel.app/privacy");
+    expect(APP_URL).toBe("https://care-plan-scheduler.web.app");
+    expect(PRIVACY_URL).toBe("https://care-plan-scheduler.web.app/privacy");
   });
 });
 
 describe("isAllowedNavigation (D-3)", () => {
   it("allows https pages on the site and Google sign-in's hosts", () => {
     for (const url of [
-      "https://careplan-scheduler.vercel.app",
-      "https://careplan-scheduler.vercel.app/quick",
-      "https://careplan-scheduler.vercel.app/join/abc123?next=%2Fapp",
-      "https://CAREPLAN-SCHEDULER.vercel.app/rules",
+      "https://care-plan-scheduler.web.app",
+      "https://care-plan-scheduler.web.app/quick",
+      "https://care-plan-scheduler.web.app/join/abc123?next=%2Fapp",
+      "https://CARE-PLAN-SCHEDULER.web.app/rules",
       "https://accounts.google.com/o/oauth2/auth?client_id=x",
       "https://care-plan-scheduler.firebaseapp.com/__/auth/handler?apiKey=x",
     ]) {
@@ -35,13 +35,13 @@ describe("isAllowedNavigation (D-3)", () => {
 
   it("refuses lookalike hosts", () => {
     for (const url of [
-      "https://careplan-scheduler.vercel.app.evil.com/",
-      "https://evil-careplan-scheduler.vercel.app/",
-      "https://careplan-scheduler.vercel.app.",
-      "https://careplan-scheduler-git-main.vercel.app/",
+      "https://care-plan-scheduler.web.app.evil.com/",
+      "https://evil-care-plan-scheduler.web.app/",
+      "https://care-plan-scheduler.web.app.",
+      "https://care-plan-scheduler--preview.web.app/",
       "https://accounts.google.com.evil.com/",
-      "https://evil.com/?next=https://careplan-scheduler.vercel.app",
-      "https://careplan-scheduler.vercel.app@evil.com/",
+      "https://evil.com/?next=https://care-plan-scheduler.web.app",
+      "https://care-plan-scheduler.web.app@evil.com/",
     ]) {
       expect(isAllowedNavigation(url), url).toBe(false);
     }
@@ -49,14 +49,14 @@ describe("isAllowedNavigation (D-3)", () => {
 
   it("refuses other schemes, other ports, credentials and anything that isn't a URL", () => {
     for (const url of [
-      "http://careplan-scheduler.vercel.app/",
+      "http://care-plan-scheduler.web.app/",
       "file:///C:/Windows/System32/calc.exe",
       "javascript:alert(1)",
       "data:text/html,hello",
       "mailto:support@thecdscloud.com",
-      "https://careplan-scheduler.vercel.app:8443/",
-      "https://user:pass@careplan-scheduler.vercel.app/",
-      "careplan-scheduler.vercel.app",
+      "https://care-plan-scheduler.web.app:8443/",
+      "https://user:pass@care-plan-scheduler.web.app/",
+      "care-plan-scheduler.web.app",
       "",
       "not a url",
       "https://",
@@ -70,7 +70,7 @@ describe("opensOutside", () => {
   it("opens https pages and mail links in the person's own browser or mail app", () => {
     expect(opensOutside("https://health.mo.gov/seniors/hcbs/")).toBe(true);
     expect(opensOutside("mailto:support@thecdscloud.com")).toBe(true);
-    expect(opensOutside("mailto:p-test@example.com?subject=Join&body=https%3A%2F%2Fcareplan-scheduler.vercel.app")).toBe(true);
+    expect(opensOutside("mailto:p-test@example.com?subject=Join&body=https%3A%2F%2Fcare-plan-scheduler.web.app")).toBe(true);
   });
 
   it("opens nothing else", () => {
@@ -82,11 +82,11 @@ describe("opensOutside", () => {
 
 describe("allowsPermission (D-2)", () => {
   it("allows only writing to the clipboard, and only for the site itself", () => {
-    expect(allowsPermission("clipboard-sanitized-write", "https://careplan-scheduler.vercel.app/app/agency/members")).toBe(true);
+    expect(allowsPermission("clipboard-sanitized-write", "https://care-plan-scheduler.web.app/app/agency/members")).toBe(true);
     expect(allowsPermission("clipboard-sanitized-write", "https://accounts.google.com/")).toBe(false);
-    expect(allowsPermission("clipboard-sanitized-write", "https://careplan-scheduler.vercel.app.evil.com/")).toBe(false);
+    expect(allowsPermission("clipboard-sanitized-write", "https://care-plan-scheduler.web.app.evil.com/")).toBe(false);
     for (const permission of ["clipboard-read", "media", "geolocation", "notifications", "openExternal", "fullscreen", "unknown"]) {
-      expect(allowsPermission(permission, "https://careplan-scheduler.vercel.app/"), permission).toBe(false);
+      expect(allowsPermission(permission, "https://care-plan-scheduler.web.app/"), permission).toBe(false);
     }
   });
 });
@@ -101,7 +101,7 @@ describe("File > Print (APP-SPEC 5.4)", () => {
 });
 
 describe("opensAfterSaving", () => {
-  const SITE_PDF = "blob:https://careplan-scheduler.vercel.app/2f1c7a7e-4c1d-4a77-9a55-0d7b9f1e2a10";
+  const SITE_PDF = "blob:https://care-plan-scheduler.web.app/2f1c7a7e-4c1d-4a77-9a55-0d7b9f1e2a10";
 
   it("opens the site's own PDF once saved as a .pdf, so it can be printed from the PDF app", () => {
     expect(opensAfterSaving(SITE_PDF, "application/pdf", "C:\\Users\\p-test\\Downloads\\Care schedule 2026-10-26.pdf")).toBe(true);
@@ -110,9 +110,9 @@ describe("opensAfterSaving", () => {
 
   it("opens nothing else: other sources, other types, or a file saved under another extension", () => {
     for (const [url, mime, path] of [
-      ["blob:https://careplan-scheduler.vercel.app.evil.com/x", "application/pdf", "C:\\x.pdf"],
+      ["blob:https://care-plan-scheduler.web.app.evil.com/x", "application/pdf", "C:\\x.pdf"],
       ["blob:https://evil.com/x", "application/pdf", "C:\\x.pdf"],
-      ["https://careplan-scheduler.vercel.app/report.pdf", "application/pdf", "C:\\x.pdf"],
+      ["https://care-plan-scheduler.web.app/report.pdf", "application/pdf", "C:\\x.pdf"],
       [SITE_PDF, "text/html", "C:\\x.pdf"],
       [SITE_PDF, "application/pdf", "C:\\x.exe"],
       [SITE_PDF, "application/pdf", "C:\\x.pdf.exe"],

@@ -18,6 +18,9 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# Firebase CLI local cache (hosting.* deployment state)
+.firebase/
+
 # Vercel CLI link (vercel link). apps/web/.env and .env.emulator are committed (APP-SPEC 7.1),
 # so never ignore .env* broadly.
 .vercel
