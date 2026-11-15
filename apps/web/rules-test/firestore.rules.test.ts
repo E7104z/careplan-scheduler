@@ -1,4 +1,4 @@
-// Firestore security rules tests R-01 to R-28 (APP-SPEC section 8 and PHASE-3-SPEC section 7),
+// Firestore security rules tests R-01 to R-36 (APP-SPEC section 8 and PHASE-3-SPEC section 7),
 // one `it` per expectation.
 // Runs against the Firestore emulator: `npm run test:rules` inside `firebase emulators:exec`.
 // The accept cases (R-09 to R-12) all send the same full batch, so each denial comes from the
@@ -12,7 +12,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 const PROJECT_ID = "demo-careplan";
 const RULES = readFileSync(new URL("../../../firestore.rules", import.meta.url), "utf8");
@@ -62,6 +62,22 @@ const planFields = (by: string) => ({
   carePlan: { version: "cps.quick.v3" },
   savedAt: serverTimestamp(),
   savedBy: by,
+});
+
+const visitDoc = (db: Db, pid: string, visitId: string) =>
+  participantDoc(db, pid).collection("visits").doc(visitId);
+
+const visitFields = (by: string) => ({
+  participantId: "p-test-1",
+  caregiverId: "cg-test-01",
+  serviceCode: "S-01",
+  start: "2026-07-06T09:00:00.000-05:00",
+  end: "2026-07-06T10:00:00.000-05:00",
+  taskIds: ["task-1"],
+  createdAt: serverTimestamp(),
+  createdBy: by,
+  updatedAt: serverTimestamp(),
+  updatedBy: by,
 });
 
 /** Opens (or leaves closed) the two halves of the participant-write gate, bypassing rules. */
@@ -429,5 +445,100 @@ describe("R-21 to R-28 saved participants, plans and the deployment gate", () =>
     await seedTenant(TENANT, TENANT_NAME);
     await seedGate({ baa: true }); // phiStorage off
     await assertFails(planDoc(verified(OWNER), "p-test-1", "plan-1").set(planFields(OWNER.uid)));
+  });
+});
+
+describe("R-29 to R-36 saved visits, worker ids and tenant isolation", () => {
+  it("R-29 denies a non-member reading a visit", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+    await assertFails(visitDoc(verified(OTHER), "p-test-1", "v-test-1").get());
+  });
+
+  it("R-29 denies a non-member listing a participant's visits", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+    await assertFails(participantDoc(verified(OTHER), "p-test-1").collection("visits").get());
+  });
+
+  it("R-30 keeps one tenant's visits from another tenant's members", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+    await seedTenant("t-test-02", "P-TEST-AGENCY-02", [{ person: SCHEDULER, role: "owner" }]);
+    await assertFails(
+      verified(SCHEDULER)
+        .collection("tenants")
+        .doc(TENANT)
+        .collection("participants")
+        .doc("p-test-1")
+        .collection("visits")
+        .doc("v-test-1")
+        .get(),
+    );
+  });
+
+  it("R-31 allows an owner and a scheduler to save a visit when both gates are open", async () => {
+    await seedTenant(TENANT, TENANT_NAME, [{ person: SCHEDULER, role: "scheduler" }]);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+    await assertSucceeds(visitDoc(verified(SCHEDULER), "p-test-1", "v-test-2").set(visitFields(SCHEDULER.uid)));
+  });
+
+  it("R-31 denies a viewer saving a visit", async () => {
+    await seedTenant(TENANT, TENANT_NAME, [{ person: SCHEDULER, role: "viewer" }]);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(visitDoc(verified(SCHEDULER), "p-test-1", "v-test-1").set(visitFields(SCHEDULER.uid)));
+  });
+
+  it("R-32 denies a visit that carries a caregiver name", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(
+      visitDoc(verified(OWNER), "p-test-1", "v-test-1").set({ ...visitFields(OWNER.uid), caregiverName: "P-TEST-CAREGIVER" }),
+    );
+  });
+
+  it("R-33 denies a visit whose participantId does not match its path", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(
+      visitDoc(verified(OWNER), "p-test-1", "v-test-1").set({ ...visitFields(OWNER.uid), participantId: "p-test-2" }),
+    );
+  });
+
+  it("R-34 denies a visit save when the gate is closed", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true }); // phiStorage off
+    await assertFails(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+  });
+
+  it("R-35 a written participant and visit carry only their allowed fields", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertSucceeds(participantDoc(verified(OWNER), "p-test-1").set(participantFields(OWNER.uid)));
+    await assertSucceeds(visitDoc(verified(OWNER), "p-test-1", "v-test-1").set(visitFields(OWNER.uid)));
+
+    const participantData = (await participantDoc(verified(OWNER), "p-test-1").get()).data() as Record<string, unknown>;
+    expect(Object.keys(participantData).sort()).toEqual(["createdAt", "createdBy", "displayName", "updatedAt", "updatedBy"]);
+    for (const key of ["name", "dcn", "address", "dateOfBirth"]) {
+      expect(participantData[key]).toBeUndefined();
+    }
+
+    const visitData = (await visitDoc(verified(OWNER), "p-test-1", "v-test-1").get()).data() as Record<string, unknown>;
+    expect(visitData.caregiverId).toBe("cg-test-01");
+    for (const key of ["caregiverName", "name", "dcn", "address"]) {
+      expect(visitData[key]).toBeUndefined();
+    }
+  });
+
+  it("R-36 denies a participant document that carries a name", async () => {
+    await seedTenant(TENANT, TENANT_NAME);
+    await seedGate({ baa: true, phiStorage: true });
+    await assertFails(
+      participantDoc(verified(OWNER), "p-test-1").set({ ...participantFields(OWNER.uid), name: "P-TEST-REAL-NAME" }),
+    );
   });
 });
