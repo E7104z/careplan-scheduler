@@ -8,9 +8,11 @@ const repoRoot = resolve(import.meta.dirname, "../../..");
 
 // Files allowed to contain the word "vercel". History files (CP5-0 line 46) record what was
 // true at the time; docs/PHASE-3-SPEC.md is history by owner decision; .clinerules carries the
-// rule that names Vercel to forbid its reintroduction (CP5-0 Step 2).
+// rule that names Vercel to forbid its reintroduction (CP5-0 Step 2); this test is the guard
+// itself and must name the word it checks for.
 const ALLOWED = [
   ".clinerules",
+  "apps/web/test/hosting.test.ts",
   "docs/PHASE-1-",
   "docs/PHASE-2-",
   "docs/PHASE-3-SPEC.md",
