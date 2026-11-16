@@ -214,6 +214,41 @@ service cloud.firestore {
           && (!('checksum' in request.resource.data) || request.resource.data.checksum is string);
         allow delete: if isOwner(tenantId) && tenantHasBaa(tenantId) && phiStorageEnabled();
       }
+
+      // CP4-9: a participant's visits and caregiver ids. Caregivers are stored as ids, never
+      // names; the field list closes the door on a name, DCN or address ending up in a visit.
+      match /visits/{visitId} {
+        allow read: if isMember(tenantId);
+        allow create: if canWriteParticipants(tenantId)
+          && request.resource.data.keys().hasOnly(['participantId', 'caregiverId', 'serviceCode', 'start', 'end', 'taskIds', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+          && request.resource.data.participantId == participantId
+          && request.resource.data.caregiverId is string
+          && request.resource.data.caregiverId.size() >= 1
+          && request.resource.data.serviceCode is string
+          && request.resource.data.serviceCode.size() >= 1
+          && request.resource.data.start is string
+          && request.resource.data.end is string
+          && request.resource.data.taskIds is list
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow update: if canWriteParticipants(tenantId)
+          && request.resource.data.keys().hasOnly(['participantId', 'caregiverId', 'serviceCode', 'start', 'end', 'taskIds', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+          && request.resource.data.participantId == participantId
+          && request.resource.data.caregiverId is string
+          && request.resource.data.caregiverId.size() >= 1
+          && request.resource.data.serviceCode is string
+          && request.resource.data.serviceCode.size() >= 1
+          && request.resource.data.start is string
+          && request.resource.data.end is string
+          && request.resource.data.taskIds is list
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isOwner(tenantId) && tenantHasBaa(tenantId) && phiStorageEnabled();
+      }
     }
 
     // Everything else is closed.
