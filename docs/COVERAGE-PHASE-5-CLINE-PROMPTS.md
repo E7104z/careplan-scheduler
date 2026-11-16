@@ -185,11 +185,13 @@ Build:
   4. Fixture F end to end.
   5. Open DHSS questions (audit section 9).
   6. Security review: Quick Schedule is browser-only (nothing uploaded, nothing in storage or the
-     console); caregiver and participant names stay in memory only. State whether CP4-9 (agency-wide
-     worker load, alias-only Firestore storage) was built and merged or skipped. Decide this from
-     the git log and the code, not from memory: look for the CON-04 and CON-05 agency storage code
-     and its rules tests. If skipped, say plainly that cross-participant worker checks are not
-     shipped. The BAA decision covers Google only (Firebase Hosting and Firestore).
+     console); caregiver and participant names stay in memory only. CP4-9 (agency-wide worker load,
+     alias-only Firestore storage) was built and merged — PR #21, commit c758b6f, "feat(agency):
+     worker load across participants with alias-only storage (CON-04, CON-05)". Cross-participant
+     worker checks are shipped: CON-04 double-bookings BLOCK and CON-05 40-hour weeks WARN across
+     the agency's participants, each shown by agency alias only (never name, DCN or address). The
+     BAA decision was made by the owner on 2026-11-13 and covers Google only (Firebase Hosting and
+     Firestore); live participant persistence stays disabled until the Google Cloud BAA is executed.
   7. Hosting and deploy: Firebase Hosting project `care-plan-scheduler`; deployed only by the GitHub
      Actions Deploy workflow on merge to `main`, hosting only (read the workflow and quote its deploy
      command, never any secret). Firestore rules and indexes are deployed by hand and are not
