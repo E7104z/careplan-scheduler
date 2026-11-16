@@ -5,15 +5,17 @@ accounts, and **Quick Schedule**: open a care plan PDF from Fusion and get a
 ready schedule that can't be edited outside Missouri's rules. Nothing about a participant is
 stored in Phase 2.
 
-This file is the source of truth for everything under `apps/web`, `firestore.rules`,
-`firebase.json` and `vercel.json`. `docs/IMPORT-SPEC.md` is the source of truth for reading
+This file is the source of truth for everything under `apps/web`, `firestore.rules` and
+`firebase.json`. `docs/IMPORT-SPEC.md` is the source of truth for reading
 Fusion care plans (`packages/import`), and `docs/ENGINE-SPEC.md` for `packages/engine`.
 If a prompt and a spec disagree, stop and ask.
 
 Visual and behavioral target: `docs/design/quick-schedule-prototype.html` (open it in a
 browser; it runs the real engine). Tokens: `docs/design/tokens.css`.
 
-**Done when:** the Vercel preview of the `phase-2-app` pull request works end to end: a
+**Done when:** the `phase-2-app` pull request works end to end on Firebase Hosting (project
+`care-plan-scheduler`, deployed by the GitHub Actions Deploy workflow when a change is merged to
+`main`): a
 visitor opens a Fusion care plan PDF in Quick Schedule without an account and gets a ready
 schedule; an agency owner signs up,
 verifies their email, creates the agency, invites a scheduler, and the scheduler joins; every
@@ -35,7 +37,7 @@ acceptance check in section 11 passes.
 | D-08 | Agency data model is multi-tenant from day one: `tenants/{tenantId}`, membership docs, roles `owner`, `scheduler`, `viewer`. | Matches the release-1 data model; Phase 3 adds participants under the tenant. |
 | D-09 | Invites are links, not emails. The owner copies the link (or opens their own mail app with it filled in). | No server or email provider is needed in Phase 2; nothing is sent on the agency's behalf. |
 | D-10 | Signed-in sessions end after 30 minutes without activity, with a 2-minute warning. | Expected by agencies and the state for any system that will hold participant data. |
-| D-11 | Deployed on Vercel from the repo root (`vercel.json`), with strict security headers. Firebase is used only for Auth and Firestore, not Hosting. | Every pull request gets a preview link. |
+| D-11 | Deployed on Firebase Hosting (project `care-plan-scheduler`) from the repo root (`firebase.json`), with strict security headers, by the GitHub Actions Deploy workflow when a change is merged to `main`. | The owner creates a Firebase Hosting preview channel for a pull request. |
 | D-12 | The engine gains one export, `RULE_CATALOG` (rule ID, area, rule text, severities, status, source), tested against ENGINE-SPEC section 5. | The public "Rules and sources" page and the check copy are generated from the engine, not retyped. |
 | D-13 | **Import is the front door.** Quick Schedule opens on "Open the care plan PDF from Fusion"; building by hand is the fallback. **Nov 13, 2026: paste removed, PDF only** (the owner's decision; the paste box, its "Build schedule" button and every paste message are gone, and the care plan PDF is the only way a plan comes in). Reading the PDF's text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
 | D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
@@ -94,11 +96,10 @@ vitest 4 is its own change after Phase 2 merges, before Phase 3 stores participa
 ```
 careplan-scheduler/
   .clinerules
-  firebase.json                 Firestore rules + emulator config (no Hosting)
+  firebase.json                 Firestore rules + Hosting + emulator config
   firestore.rules               section 8, verbatim
   firestore.indexes.json        { "indexes": [], "fieldOverrides": [] }
   .firebaserc                   { "projects": { "default": "care-plan-scheduler" } }
-  vercel.json                   section 9
   package.json                  workspaces ["packages/*", "apps/*"]
   docs/  APP-SPEC.md  ENGINE-SPEC.md  IMPORT-SPEC.md  RULE-MAP.md  PHASE-2-CLINE-PROMPTS.md
          design/ (tokens, prototype, reference/)  fixtures/fusion/
@@ -1141,34 +1142,36 @@ Rules tests (`apps/web/rules-test/firestore.rules.test.ts`, emulator) cover at l
 
 ---
 
-## 9. `vercel.json` and security headers
+## 9. `firebase.json` and security headers
+
+Firebase Hosting serves the app from `apps/web/dist` with these security headers and the
+single-page-app rewrite, defined in `firebase.json` (project `care-plan-scheduler`):
 
 ```json
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build -w @careplan/web",
-  "outputDirectory": "apps/web/dist",
-  "framework": null,
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
-        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com; frame-src https://care-plan-scheduler.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" }
-      ]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-    }
-  ]
+  "hosting": {
+    "public": "apps/web/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+          { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+          { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
+          { "key": "X-Frame-Options", "value": "DENY" },
+          { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://apis.google.com https://www.gstatic.com https://www.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://*.googleapis.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com; frame-src https://care-plan-scheduler.firebaseapp.com https://accounts.google.com https://www.google.com https://www.gstatic.com; frame-ancestors 'none'; worker-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'" }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      }
+    ]
+  }
 }
 ```
 

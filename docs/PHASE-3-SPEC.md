@@ -63,8 +63,11 @@ Phase 3, in the founder's fixed order:
   { provider: new ReCAPTCHAEnterpriseProvider(key), isTokenAutoRefreshEnabled: true })`.
 - `apps/web/.env` and `.env.emulator` gain the key variable (emulator empty). Public pages stay
   Firebase-free; the module is only imported by lazy routes (D-06).
-- CSP in `vercel.json` adds `https://*.googleapis.com` to `script-src` if the reCAPTCHA
-  provider needs it. The App Check debug token is never used in production.
+- App Check's reCAPTCHA needs `https://www.google.com` in the Content-Security-Policy
+  `script-src` and `frame-src` and `https://www.gstatic.com` in `frame-src`. Firebase Hosting
+  serves these from the response headers in `firebase.json`, and they are already set.
+  `https://*.googleapis.com` is in `connect-src`. The App Check debug token is never used in
+  production.
 
 ## 5. Audit log + MFA (Prompt 3)
 

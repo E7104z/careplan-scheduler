@@ -12,6 +12,9 @@ community-based services (HCBS).
 - `apps/web`: the React app (Phase 2): public site, accounts, Quick Schedule.
   Source of truth: `docs/APP-SPEC.md`. Visual target: `docs/design/quick-schedule-prototype.html`
   and `docs/design/tokens.css`. Colors come from docs/design/tokens.css only; the prototype's green is superseded.
+- Hosting is Firebase Hosting only. Vercel is not used and must not be reintroduced. Deploys
+  run only through the GitHub Actions Deploy workflow on merge to `main`; no agent runs a
+  deploy command.
 If a prompt and a spec disagree, stop and ask.
 
 ## Hard rules (whole repo)
