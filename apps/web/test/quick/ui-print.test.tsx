@@ -96,6 +96,24 @@ describe("Quick Schedule: the one-page printout (APP-SPEC 5.4 Print)", () => {
     }
   });
 
+  it("the agency copy box adds the accrual pages and names the file for the agency (ACC-06)", async () => {
+    const { user } = renderQuick();
+    await buildB(user);
+
+    await user.click(screen.getByRole("checkbox", { name: "Agency copy with projected accruals" }));
+    await user.click(screen.getByRole("button", { name: "Save as PDF" }));
+    await waitFor(() => expect(downloads).toEqual([{ name: "Care schedule 2025-11-20 agency.pdf", href: "blob:http://localhost/schedule" }]));
+    const sheets = vi.mocked(schedulePdfBlob).mock.calls[0]![0] as ScheduleSheet;
+    expect(sheets.accruals?.length).toBeGreaterThan(0);
+
+    // Unticked again, the participant's copy has no accrual pages.
+    await user.click(screen.getByRole("checkbox", { name: "Agency copy with projected accruals" }));
+    await user.click(screen.getByRole("button", { name: "Save as PDF" }));
+    await waitFor(() => expect(downloads).toHaveLength(2));
+    expect(downloads[1]!.name).toBe("Care schedule 2025-11-20.pdf");
+    expect((vi.mocked(schedulePdfBlob).mock.calls[1]![0] as ScheduleSheet).accruals).toBeUndefined();
+  });
+
   it("Save as PDF downloads it, without opening a tab", async () => {
     const open = vi.spyOn(window, "open");
     const { user } = renderQuick();

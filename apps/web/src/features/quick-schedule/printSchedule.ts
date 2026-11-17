@@ -1,6 +1,5 @@
 import type { RulePack } from "@careplan/engine";
 import { todayIso } from "../../lib/format";
-import { planSheets } from "./planSheet";
 import type { CarePlan, QuickModel } from "./types";
 
 /**
@@ -24,10 +23,25 @@ export function scheduleFileName(today: string): string {
   return `Care schedule ${today}.pdf`;
 }
 
-async function makePdf(source: ScheduleSource, today: string): Promise<Blob> {
-  // pdf-lib, fontkit and the fonts load only when someone prints (APP-SPEC 10).
-  const { schedulePdfBlob } = await import("./schedulePdf");
-  return schedulePdfBlob(planSheets(source.plan, source.models, source.pack, today), new Date());
+/** "Care schedule 2026-10-26 agency.pdf": the agency printout with the accrual sections. */
+export function agencyScheduleFileName(today: string): string {
+  return `Care schedule ${today} agency.pdf`;
+}
+
+/** Who the printout is for: the participant's copy, or the agency's with the accrual pages (ACC-06). */
+export interface PrintOptions {
+  agency?: boolean;
+}
+
+async function makePdf(source: ScheduleSource, today: string, options: PrintOptions): Promise<Blob> {
+  // The sheet builders, pdf-lib, fontkit and the fonts load only when someone prints (APP-SPEC 10).
+  const [{ planSheets }, { schedulePdfBlob }] = await Promise.all([import("./planSheet"), import("./schedulePdf")]);
+  const audience = options.agency ? "agency" : "client";
+  return schedulePdfBlob(planSheets(source.plan, source.models, source.pack, today, audience), new Date());
+}
+
+function fileNameFor(today: string, options: PrintOptions): string {
+  return options.agency ? agencyScheduleFileName(today) : scheduleFileName(today);
 }
 
 function download(blob: Blob, fileName: string): void {
@@ -41,10 +55,10 @@ function download(blob: Blob, fileName: string): void {
   window.setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
 }
 
-/** APP-SPEC 5.4 "Save as PDF": the one-page schedule downloads as a file. */
-export async function saveSchedulePdf(source: ScheduleSource): Promise<void> {
+/** APP-SPEC 5.4 "Save as PDF": the schedule downloads as a file (the agency copy adds the accrual pages). */
+export async function saveSchedulePdf(source: ScheduleSource, options: PrintOptions = {}): Promise<void> {
   const today = todayIso();
-  download(await makePdf(source, today), scheduleFileName(today));
+  download(await makePdf(source, today, options), fileNameFor(today, options));
 }
 
 /**
@@ -54,26 +68,31 @@ export async function saveSchedulePdf(source: ScheduleSource): Promise<void> {
  * the browser shows no PDFs (set to download them; in a tab it would arrive blank and unnamed) or
  * no tab can open (a blocked popup, or the Windows app, which opens no windows for the site).
  */
-export async function printSchedulePdf(source: ScheduleSource): Promise<void> {
+async function openForPrint(make: () => Promise<Blob>, fileName: string): Promise<void> {
   const tab = navigator.pdfViewerEnabled === false ? null : window.open("", "_blank");
   if (tab) {
     tab.document.title = "Weekly care schedule";
     tab.document.body.textContent = "Making the schedule…";
   }
-  const today = todayIso();
   let blob: Blob;
   try {
-    blob = await makePdf(source, today);
+    blob = await make();
   } catch (error) {
     tab?.close();
     throw error;
   }
   if (!tab) {
-    download(blob, scheduleFileName(today));
+    download(blob, fileName);
     return;
   }
   // Closed while the PDF was being made: the person changed their mind.
   if (tab.closed) return;
   // Not revoked: the viewer in that tab reads it again to print or save, until this page closes.
   tab.location.replace(URL.createObjectURL(blob));
+}
+
+/** APP-SPEC 5.4 "Print schedule" (the agency copy adds each service's accrual pages). */
+export async function printSchedulePdf(source: ScheduleSource, options: PrintOptions = {}): Promise<void> {
+  const today = todayIso();
+  await openForPrint(() => makePdf(source, today, options), fileNameFor(today, options));
 }

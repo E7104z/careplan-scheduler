@@ -1,5 +1,6 @@
-import type { RulePack, Weekday } from "@careplan/engine";
+import type { AccrualProjection, RulePack, Weekday } from "@careplan/engine";
 import { clockTime, formatDuration, formatUnits, niceDate, shortMonth, weekdayName } from "../../lib/format";
+import { serviceAccrual } from "./accrual";
 import { fusionUnitsText } from "./checksumText";
 import { dailyVisits } from "./DailyTaskList";
 import { contextFor, groupResults } from "./grouping";
@@ -77,6 +78,11 @@ export interface SheetCheck {
   context: string;
 }
 
+/** One service's one month, for the agency-only accrual page (ACC-06, ACC-08). */
+export interface SheetAccrual extends AccrualProjection {
+  month: string;
+}
+
 /**
  * Everything the one-page printed schedule says (APP-SPEC 5.4 Print), worked out from the same
  * model and copy as the screen. `schedulePdf.ts` only lays it out.
@@ -105,6 +111,8 @@ export interface ScheduleSheet {
   /** "Oct 21, 2026", or null: a line to write the date on. */
   reviewed: string | null;
   footer: string;
+  /** The agency-only accrual sections (ACC-06). Absent on the client printout. */
+  accruals?: SheetAccrual[];
 }
 
 const grouped = new Intl.NumberFormat("en-US");
@@ -135,7 +143,13 @@ function authorizedNote(model: QuickModel, calculated: boolean[]): string {
  * Saturday with each visit's length, every month's units and cuts, the checks, the review with
  * the participant and when it was checked.
  */
-export function buildScheduleSheet(state: QuickState, model: QuickModel, pack: RulePack, today: string): ScheduleSheet {
+export function buildScheduleSheet(
+  state: QuickState,
+  model: QuickModel,
+  pack: RulePack,
+  today: string,
+  audience: "client" | "agency" = "client",
+): ScheduleSheet {
   const status = scheduleStatus(state, model);
 
   // The example is titled as the example, without its sample DCN, as in the read summary.
@@ -270,5 +284,6 @@ export function buildScheduleSheet(state: QuickState, model: QuickModel, pack: R
     checks,
     reviewed: state.reviewed !== null ? niceDate(state.reviewed) : null,
     footer: `Checked with CarePlan Scheduler under rule pack ${pack.id} on ${niceDate(today)}`,
+    accruals: audience === "agency" ? model.months.map((month) => ({ month, ...serviceAccrual(model, month) })) : undefined,
   };
 }

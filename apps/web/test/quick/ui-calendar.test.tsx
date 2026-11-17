@@ -89,7 +89,7 @@ describe("The participant calendar (APP-SPEC 5.8)", () => {
     expect(within(balances).getByText("Next nurse visit to place: General Health Evaluation, August 2026")).toBeInTheDocument();
     await user.click(within(calendar()).getByRole("button", { name: "Next month on the calendar" }));
     const grid = within(calendar()).getByRole("grid", { name: "May 2026, by date" });
-    expect(within(grid).getByRole("gridcell", { name: /^Tuesday, May 12, 2026: .*GHE, Nurse visit, 1 visit$/ })).toBeInTheDocument();
+    expect(within(grid).getByRole("gridcell", { name: /^Tuesday, May 12, 2026: .*GHE, Nurse visit, 1 visit; AMV unit earned: PC - Agency$/ })).toBeInTheDocument();
     expect(within(balances).getByText("1 visit in May 2026 · 1 visit placed · 0 visits left")).toBeInTheDocument();
     expect(within(balances).getByText(/^226 units in May 2026 · /)).toBeInTheDocument();
   });

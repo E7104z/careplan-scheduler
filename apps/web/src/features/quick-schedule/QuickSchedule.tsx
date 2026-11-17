@@ -94,6 +94,9 @@ export function QuickSchedule() {
   // in the same moment, and that is one printout.
   const making = useRef(false);
   const printErrors = useRef(0);
+  // ACC-06: the agency's copy adds each service's projected accrual pages. Ctrl+P and the Windows
+  // app's menu go through latestPrintout, so they follow the box too.
+  const [agency, setAgency] = useState(false);
   const canPrint = models.some(hasSchedule);
   /** Makes the printout; false when there's nothing to print (no tasks yet). */
   const makePrintout = (action: PrintAction): boolean => {
@@ -102,7 +105,8 @@ export function QuickSchedule() {
     making.current = true;
     setPrinting(action);
     const source = { plan, models, pack: PACK };
-    (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source))
+    const options = { agency };
+    (action === "print" ? printSchedulePdf(source, options) : saveSchedulePdf(source, options))
       .catch(() => setToast({ seq: --printErrors.current, message: PRINT_FAILED }))
       .finally(() => {
         making.current = false;
@@ -186,6 +190,16 @@ export function QuickSchedule() {
           <Button variant="secondary" disabled={!canPrint} busy={printing === "save"} onClick={() => makePrintout("save")}>
             Save as PDF
           </Button>
+          <label className="inline-flex min-h-10 items-center gap-2 text-sm text-ink max-sm:min-h-11">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-brand"
+              checked={agency}
+              disabled={!canPrint}
+              onChange={(event) => setAgency(event.target.checked)}
+            />
+            Agency copy with projected accruals
+          </label>
         </div>
       </div>
 

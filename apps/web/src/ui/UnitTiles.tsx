@@ -47,6 +47,7 @@ export function UnitTiles({ dayTotals, activeDays }: UnitTilesProps) {
                   {units} unit{units === 1 ? "" : "s"}
                   {remainder > 0 ? ` + ${remainder} min` : ""}
                 </span>
+                {remainder > 0 ? <span className="text-[13px] font-medium text-brand">+{remainder} min accrues</span> : null}
               </>
             )}
           </li>
