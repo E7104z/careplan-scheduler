@@ -83,6 +83,8 @@ export interface CalendarCell {
   events: CalendarItem[];
   /** "Decrease takes effect": a care plan change's effective date. */
   markers: string[];
+  /** Services that earn an AMV unit on this date, from the accrual projection. */
+  earnedUnits: string[];
   /** The whole cell in words, for its accessible name. */
   label: string;
 }
@@ -99,6 +101,15 @@ export function amendmentMarkers(plan: CarePlan, models: QuickModel[]): Record<s
   return markers;
 }
 
+/** The dates each service earns an AMV unit in a month (ACC-08), for the calendar's accrual dots. */
+export function accrualUnitDates(accruals: { name: string; units: { availableOn: string }[] }[]): Record<string, string[]> {
+  const dates: Record<string, string[]> = {};
+  for (const accrual of accruals) {
+    for (const unit of accrual.units) (dates[unit.availableOn] ??= []).push(accrual.name);
+  }
+  return dates;
+}
+
 /**
  * The month as calendar cells, one per date, each holding exactly the occurrences of that date:
  * the grid and the list are two views of one list.
@@ -108,6 +119,7 @@ export function calendarCells(
   month: string,
   plan: { start: string; end: string },
   markers: Record<string, string[]> = {},
+  unitDates: Record<string, string[]> = {},
 ): CalendarCell[] {
   const [year, monthNumber] = month.split("-").map(Number) as [number, number];
   const inMonth = occurrencesIn(occurrences, month);
@@ -127,14 +139,16 @@ export function calendarCells(
     const events = items.filter((item) => item.kind !== "TASK" && item.kind !== "TRANSPORT");
     const inPlan = date >= plan.start && date <= plan.end;
     const dayMarkers = markers[date] ?? [];
+    const earnedUnits = unitDates[date] ?? [];
     const parts = [
       ...bands.map((band) => `${band.service} ${band.minutes} minutes`),
       ...events.map((event) => [event.service, event.what, event.amount].filter(Boolean).join(", ")),
       ...dayMarkers,
+      ...earnedUnits.map((name) => `AMV unit earned: ${name}`),
     ];
     const contents = !inPlan ? "outside the plan" : parts.length > 0 ? parts.join("; ") : "no care";
     return {
-      date, day, weekday, inPlan, items, bands, events, markers: dayMarkers,
+      date, day, weekday, inPlan, items, bands, events, markers: dayMarkers, earnedUnits,
       label: `${weekdayName(weekday)}, ${niceDate(date)}: ${contents}`,
     };
   });

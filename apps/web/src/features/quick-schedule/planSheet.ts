@@ -1,6 +1,6 @@
 import type { RulePack, Weekday } from "@careplan/engine";
 import { formatDuration, monthName, niceDate, shortMonth, weekdayName } from "../../lib/format";
-import { serviceName, serviceDayWarning, serviceDays, weekMinutes } from "./carePlan";
+import { figureMonth, serviceName, serviceDayWarning, serviceDays, weekMinutes } from "./carePlan";
 import { hasSchedule, monthFigures } from "./model";
 import { buildScheduleSheet, type ScheduleSheet, type SheetDay, type SheetFact, type SheetFigure } from "./scheduleSheet";
 import { otherLines, planOthers } from "./others";
@@ -34,12 +34,6 @@ function outsideWeekNote(plan: CarePlan): string {
       : "";
   const others = planOthers(plan).length > 0 ? ` Also in the care plan, not in the week: ${otherLines(plan).join(" ")}` : "";
   return visits + others;
-}
-
-/** The month a service's figures are shown for: the one being viewed, else its first scheduled month. */
-export function figureMonth(plan: CarePlan, index: number, model: QuickModel): string | null {
-  const viewed = plan.services[index]!.viewMonth;
-  return model.months.includes(viewed) ? viewed : (model.months[0] ?? null);
 }
 
 /**
@@ -141,14 +135,20 @@ export function buildPlanSheet(plan: CarePlan, models: QuickModel[], pack: RuleP
  * What prints: one service as its one page (APP-SPEC 5.4); several as the whole week, then each
  * service with anything scheduled on its own page (APP-SPEC 5.8).
  */
-export function planSheets(plan: CarePlan, models: QuickModel[], pack: RulePack, today: string): ScheduleSheet | ScheduleSheet[] {
+export function planSheets(
+  plan: CarePlan,
+  models: QuickModel[],
+  pack: RulePack,
+  today: string,
+  audience: "client" | "agency" = "client",
+): ScheduleSheet | ScheduleSheet[] {
   if (plan.services.length === 1) {
-    const sheet = buildScheduleSheet(plan.services[0]!, models[0]!, pack, today);
+    const sheet = buildScheduleSheet(plan.services[0]!, models[0]!, pack, today, audience);
     return { ...sheet, authorizedNote: sheet.authorizedNote + outsideWeekNote(plan) };
   }
   const pages = plan.services
     .map((state, index) => ({ state, model: models[index]! }))
     .filter(({ model }) => hasSchedule(model))
-    .map(({ state, model }) => buildScheduleSheet(state, model, pack, today));
+    .map(({ state, model }) => buildScheduleSheet(state, model, pack, today, audience));
   return [buildPlanSheet(plan, models, pack, today), ...pages];
 }

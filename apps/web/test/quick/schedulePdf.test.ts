@@ -66,6 +66,20 @@ async function readBack(bytes: Uint8Array): Promise<ReadBack> {
   return result;
 }
 
+/** Reads every page's text, for documents whose agency accrual pages follow the one-page sheets. */
+async function readBackAll(bytes: Uint8Array): Promise<{ pages: number; text: string }> {
+  const pdf = await getDocument({ data: bytes.slice(), useSystemFonts: false }).promise;
+  const pages = pdf.numPages;
+  const parts: string[] = [];
+  for (let number = 1; number <= pages; number++) {
+    const page = await pdf.getPage(number);
+    const content = await page.getTextContent();
+    parts.push((content.items as TextItem[]).map((item) => item.str).join(" | "));
+  }
+  await pdf.destroy();
+  return { pages, text: parts.join(" | ") };
+}
+
 function sheetFor(state: QuickState, today = "2025-11-20"): ScheduleSheet {
   return buildScheduleSheet(state, buildQuickModel(state, MO_2026_07), MO_2026_07, today);
 }
@@ -212,6 +226,36 @@ describe("printed schedule: the PDF", () => {
     const pdf = await readBack(await renderSchedulePdf(sheets, FONTS, NOW));
     expect(pdf.text).toContain("This week has more service days than the plan's 5 days a week");
     expectTidy(pdf.items);
+  });
+
+  it("ACC-06/ACC-08: the agency printout adds each service's accrual section; the client's stays as-is", async () => {
+    const outcome = next(addPage(emptyImportFlow(), fixtureF), MO_2026_07, new Date("2026-10-21T12:00:00-05:00"));
+    if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
+    const models = outcome.plan.services.map((state) => buildQuickModel(state, MO_2026_07));
+    const client = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
+    const agency = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21", "agency");
+    const clientSheets = Array.isArray(client) ? client : [client];
+    const agencySheets = Array.isArray(agency) ? agency : [agency];
+
+    // The client printout carries no accrual data; the agency printout carries one section per service.
+    expect(clientSheets.every((sheet) => sheet.accruals === undefined)).toBe(true);
+    expect(agencySheets.filter((sheet) => sheet.accruals !== undefined)).toHaveLength(agencySheets.length - 1);
+    for (const sheet of agencySheets.slice(1)) {
+      expect(sheet.accruals).toBeDefined();
+      expect(sheet.accruals!.length).toBeGreaterThan(0);
+      for (const accrual of sheet.accruals!) {
+        expect(accrual.month).toMatch(/^\d{4}-\d{2}$/);
+        expect(accrual.accruedMinutes).toBeGreaterThanOrEqual(0);
+      }
+    }
+
+    const clientPdf = await readBack(await renderSchedulePdf(client, FONTS, NOW));
+    expect(clientPdf.text).not.toContain("Projected Accruals");
+
+    const agencyPdf = await readBackAll(await renderSchedulePdf(agency, FONTS, NOW));
+    expect(agencyPdf.pages).toBeGreaterThan(clientPdf.pages);
+    expect(agencyPdf.text).toContain("Projected Accruals — Subject to Actual EVV Verification");
+    expect(agencyPdf.text).toContain("Accrued minutes are used in the month they are earned and do not carry over.");
   });
 
   it("takes its colors from tokens.css, light theme (paper is white whatever the screen)", () => {

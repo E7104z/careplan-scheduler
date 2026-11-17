@@ -4,8 +4,10 @@ import { cn } from "../../lib/cn";
 import { monthName, niceDate, weekdayName } from "../../lib/format";
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
+import { serviceAccrual } from "./accrual";
 import { balanceRows, calendarMonths, ilwSwitchProjection, nextVisitNeeded, respiteLine } from "./balances";
-import { amendmentMarkers, calendarCells, listRows, moveDate, type CalendarCell } from "./calendarView";
+import { accrualUnitDates, amendmentMarkers, calendarCells, listRows, moveDate, type CalendarCell } from "./calendarView";
+import { serviceName } from "./carePlan";
 import { DayChangeForm } from "./DayChangeForm";
 import { localMonth } from "./model";
 import { normalizeEvents, occurrencesIn } from "./normalizeEvents";
@@ -49,7 +51,10 @@ export function ParticipantCalendar({ plan, models, pack, today, feedback, dispa
     start: plan.services.map((state) => state.plan.start).sort()[0]!,
     end: plan.services.map((state) => state.plan.end).sort().at(-1)!,
   };
-  const cells = calendarCells(occurrences, month, planDates, amendmentMarkers(plan, models));
+  // ACC-08: one projection per service (never summed), shown as chips above the calendar and as
+  // the dates each service earns a unit.
+  const accruals = plan.services.map((state, index) => ({ name: serviceName(state, models[index]!), ...serviceAccrual(models[index]!, month) }));
+  const cells = calendarCells(occurrences, month, planDates, amendmentMarkers(plan, models), accrualUnitDates(accruals));
   const rows = listRows(occurrences, month);
   const focusDate = focused !== null && focused.startsWith(month) ? focused : `${month}-01`;
   const selectedCell = selected !== null && selected.startsWith(month) ? cells.find((cell) => cell.date === selected) : undefined;
@@ -111,6 +116,16 @@ export function ParticipantCalendar({ plan, models, pack, today, feedback, dispa
 
       <div className="grid gap-5 min-[1060px]:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
         <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap gap-2 print:hidden">
+            {accruals.map((accrual, index) => (
+              <span key={index} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-sunk px-2.5 py-1 text-[13px] text-ink">
+                <strong className="font-semibold text-ink">{accrual.name}:</strong>
+                <span>
+                  {accrual.accruedMinutes} projected min · {accrual.potentialAmvUnits} AMV {accrual.potentialAmvUnits === 1 ? "unit" : "units"}
+                </span>
+              </span>
+            ))}
+          </div>
           {view === "grid" ? (
             <div ref={gridRef} role="grid" aria-label={`${monthName(month)}, by date`} className="grid gap-1">
               <div role="row" className="grid grid-cols-7 gap-1 text-center text-[13px] font-medium text-ink-3">
@@ -156,6 +171,12 @@ export function ParticipantCalendar({ plan, models, pack, today, feedback, dispa
                         ))}
                         {cell.markers.length > 0 ? (
                           <span aria-hidden="true" className="truncate border-l-4 border-l-info pl-1 font-semibold text-ink">Change</span>
+                        ) : null}
+                        {cell.earnedUnits.length > 0 ? (
+                          <span aria-hidden="true" className="inline-flex items-center gap-1 text-[11px] font-semibold leading-none text-brand">
+                            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+                            AMV
+                          </span>
                         ) : null}
                       </div>
                     ),

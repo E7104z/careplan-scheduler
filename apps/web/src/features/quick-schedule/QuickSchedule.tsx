@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Info } from "lucide-react";
 import { MO_2026_07 } from "@careplan/engine";
 import { usePageTitle } from "../../lib/usePageTitle";
@@ -9,40 +9,49 @@ import { READ_SUMMARY_TITLE_ID, ReadSummary } from "../import/ReadSummary";
 import { activeIndex } from "./carePlan";
 import { CarePlanPane } from "./CarePlanPane";
 import { AmendmentsSlot, BackupSlot, CalendarSlot, CaregiversSlot, CoverageBlocksSlot, OtherPlacingSlot, PlanChecksSlot, ProgramsSlot, VisitsSlot, VisitTimesSlot, WaiversSlot } from "./extrasSlots";
-import { buildQuickModel, hasSchedule } from "./model";
+import { buildQuickModel } from "./model";
 import { AuthorizationsPanel, OthersPanel, PlanSummary, PlanWeekPanel, ServiceTabs } from "./PlanOverview";
-import { printSchedulePdf, saveSchedulePdf, SHELL_PRINT_EVENT } from "./printSchedule";
 import { SchedulePane } from "./SchedulePane";
 import { TASK_PICKER_ID } from "./TaskPicker";
 import "./print.css";
-import type { CarePlan, QuickModel } from "./types";
-import { refusalPlace, useQuickStore, type QuickFeedback } from "./useQuickStore";
+import type { CarePlan } from "./types";
+import { toastMessage, useQuickStore } from "./useQuickStore";
+import { usePrintout } from "./usePrintout";
 
 const PACK = MO_2026_07;
 
+// APP-SPEC 5.9: the save dialog and its encryption load only when someone saves a plan.
+const SavePlanDialog = lazy(() => import("./SavePlanDialog").then((module) => ({ default: module.SavePlanDialog })));
+
+/** The page title's id: focus goes there after a saved plan opens. */
+const TITLE_ID = "qs-title";
+
 const PRINT_FAILED = "Couldn't make the PDF. Check your connection, then try again.";
-
-type PrintAction = "print" | "save";
-
-/** A refusal that belongs in a toast, or the QS-02 "Removed …" message after a service change. */
-function toastMessage(feedback: QuickFeedback | null, model: QuickModel | null): string | null {
-  if (!feedback || !model) return null;
-  if (feedback.refusal !== undefined) return refusalPlace(feedback.action) === "toast" ? feedback.refusal : null;
-  const count = feedback.removed?.length ?? 0;
-  if (count === 0) return null;
-  return `Removed ${count} ${count === 1 ? "task that isn't" : "tasks that aren't"} part of ${model.svc.name}`;
-}
 
 /**
  * APP-SPEC 5.1 Quick Schedule: open a Fusion care plan PDF (or start by hand) and
- * get a schedule that follows Missouri's rules. State lives in this tab only (sessionStorage,
- * without the participant's name and DCN).
+ * get a schedule that follows Missouri's rules. State lives in this tab (sessionStorage, without
+ * the participant's name and DCN) until the person keeps it (APP-SPEC 5.9): an encrypted plan file,
+ * or inside `/app` their agency's saved plans.
  *
  * APP-SPEC 5.8: a care plan with several authorizations is one schedule for the participant. It
  * opens on the whole care plan (every service in one week, each authorization's units and the
  * nurse visits); each service opens in detail to change it, under its own rules.
  */
-export function QuickSchedule() {
+export interface QuickScheduleProps {
+  /**
+   * More ways to keep the plan, beside "Save plan": inside `/app` the agency's "Save to agency"
+   * (PHASE-3-SPEC section 6). The public page has none and never loads Firebase (D-06).
+   */
+  planActions?: (plan: CarePlan) => ReactNode;
+  /** Where the plan lives, said under the toolbar; the public page's sentence by default. */
+  privacyNote?: ReactNode;
+}
+
+const PUBLIC_NOTE =
+  "Nothing you open is uploaded or saved to our servers. It stays in this browser tab, and the participant's name and DCN are gone when you close it. Save plan keeps an encrypted copy on this computer.";
+
+export function QuickSchedule({ planActions, privacyNote = PUBLIC_NOTE }: QuickScheduleProps = {}) {
   const headingRef = usePageTitle("Quick Schedule | CarePlan Scheduler");
   const [{ plan, feedback }, dispatch] = useQuickStore();
   const models = useMemo(() => plan.services.map((service) => buildQuickModel(service, PACK)), [plan.services]);
@@ -79,7 +88,8 @@ export function QuickSchedule() {
     setPlanKey((key) => key + 1);
     setMonthOpen(false);
     setImportOpen(false);
-    focusAfter.current = from === "import" ? READ_SUMMARY_TITLE_ID : from === "manual" ? TASK_PICKER_ID : null;
+    focusAfter.current =
+      from === "import" ? READ_SUMMARY_TITLE_ID : from === "manual" ? TASK_PICKER_ID : from === "saved" ? TITLE_ID : null;
   };
 
   const startNew = () => {
@@ -87,49 +97,14 @@ export function QuickSchedule() {
     focusAfter.current = PDF_CHOOSER_ID;
   };
 
-  // APP-SPEC 5.4 Print: the one-page PDF. Print errors get their own toasts, numbered below the
+  // APP-SPEC 5.4 Print. Print errors (and "Saved …") get their own toasts, numbered below the
   // store's feedback so the two never share a key.
-  const [printing, setPrinting] = useState<PrintAction | null>(null);
-  // Set at once (state waits for a render): Ctrl+P can reach the page and the Windows app's menu
-  // in the same moment, and that is one printout.
-  const making = useRef(false);
-  const printErrors = useRef(0);
-  const canPrint = models.some(hasSchedule);
-  /** Makes the printout; false when there's nothing to print (no tasks yet). */
-  const makePrintout = (action: PrintAction): boolean => {
-    if (!canPrint) return false;
-    if (making.current) return true;
-    making.current = true;
-    setPrinting(action);
-    const source = { plan, models, pack: PACK };
-    (action === "print" ? printSchedulePdf(source) : saveSchedulePdf(source))
-      .catch(() => setToast({ seq: --printErrors.current, message: PRINT_FAILED }))
-      .finally(() => {
-        making.current = false;
-        setPrinting(null);
-      });
-    return true;
-  };
-  const latestPrintout = useRef(makePrintout);
-  useEffect(() => {
-    latestPrintout.current = makePrintout;
-  });
-  // Ctrl+P (and the Windows app's File > Print) make the printout rather than print the page.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "p") return;
-      if (latestPrintout.current("print")) event.preventDefault();
-    };
-    const onShellPrint = (event: Event) => {
-      if (latestPrintout.current("print")) event.preventDefault();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener(SHELL_PRINT_EVENT, onShellPrint);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener(SHELL_PRINT_EVENT, onShellPrint);
-    };
-  }, []);
+  const pageToasts = useRef(0);
+  const { printing, canPrint, agency, setAgency, makePrintout } = usePrintout(plan, models, PACK, () =>
+    setToast({ seq: --pageToasts.current, message: PRINT_FAILED }),
+  );
+  // APP-SPEC 5.9: the encrypted plan file.
+  const [saveOpen, setSaveOpen] = useState(false);
 
   // The dated side (Coverage Phase 3 on) is its own chunk; these slots are empty until it loads.
   const opened = !plan.services[0]!.isExample;
@@ -166,7 +141,7 @@ export function QuickSchedule() {
     <div className="mx-auto grid w-full max-w-[1440px] gap-6 px-[max(16px,env(safe-area-inset-left))] pb-16 pt-6">
       <div className="flex flex-wrap items-end gap-x-6 gap-y-3 print:hidden">
         <div>
-          <h1 ref={headingRef} tabIndex={-1} className="text-[28px] font-bold leading-tight text-ink max-sm:text-[24px]">
+          <h1 id={TITLE_ID} ref={headingRef} tabIndex={-1} className="text-[28px] font-bold leading-tight text-ink max-sm:text-[24px]">
             Quick Schedule
           </h1>
           <p className="mt-1 max-w-[64ch] text-ink-2">
@@ -180,12 +155,28 @@ export function QuickSchedule() {
               New care plan
             </Button>
           )}
+          {opened ? (
+            <Button variant="secondary" onClick={() => setSaveOpen(true)}>
+              Save plan
+            </Button>
+          ) : null}
+          {opened && planActions ? planActions(plan) : null}
           <Button variant="secondary" disabled={!canPrint} busy={printing === "print"} onClick={() => makePrintout("print")}>
             Print schedule
           </Button>
           <Button variant="secondary" disabled={!canPrint} busy={printing === "save"} onClick={() => makePrintout("save")}>
             Save as PDF
           </Button>
+          <label className="inline-flex min-h-10 items-center gap-2 text-sm text-ink max-sm:min-h-11">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-brand"
+              checked={agency}
+              disabled={!canPrint}
+              onChange={(event) => setAgency(event.target.checked)}
+            />
+            Agency copy with projected accruals
+          </label>
         </div>
       </div>
 
@@ -215,9 +206,18 @@ export function QuickSchedule() {
 
       <p role="note" className="flex items-start gap-2.5 rounded-sm bg-info-bg px-3.5 py-2.5 text-sm text-ink print:hidden">
         <Info className="mt-0.5 h-4 w-4 flex-none text-info" aria-hidden="true" />
-        Nothing you open is uploaded or saved to our servers. It stays in this browser tab, and the participant's
-        name and DCN are gone when you close it.
+        <span>{privacyNote}</span>
       </p>
+      {saveOpen ? (
+        <Suspense fallback={null}>
+          <SavePlanDialog
+            plan={plan}
+            open
+            onClose={() => setSaveOpen(false)}
+            onSaved={(fileName) => setToast({ seq: --pageToasts.current, message: `Saved ${fileName}` })}
+          />
+        </Suspense>
+      ) : null}
 
       {state === null || model === null ? (
         <div className="grid gap-5">

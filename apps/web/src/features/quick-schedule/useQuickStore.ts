@@ -4,7 +4,7 @@ import { activeIndex, singlePlan } from "./carePlan.js";
 import { loadPlan, savePlan } from "./persistence.js";
 import { isPlanExtraAction, reducePlanExtra, type PlanExtraAction } from "./planExtraStore.js";
 import { exampleStateA, reduce, type QuickAction } from "./state.js";
-import type { CarePlan } from "./types.js";
+import type { CarePlan, QuickModel } from "./types.js";
 
 /** APP-SPEC 5.8: changes to the plan as a whole, as opposed to one service's schedule. */
 export type PlanAction =
@@ -42,6 +42,15 @@ export function refusalPlace(action: StoreAction): "task" | "cell" | "toast" | "
   if (action.type === "togglePinDay" || action.type === "unpin") return "task";
   if (action.type === "setCell") return "cell";
   return "toast";
+}
+
+/** A refusal that belongs in a toast, or the QS-02 "Removed …" message after a service change. */
+export function toastMessage(feedback: QuickFeedback | null, model: QuickModel | null): string | null {
+  if (!feedback || !model) return null;
+  if (feedback.refusal !== undefined) return refusalPlace(feedback.action) === "toast" ? feedback.refusal : null;
+  const count = feedback.removed?.length ?? 0;
+  if (count === 0) return null;
+  return `Removed ${count} ${count === 1 ? "task that isn't" : "tasks that aren't"} part of ${model.svc.name}`;
 }
 
 function validView(plan: CarePlan, view: "plan" | number): boolean {

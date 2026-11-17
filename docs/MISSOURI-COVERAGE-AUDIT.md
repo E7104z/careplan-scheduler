@@ -30,7 +30,7 @@ merges.
 | Item | Finding |
 |---|---|
 | Branches | `origin/main` at `445fe3f` (PR #6 merged). Open: PR #5 (`phase-3-worksheet`, the DSDS workbooks and worksheet view), PR #7 (`fix-report-service-table`), PR #8 (`unified-care-plan`, includes #7; CI green). This branch is cut from #8. |
-| Deployment | Firebase Hosting builds and serves `apps/web` (`firebase.json`); Vercel is removed. The deployed commit was not checked from here. Merge order keeps it safe: #7, #8, then this branch. |
+| Deployment | Firebase Hosting builds and serves `apps/web` (`firebase.json`). The deployed commit was not checked from here. Merge order keeps it safe: #7, #8, then this branch. |
 | `npm run typecheck` | passes |
 | `npm test` | 858 pass: engine 256, import 125, desktop 15, web 462 |
 | `npm run build` | passes; `/quick` page 165.8 KB gzip of its 180 KB budget |
@@ -281,8 +281,8 @@ app), and clock times arrive with Phase 4.
 
 ### Security and environment (runs across phases)
 Quick Schedule stays local (browser only, no upload, name and DCN never stored). Agency mode is a
-cloud product on covered Google Cloud infrastructure (Firebase Hosting + Firestore/Auth, no
-Vercel) — owner decision 2026-11-13 (PHASE-3-SPEC P3-08/P3-10). Saved participants store
+cloud product on covered Google Cloud infrastructure (Firebase Hosting + Firestore/Auth) —
+owner decision 2026-11-13 (PHASE-3-SPEC P3-08/P3-10). Saved participants store
 `displayName` only (no DCN), with random internal ids. Live PHI stays disabled until the Google
 Cloud BAA is executed, every service's coverage is verified and the security review is done; the
 `config/phiStorage.enabled` deployment flag (set only by the Admin SDK) keeps participant writes

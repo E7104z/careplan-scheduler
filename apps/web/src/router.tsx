@@ -33,6 +33,13 @@ const AgencyDetails = lazy(() =>
 const Baa = lazy(() => import("./features/agency/Baa").then((module) => ({ default: module.Baa })));
 const Team = lazy(() => import("./features/agency/Team").then((module) => ({ default: module.Team })));
 const WorkerLoad = lazy(() => import("./features/agency/WorkerLoad").then((module) => ({ default: module.WorkerLoad })));
+const AgencyQuickSchedule = lazy(() =>
+  import("./features/agency/AgencyQuickSchedule").then((module) => ({ default: module.AgencyQuickSchedule })),
+);
+const Participants = lazy(() => import("./features/agency/ParticipantsPage").then((module) => ({ default: module.Participants })));
+const ParticipantDetail = lazy(() =>
+  import("./features/agency/ParticipantDetail").then((module) => ({ default: module.ParticipantDetail })),
+);
 const NewAgency = lazy(() => import("./features/agency/NewAgency").then((module) => ({ default: module.NewAgency })));
 const Join = lazy(() => import("./features/agency/Join").then((module) => ({ default: module.Join })));
 // The membership guards load with the signed-in pages, not the public entry.
@@ -86,7 +93,9 @@ export const routes = [
         children: [
           { index: true, element: <RequireMembership><Home /></RequireMembership> },
           { path: "account", element: <Account /> },
-          { path: "quick", element: <RequireMembership><QuickSchedule /></RequireMembership> },
+          { path: "quick", element: <RequireMembership><AgencyQuickSchedule /></RequireMembership> },
+          { path: "participants", element: <RequireMembership><Participants /></RequireMembership> },
+          { path: "participants/:participantId", element: <RequireMembership><ParticipantDetail /></RequireMembership> },
           { path: "agency", element: <RequireMembership><AgencyDetails /></RequireMembership> },
           { path: "agency/baa", element: <RequireMembership><Baa /></RequireMembership> },
           { path: "agency/members", element: <RequireMembership><Team /></RequireMembership> },

@@ -14,6 +14,7 @@ import { SkipLink } from "../ui/SkipLink";
 const NAV = [
   { to: "/app", label: "Home", end: true },
   { to: "/app/quick", label: "Quick Schedule", end: true },
+  { to: "/app/participants", label: "Participants", end: false },
   { to: "/app/agency/members", label: "Team", end: true },
   { to: "/app/agency/worker-load", label: "Worker load", end: true },
   { to: "/app/agency", label: "Agency", end: true },

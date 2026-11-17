@@ -15,6 +15,12 @@ export function activeIndex(plan: CarePlan): number | null {
   return plan.view === "plan" ? null : plan.view;
 }
 
+/** The month a service's figures are shown for: the one being viewed, else its first scheduled month. */
+export function figureMonth(plan: CarePlan, index: number, model: QuickModel): string | null {
+  const viewed = plan.services[index]!.viewMonth;
+  return model.months.includes(viewed) ? viewed : (model.months[0] ?? null);
+}
+
 /** "PC - Agency", else the rule pack's name for the service. */
 export function serviceName(state: QuickState, model: QuickModel): string {
   return state.serviceLabel ?? model.svc.name;

@@ -3,8 +3,16 @@ import regularUrl from "@fontsource/public-sans/files/public-sans-latin-400-norm
 import semiboldUrl from "@fontsource/public-sans/files/public-sans-latin-600-normal.woff?url";
 import fontkit from "@pdf-lib/fontkit";
 import { LineCapStyle, PDFDocument, rgb as colorFrom, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
+import { monthName } from "../../lib/format";
 import tokensCss from "../../styles/tokens.css?raw";
-import type { ScheduleSheet, SheetCell, SheetMonth, SheetRow } from "./scheduleSheet";
+import {
+  ACCRUAL_NOTE,
+  ACCRUAL_SECTION_TITLE,
+  accrualRemainingText,
+  accrualSentence,
+  accrualUnitText,
+} from "./accrual";
+import type { ScheduleSheet, SheetAccrual, SheetCell, SheetMonth, SheetRow } from "./scheduleSheet";
 
 /**
  * APP-SPEC 5.4 Print: the schedule as one US Letter landscape page, drawn as a PDF so it comes out
@@ -613,6 +621,75 @@ function drawFooter(p: Painter, sheet: ScheduleSheet): void {
   p.text(evv, RIGHT, FOOTER_TOP, { size: 6.5, color: p.color["ink-3"], align: "right" });
 }
 
+/** The agency-only accrual page's heading: the exact section title and the service it is for. */
+function drawAccrualHeader(p: Painter, sheet: ScheduleSheet): number {
+  drawLogo(p, LEFT, MARGIN, 12);
+  p.middle("CarePlan Scheduler", LEFT + 17, MARGIN + 6, { weight: "bold", size: 8.5, color: p.color.ink });
+  const service = sheet.facts.find((fact) => fact.label === "Service")?.value ?? sheet.name ?? "Service";
+  p.middle(service, RIGHT, MARGIN + 6, { weight: "semibold", size: 8.5, color: p.color.brand, align: "right" });
+
+  let y = MARGIN + 28;
+  p.text(ACCRUAL_SECTION_TITLE, LEFT, y, { weight: "bold", size: 14, color: p.color.ink });
+  y += 20;
+  for (const line of p.wrap(ACCRUAL_NOTE, "regular", 7.5, RIGHT - LEFT)) {
+    p.text(line, LEFT, y, { size: 7.5, color: p.color["ink-3"] });
+    y += 9.5;
+  }
+  return y + 6;
+}
+
+/** How tall one month's accrual block is, so a block never splits across a page. */
+function accrualBlockHeight(p: Painter, accrual: SheetAccrual): number {
+  const width = RIGHT - LEFT;
+  let height = 13;
+  height += p.wrap(accrualSentence(accrual.month, accrual), "regular", 8, width).length * 10;
+  height += accrual.units.length * 9.5;
+  const remaining = accrualRemainingText(accrual);
+  if (remaining) height += p.wrap(remaining, "regular", 7.5, width).length * 9.5;
+  return height + 10;
+}
+
+/** One month's accrual block; returns the y after it. */
+function drawAccrualBlock(p: Painter, accrual: SheetAccrual, top: number): number {
+  let y = top;
+  p.text(monthName(accrual.month), LEFT, y, { weight: "bold", size: 10, color: p.color.brand });
+  y += 13;
+  for (const line of p.wrap(accrualSentence(accrual.month, accrual), "regular", 8, RIGHT - LEFT)) {
+    p.text(line, LEFT, y, { size: 8, color: p.color.ink });
+    y += 10;
+  }
+  for (const unit of accrual.units) {
+    p.text(accrualUnitText(unit), LEFT, y, { size: 7.5, color: p.color["ink-2"] });
+    y += 9.5;
+  }
+  const remaining = accrualRemainingText(accrual);
+  if (remaining) {
+    for (const line of p.wrap(remaining, "regular", 7.5, RIGHT - LEFT)) {
+      p.text(line, LEFT, y, { size: 7.5, color: p.color["ink-2"] });
+      y += 9.5;
+    }
+  }
+  return y + 10;
+}
+
+/** The agency printout's accrual pages (ACC-06, ACC-08): the client's pages plus these sections. */
+function drawAccrualPages(doc: PDFDocument, fonts: Fonts, palette: Palette, sheet: ScheduleSheet): void {
+  const accruals = sheet.accruals ?? [];
+  if (accruals.length === 0) return;
+  const measure = new Painter(null, fonts, palette);
+  const bottom = FOOTER_TOP - 12;
+  let painter = new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette);
+  let y = drawAccrualHeader(painter, sheet);
+  for (const accrual of accruals) {
+    const height = accrualBlockHeight(measure, accrual);
+    if (y + height > bottom) {
+      painter = new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette);
+      y = drawAccrualHeader(painter, sheet);
+    }
+    y = drawAccrualBlock(painter, accrual, y);
+  }
+}
+
 /** Lays the sheet out on the page (or, without a page, only measures). */
 function layOut(p: Painter, sheet: ScheduleSheet): void {
   const headerBottom = drawHeader(p, sheet);
@@ -636,6 +713,7 @@ export async function renderSchedulePdf(sheets: ScheduleSheet | ScheduleSheet[],
   const palette = printPalette();
   for (const sheet of Array.isArray(sheets) ? sheets : [sheets]) {
     layOut(new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette), sheet);
+    drawAccrualPages(doc, fonts, palette, sheet);
   }
 
   // No name in the title: a PDF viewer shows it in its tab and window list.

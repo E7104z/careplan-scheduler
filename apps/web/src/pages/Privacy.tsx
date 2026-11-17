@@ -20,8 +20,13 @@ export function Privacy() {
         </p>
         <p>We run no advertising and no analytics trackers.</p>
         <p>
-          Participant data arrives in a later release. Before any agency enters participant
-          data, a business associate agreement will cover it.
+          Save plan in Quick Schedule saves the plan as an encrypted file on your computer.
+          Only the passphrase you choose opens it, and we never see the file or the passphrase.
+        </p>
+        <p>
+          Saving participants and their plans in an agency account stays turned off until a
+          business associate agreement covers it: your agency's with us, and ours with Google
+          Cloud. Saved plans never hold the participant's DCN or caregivers' names.
         </p>
         <p>
           Questions about privacy:{" "}

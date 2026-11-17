@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type Dispatch, type ReactNode } from "react";
 import { daysInMonth, weekdayOf, type Weekday } from "@careplan/engine";
 import { cn } from "../../lib/cn";
 import { formatUnits, monthName, weekdayName } from "../../lib/format";
@@ -11,6 +11,9 @@ import { addMonths, combinedRespiteFigure, hasSchedule, monthFigures } from "./m
 import { MonthTable } from "./MonthTable";
 import type { QuickAction } from "./state";
 import type { QuickModel, QuickState } from "./types";
+
+// The accrual projection is its own chunk: it loads when the Month tab shows it (APP-SPEC 10).
+const AccrualPanel = lazy(() => import("./AccrualPanel").then((module) => ({ default: module.AccrualPanel })));
 
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -197,6 +200,9 @@ export function MonthPanel({ state, model, models, dispatch }: MonthPanelProps) 
             <div className="mt-1 grid grid-cols-7 gap-1">{cells}</div>
           </div>
           <MonthTable model={model} />
+          <Suspense fallback={null}>
+            <AccrualPanel state={state} model={model} />
+          </Suspense>
         </>
       )}
     </Panel>

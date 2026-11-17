@@ -57,7 +57,7 @@ describe("Quick Schedule: import panel and read summary", () => {
     // The example isn't a plan the person opened, so there's nothing to start over from yet.
     expect(screen.queryByRole("button", { name: "New care plan" })).not.toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent(
-      "Nothing you open is uploaded or saved to our servers. It stays in this browser tab, and the participant's name and DCN are gone when you close it.",
+      "Nothing you open is uploaded or saved to our servers. It stays in this browser tab, and the participant's name and DCN are gone when you close it. Save plan keeps an encrypted copy on this computer.",
     );
   });
 

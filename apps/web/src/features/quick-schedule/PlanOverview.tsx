@@ -6,11 +6,10 @@ import { formatDuration, formatUnits, monthName, niceDate, weekdayName } from ".
 import { Button } from "../../ui/Button";
 import { Panel } from "../../ui/Panel";
 import { READ_SUMMARY_TITLE_ID } from "../import/ReadSummary";
-import { planWeek, serviceDayWarning, serviceDays, serviceName, type PlanDay } from "./carePlan";
+import { figureMonth, planWeek, serviceDayWarning, serviceDays, serviceName, type PlanDay } from "./carePlan";
 import { checksumLines } from "./checksumText";
 import { monthBalance, monthFigures } from "./model";
 import { otherAmount, otherDetail, otherName, otherReasonLine, otherService, planOthers } from "./others";
-import { figureMonth } from "./planSheet";
 import { scheduleStatus } from "./status";
 import type { CarePlan, PlanOther, QuickModel } from "./types";
 

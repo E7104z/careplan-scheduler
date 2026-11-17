@@ -16,6 +16,28 @@ const primaryLink =
 const secondaryLink =
   "inline-flex h-10 items-center justify-center gap-2 rounded-sm border border-line-2 bg-surface px-4 font-semibold leading-none text-ink transition-colors hover:bg-sunk max-sm:min-h-11";
 
+// What an agency account adds, each something the app does today (saved plans behind their BAA gate).
+const AGENCY_FEATURES = [
+  {
+    title: "Your team, with roles",
+    detail: "Invite schedulers and viewers by link. Owners decide who can change schedules.",
+  },
+  {
+    title: "Every plan kept",
+    detail:
+      "Save each care plan under its participant so anyone on the team can open it again. Saved plans never hold the DCN.",
+  },
+  {
+    title: "Worker load across participants",
+    detail: "See a worker booked in two visits at once, or over 40 hours in a workweek, across every participant.",
+  },
+  {
+    title: "Built for participant privacy",
+    detail:
+      "A business associate agreement for your agency, sessions that end after 30 idle minutes, and no analytics trackers.",
+  },
+];
+
 function Section({
   heading,
   lead,
@@ -142,6 +164,30 @@ export function Landing() {
             </div>
           }
         />
+      </section>
+
+      <section aria-labelledby="agencies-heading" className="grid gap-6 border-t border-line py-12">
+        <div className="max-w-[62ch]">
+          <h2 id="agencies-heading" className="text-[22px] font-bold text-ink">
+            For agencies: one place for every participant's schedule
+          </h2>
+          <p className="mt-2 text-ink-2">
+            An agency account adds what a team needs on top of Quick Schedule.
+          </p>
+        </div>
+        <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {AGENCY_FEATURES.map((feature) => (
+            <li key={feature.title} className="rounded-md border border-line bg-surface p-4">
+              <h3 className="font-semibold text-ink">{feature.title}</h3>
+              <p className="mt-1 text-sm text-ink-2">{feature.detail}</p>
+            </li>
+          ))}
+        </ul>
+        <div>
+          <Link to="/sign-up" className={primaryLink}>
+            Set up your agency
+          </Link>
+        </div>
       </section>
 
       <section className="flex flex-col items-start gap-3 py-12">

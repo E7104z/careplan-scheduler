@@ -197,17 +197,40 @@ function withoutIdentity(state: QuickState): Omit<QuickState, "identity"> {
   return rest;
 }
 
+function identityOf(value: unknown): QuickState["identity"] {
+  if (!isRecord(value) || !isRecord(value.identity)) return null;
+  const { name, dcn } = value.identity;
+  return typeof name === "string" && typeof dcn === "string" ? { name, dcn } : null;
+}
+
+/**
+ * The care plan as it is stored: every caregiver without a name (names live in memory only), and
+ * every service without `identity` unless `keepIdentity` (only the encrypted plan file keeps it).
+ */
+export function storedPlan(plan: CarePlan, options: { keepIdentity?: boolean } = {}): StoredCarePlan {
+  const caregivers = plan.caregivers?.map(({ name: _name, ...rest }) => rest);
+  const services = options.keepIdentity ? plan.services : plan.services.map(withoutIdentity);
+  return { ...plan, services, ...(caregivers ? { caregivers } : {}) } as StoredCarePlan;
+}
+
+/**
+ * A stored care plan back as a CarePlan if its shape validates, else null: the same check for the
+ * tab's copy, a saved plan file and an agency's saved plan. An identity is kept only when present
+ * and well formed (the encrypted plan file); every other copy has none.
+ */
+export function planFromStored(value: unknown): CarePlan | null {
+  if (!isStoredCarePlan(value)) return null;
+  const plan = migratePlan(value);
+  return { ...plan, services: plan.services.map((state, at) => ({ ...state, identity: identityOf(value.services[at]) })) };
+}
+
 /**
  * Persist the whole care plan, every service without `identity` and every caregiver without a
  * name (APP-SPEC 5.6, 5.8): names live in memory only. Never throws.
  */
 export function savePlan(plan: CarePlan): void {
   try {
-    const caregivers = plan.caregivers?.map(({ name: _name, ...rest }) => rest);
-    sessionStorage.setItem(
-      PLAN_KEY,
-      JSON.stringify({ ...plan, services: plan.services.map(withoutIdentity), ...(caregivers ? { caregivers } : {}) }),
-    );
+    sessionStorage.setItem(PLAN_KEY, JSON.stringify(storedPlan(plan)));
   } catch {
     // Storage can be unavailable (private mode, quota). Quick Schedule keeps working.
   }
@@ -221,10 +244,8 @@ export function loadPlan(): CarePlan | null {
   try {
     const raw = sessionStorage.getItem(PLAN_KEY);
     if (raw !== null) {
-      const parsed: unknown = JSON.parse(raw);
-      if (!isStoredCarePlan(parsed)) return null;
-      const plan = migratePlan(parsed);
-      return { ...plan, services: plan.services.map((state) => ({ ...state, identity: null })) };
+      const plan = planFromStored(JSON.parse(raw));
+      return plan ? { ...plan, services: plan.services.map((state) => ({ ...state, identity: null })) } : null;
     }
     const old = sessionStorage.getItem(STATE_KEY);
     if (old === null) return null;
