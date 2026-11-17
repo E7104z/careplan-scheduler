@@ -1,4 +1,5 @@
 import type { RulePack } from "@careplan/engine";
+import { downloadBlob as download } from "../../lib/download";
 import { todayIso } from "../../lib/format";
 import type { CarePlan, QuickModel } from "./types";
 
@@ -7,9 +8,6 @@ import type { CarePlan, QuickModel } from "./types";
  * when it prints the schedule itself; otherwise the app prints the page as it is.
  */
 export const SHELL_PRINT_EVENT = "careplan:print";
-
-/** A saved PDF's object URL is freed after this; its download started long before. */
-const REVOKE_AFTER_MS = 60_000;
 
 export interface ScheduleSource {
   plan: CarePlan;
@@ -42,17 +40,6 @@ async function makePdf(source: ScheduleSource, today: string, options: PrintOpti
 
 function fileNameFor(today: string, options: PrintOptions): string {
   return options.agency ? agencyScheduleFileName(today) : scheduleFileName(today);
-}
-
-function download(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
 }
 
 /** APP-SPEC 5.4 "Save as PDF": the schedule downloads as a file (the agency copy adds the accrual pages). */

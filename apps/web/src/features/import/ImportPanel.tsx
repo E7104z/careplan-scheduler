@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { MO_2026_07 } from "@careplan/engine";
 import { Button } from "../../ui/Button";
 import { FileDrop } from "../../ui/FileDrop";
@@ -12,7 +12,7 @@ import type { PdfReadResult } from "./readPdf";
 /** The PDF chooser's id, so the page can put focus there after "New care plan". */
 export const PDF_CHOOSER_ID = "qs-pdf";
 
-export type BuiltFrom = "import" | "example" | "manual";
+export type BuiltFrom = "import" | "example" | "manual" | "saved";
 
 export interface ImportPanelProps {
   /** A plan is ready: read from a PDF (every service in it), an example, or an empty one by hand. */
@@ -25,12 +25,18 @@ const READER_UNAVAILABLE: ImportNotice = {
   detail: "Check your internet connection and try again.",
 };
 
+// APP-SPEC 5.9: opening a saved plan file (and its decryption) loads only when someone chooses one.
+const OpenPlanDialog = lazy(() =>
+  import("../quick-schedule/OpenPlanDialog").then((module) => ({ default: module.OpenPlanDialog })),
+);
+
 const linkButton =
   "rounded-sm font-semibold text-brand underline hover:text-brand-hover max-sm:inline-flex max-sm:min-h-11 max-sm:items-center";
 
 /**
  * APP-SPEC 5.1 import panel: the care plan PDF from Fusion is the only way a plan comes in
- * (D-13, Nov 13, 2026), beside the examples and building by hand, with the issues that still
+ * (D-13, Nov 13, 2026), beside the examples, building by hand and reopening a plan this app saved
+ * (APP-SPEC 5.9, an encrypted file of the person's own work, never another program's data), with the issues that still
  * stop a build (IMPORT-SPEC 3.1). A PDF chosen after an incomplete one is added to it (IMP-12).
  */
 export function ImportPanel({ onBuilt }: ImportPanelProps) {
@@ -39,6 +45,9 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
   const [outcome, setOutcome] = useState<NeedsOutcome | null>(null);
   const [notice, setNotice] = useState<ImportNotice | null>(null);
   const [reading, setReading] = useState(false);
+  // APP-SPEC 5.9: the chosen saved plan file, waiting for its passphrase.
+  const [savedFile, setSavedFile] = useState<File | null>(null);
+  const savedChooser = useRef<HTMLInputElement>(null);
   // A PDF read in progress belongs to the panel as it was when the file was chosen.
   const readToken = useRef(0);
   useEffect(() => () => void (readToken.current += 1), []);
@@ -130,9 +139,41 @@ export function ImportPanel({ onBuilt }: ImportPanelProps) {
               Build a schedule by hand
             </button>
           </p>
+          <p className="text-[13px] text-ink-3">
+            Saved a plan before?{" "}
+            <button type="button" className={linkButton} onClick={() => savedChooser.current?.click()}>
+              Open a saved plan
+            </button>
+          </p>
+          <input
+            ref={savedChooser}
+            type="file"
+            accept=".careplan"
+            className="sr-only"
+            tabIndex={-1}
+            aria-label="Saved plan file"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              event.target.value = "";
+              if (file) setSavedFile(file);
+            }}
+          />
         </div>
       </div>
       <ImportIssues outcome={outcome} notice={notice} reading={reading} onChoose={choose} />
+      {savedFile ? (
+        <Suspense fallback={null}>
+          <OpenPlanDialog
+            file={savedFile}
+            onClose={() => setSavedFile(null)}
+            onOpened={(plan) => {
+              setSavedFile(null);
+              reset();
+              onBuilt(plan, "saved");
+            }}
+          />
+        </Suspense>
+      ) : null}
     </section>
   );
 }
