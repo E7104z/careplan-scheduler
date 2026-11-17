@@ -100,6 +100,28 @@ Phase 3, in the founder's fixed order:
 - Build and test with synthetic participants only; live participant persistence stays disabled
   until the BAAs are executed, service coverage is verified and the security review is complete.
 
+**Built Nov 16, 2026 (UI and client; the gate stays closed).** Decisions, with their sources:
+
+- Order: the owner asked for saving outright, so Prompt 4 was built before Prompt 3 (audit log
+  and MFA). The rules gate is unchanged, so no PHI can be written until `config/phiStorage` is
+  set, and the audit log (P3-06, HIPAA 45 CFR 164.312(b)) must be in place before that flag is
+  turned on. Listed as an open item, not done.
+- Storage: `carePlan` is `{ schema: 3, json }`, the tab's own de-identified copy
+  (`persistence.ts storedPlan`) as JSON text, and `checksum` is its SHA-256 hex. Text avoids
+  Firestore's limits on nested arrays and undefined values and reads back byte for byte through
+  the same shape check; a plan whose text doesn't match its checksum isn't opened.
+- Identity: the plan never stores the name or DCN read from the PDF, nor caregivers' names
+  (P3-08, D-16). The participant is known by `displayName` only. A name with 8 digits in a row is
+  refused as a likely DCN ("Leave the DCN out. Use a name or your agency's alias.").
+- Opening: the plan is written to the tab's copy and Quick Schedule opens on it, so `/quick`
+  never loads Firebase (D-06). `cps.quick.saved` holds ids only.
+- Deleting a participant deletes their plans and visits first (owners only), so nothing is left
+  without its participant. Page titles never carry the participant's name.
+- Files: `features/agency/savedPlans.ts` (Firestore), `storageGate.ts` (pure gate and copy),
+  `ParticipantsPage.tsx`, `ParticipantDetail.tsx`, `SaveToAgency.tsx`, `SaveToAgencyForm.tsx`,
+  `AgencyQuickSchedule.tsx`, `openedPlan.ts`. Tests: `savedPlans.test.ts`,
+  `participants.test.tsx`, `saveToAgency.test.tsx`; rules R-21 to R-28 already cover the gate.
+
 ## 7. `firestore.rules` additions (verbatim; each prompt applies its own)
 
 Tenant update (Prompt 1) — replace the existing `allow update` with:

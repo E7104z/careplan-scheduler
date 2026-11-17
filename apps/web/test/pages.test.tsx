@@ -50,6 +50,15 @@ describe("Landing", () => {
     expect(
       screen.getByText("Quick Schedule needs no account. Nothing you open is uploaded."),
     ).toBeInTheDocument();
+    // What an agency account adds, and the way in.
+    const agencies = screen.getByRole("region", { name: "For agencies: one place for every participant's schedule" });
+    expect(within(agencies).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      "Your team, with roles",
+      "Every plan kept",
+      "Worker load across participants",
+      "Built for participant privacy",
+    ]);
+    expect(within(agencies).getByRole("link", { name: "Set up your agency" })).toHaveAttribute("href", "/sign-up");
 
     // The four figures come from the engine and the import package, not hardcoded output.
     const matchLine = "Every task read. Our total from these tasks matches Fusion's 466 units a month.";

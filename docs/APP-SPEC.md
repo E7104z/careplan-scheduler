@@ -33,7 +33,7 @@ acceptance check in section 11 passes.
 | D-04 | Firebase project `care-plan-scheduler`: Authentication (email + password, Google) and Firestore. | Separate from Scheduler Pro's project, as planned. |
 | D-05 | **No Google Analytics.** `measurementId` is kept in config but `getAnalytics` is never called. | The product will hold Medicaid participant data from Phase 3. "No third-party tracking" is a selling point to the state, and Analytics isn't covered by a healthcare business associate agreement. |
 | D-06 | Public pages (`/`, `/quick`, `/rules`, `/privacy`) never import Firebase. Firebase loads only on sign-in pages and inside `/app`. | Fast first load for agencies trying the tool; no network calls from Quick Schedule. |
-| D-07 | Quick Schedule keeps its working state in `sessionStorage` (this tab only) and nothing else. | Survives an accidental refresh; disappears when the tab closes; never leaves the browser. |
+| D-07 | Quick Schedule keeps its working state in `sessionStorage` (this tab only) and nothing else. **Nov 16, 2026:** the person can also choose to keep it, in two places (5.9): an encrypted plan file on their own computer ("Save plan"), and inside `/app` their agency's saved plans ("Save to agency", PHASE-3-SPEC section 6, behind its gate). Nothing is kept anywhere without that choice. | Survives an accidental refresh; disappears when the tab closes; never leaves the browser. A care plan that can't be kept isn't one an agency can run on, so keeping it is always the person's explicit choice, never automatic. |
 | D-08 | Agency data model is multi-tenant from day one: `tenants/{tenantId}`, membership docs, roles `owner`, `scheduler`, `viewer`. | Matches the release-1 data model; Phase 3 adds participants under the tenant. |
 | D-09 | Invites are links, not emails. The owner copies the link (or opens their own mail app with it filled in). | No server or email provider is needed in Phase 2; nothing is sent on the agency's behalf. |
 | D-10 | Signed-in sessions end after 30 minutes without activity, with a 2-minute warning. | Expected by agencies and the state for any system that will hold participant data. |
@@ -42,7 +42,7 @@ acceptance check in section 11 passes.
 | D-13 | **Import is the front door.** Quick Schedule opens on "Open the care plan PDF from Fusion"; building by hand is the fallback. **Nov 13, 2026: paste removed, PDF only** (the owner's decision; the paste box, its "Build schedule" button and every paste message are gone, and the care plan PDF is the only way a plan comes in). Reading the PDF's text is a pure package, `packages/import` (`@careplan/import`), tested against de-identified fixtures of real plans. | This is what made Scheduler Lite special. A pure package can be tested exactly, like the engine. |
 | D-14 | **No edit can break a rule.** Every change a person makes is applied to a copy, validated with the engine, and accepted only if it leaves zero Must-fix (BLOCK) results. A refused change explains the limit and offers the largest value that fits. Months that need more units than Fusion's figure are trimmed at month end automatically (ENGINE-SPEC SCH-17). | The schedule on screen is always one an agency can use. |
 | D-15 | PDFs are read in the browser with `pdfjs-dist` 4.10.38, loaded only when a PDF is opened (its own chunk and worker file). Nothing is uploaded. | Keeps public pages fast; keeps participant data on the person's computer. |
-| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. | Quick Schedule stays a no-data tool even when real plans are opened in it. |
+| D-16 | Participant name and DCN from an import live only in memory: never in storage, the URL, logs or Firestore. **Nov 16, 2026:** the one exception is the encrypted plan file (5.9), which the person saves to their own computer under a passphrase only they know. | Quick Schedule stays a no-data tool even when real plans are opened in it. A plan file without the name would print without it; encrypted with AES-256-GCM it is unreadable without the passphrase (HHS breach guidance treats such data as secured). |
 | D-17 | **The printout is a one-page PDF** (US Letter landscape), drawn in the browser with `pdf-lib` 1.17.1 and `@pdf-lib/fontkit` 1.1.1 in Public Sans (`@fontsource/public-sans` 5.3.0, static weights), loaded only when someone prints (5.4). Nothing is uploaded. | Decided Oct 26, 2026, at the user's request: the page sent to the print dialog came out on several pages, and each browser and the Windows app split, turned and captioned it its own way. A PDF is the same one page everywhere. |
 
 ### Pinned versions (verified to install, typecheck, test and build together on Node 22)
@@ -148,6 +148,8 @@ One concept per file, files under 300 lines (same as the engine).
 | `/join/:inviteId` | Accept invite | signed in, verified | Auth + Firestore |
 | `/app` | Home | member | Auth + Firestore |
 | `/app/quick` | Quick Schedule (inside the app) | member | Auth + Firestore (shell only) |
+| `/app/participants` | Participants (PHASE-3-SPEC section 6) | member (owner, scheduler add) | Auth + Firestore |
+| `/app/participants/:participantId` | A participant's saved plans | member (owner deletes) | Auth + Firestore |
 | `/app/agency` | Agency details | member (owner edits) | Auth + Firestore |
 | `/app/agency/members` | Team | member (owner edits) | Auth + Firestore |
 | `/app/account` | Your account | signed in | Auth + Firestore |
@@ -524,7 +526,7 @@ nothing.
   key `cps.quick.v3` (debounced 300 ms); restore if the shape validates (else a single service
   under `cps.quick.v2` from the version before), else show the example. After a reload the read
   summary title is "Care plan from Fusion". All storage access in try/catch.
-- Never write Quick Schedule state to `localStorage`, Firestore, the URL, or the console.
+- Never write Quick Schedule state to `localStorage`, Firestore, the URL, or the console, except the two the person chooses in 5.9 (the encrypted plan file, and Save to agency inside `/app`).
 
 ### 5.7 Guard: no change can break a rule (`guard.ts`)
 - `tryChange(next, pack, current) → { ok: true, model } | { ok: false, blocks, model }`: build
@@ -837,6 +839,57 @@ service on its own, but the participant lives one week. So:
     person chooses, and the authorization, its tasks and its minutes never change.
   - Stored as optional `CarePlan.backup` (`unavailable`, `substitutes`, `priorities` by task
     id), with caregiver ids only, never names.
+
+### 5.9 Keeping the plan: plan file and agency saved plans (Nov 16, 2026)
+
+Two ways to keep a care plan, both the person's explicit choice. Both read back through one shape
+check, `planFromStored` in `persistence.ts` (the same one the tab's copy uses), so a damaged or
+foreign copy never reaches the schedule.
+
+- **Save plan** (every Quick Schedule page, once a plan is opened or built; not for the examples):
+  a dialog asks for a passphrase of at least 15 characters (NIST SP 800-63B-4 3.1.1.2, a single
+  factor), typed twice. The plan is encrypted in the browser with AES-256-GCM under a key from
+  PBKDF2-SHA-256 at 600,000 iterations (OWASP Password Storage Cheat Sheet), with a random 16-byte
+  salt and 12-byte IV, and the file header bound as additional data. It downloads as
+  `Care plan <date>.careplan` (the date only). The file holds the whole plan, the name and DCN
+  included (D-16), and never caregivers' names. The passphrase can't be recovered, and the dialog
+  says so. `planFile.ts`, `SavePlanDialog.tsx`, loaded only when someone saves (section 10).
+- **Open a saved plan** (the import panel, beside "Build a schedule by hand"): choose a `.careplan`
+  file, type its passphrase. "That passphrase doesn't open this file. Check it and try again." for
+  a wrong passphrase or a changed file; "This isn't a CarePlan Scheduler plan file. Choose a file
+  that ends in .careplan." for anything else; "This plan file can't be opened here. Open the care
+  plan PDF from Fusion instead." for a later version's file or one that fails the shape check. On
+  success the plan replaces the current one and focus moves to the page's h1. This is not an
+  import of another program's data (D-13 stands): only this app writes the file.
+- **Save to agency** (`/app/quick` only, beside Save plan; `AgencyQuickSchedule.tsx`): saves the
+  plan under one of the agency's participants (or a new one) with a name, by default
+  "Care plan <first month> to <last month>". A plan opened from the agency, or saved this session,
+  offers "Update “<name>”" or "Save as a new plan"; the tab remembers which saved plan it is under
+  `cps.quick.saved` (ids only: the tenant, participant and plan ids and the plan's authorization
+  ids, so a different care plan opened since is never written over). Stored as the tab's copy
+  (no name, DCN or caregiver names) with its SHA-256; see PHASE-3-SPEC section 6. While the gate is
+  closed the dialog says why and saves nothing.
+- The Quick Schedule note: on `/quick` it adds "Save plan keeps an encrypted copy on this
+  computer."; on `/app/quick` it reads "Nothing is saved to your agency until you choose Save to
+  agency. The name and DCN read from the PDF stay in this tab and are never saved."
+
+### 5.10 Projected accruals (ACC-01 to ACC-08, Nov 16, 2026)
+
+A read-only projection of how each service's leftover minutes (the part of a day short of a whole
+15-minute unit) build into potential accrued-minute (AMV) units through a month, first in first
+out, never carried into the next month. Engine `projectAccrual` (`calendar/accrual.ts`), source
+vendor-published (HHAeXchange and Sandata Missouri EVV guidance, reason code 280) with the
+official MO HealthNet bulletin pending; 13 CSR 70-91.010 on not billing under one unit. It never
+changes a schedule, an authorization or any minutes.
+
+- Month tab: "Projected Accruals — Subject to Actual EVV Verification", the month's sentence
+  ("November 2026: 143 projected accrued minutes = 9 potential AMV units, with 8 minutes
+  remaining."), each unit with the dates that supplied it, and the minutes that don't carry over.
+- The weekly tiles show "+N min accrues"; the participant calendar shows each service's figures
+  and an AMV dot on the date a unit becomes available. Never summed across services.
+- Printout: the box "Agency copy with projected accruals" beside Print schedule and Save as PDF
+  adds each service's accrual pages and names the file `Care schedule <date> agency.pdf`. Print
+  schedule and Save as PDF stay the only two outputs.
 
 ## 6. Accounts
 
@@ -1246,6 +1299,8 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 | AC-28 | Whole care plan (5.8): fixture F (agency PC 226, CDS essential transportation 40, homemaker 5, two GHEs) builds with nothing to choose and opens on the whole care plan: each authorization matches Fusion on its own (226, 40, 5); agency Monday to Friday (715 minutes), CDS transportation 120 minutes on the quietest weekday (Friday), homemaker on Saturday; both GHEs listed by month; no month after Oct 31, 2026; zero Must fix. "Open HC" changes homemaker's days under its own rules and the week shows it; a reload keeps every service and the view without the name or DCN; axe passes in both themes; no sideways page scroll on a phone. | unit + component + Playwright |
 | AC-29 | Whole care plan printout (5.8): F prints four US Letter landscape pages, the whole week first ("Services PC - Agency, PC - CDS, HC", every row naming its service, "Day total", "226 units in Oct · PA …", "Nurse visits May 2026 and Aug 2026", no "Units by month"), then each service's own page; every piece of text inside the margins with none overlapping. | unit (read back with pdf.js) + component |
 | AC-30 | Nothing read is dropped (IMP-19): fixture G builds PC - CDS with nothing to choose and lists HDM, ADC, FMS, RN (RCF/ALF) and XYZ under Other authorizations, each in its own unit ("62 meals a month"), XYZ marked not recognized; its printout names all five; a label we have not seen can be kept instead of named; a reload keeps them; a plan saved before keeps loading; axe passes in both themes at desktop and phone width. | unit + component + Playwright |
+| AC-31 | Save plan writes `Care plan <date>.careplan` with no name, DCN or task readable in it; a new tab opens it with its passphrase (a wrong one is refused with the fixed sentence), name included, focus on the h1, and the tab's storage still holds no name or DCN; axe passes on both dialogs. | unit + component + Playwright |
+| AC-32 | Save to agency: closed gates say why and write nothing; a scheduler saves under a new participant and the next save updates the same plan; a viewer is told who saves; a saved plan opens in Quick Schedule through the tab's copy; a plan that fails its checksum isn't opened; only owners delete. | unit + component + rules |
 
 ---
 
