@@ -21,6 +21,8 @@ async function setPhiStorage(request: APIRequestContext, enabled: boolean): Prom
 }
 
 test("AC-32: saved plans open only behind both gates, then save to a participant and open again", async ({ page, context }) => {
+  // The rules tests share this emulator and can leave the flag on: start from it off.
+  await setPhiStorage(page.request, false);
   const email = `p-test-${Date.now()}@example.com`;
   await createAccount(page, "P-TEST-01", email);
   await verifyEmail(page, context, email);
