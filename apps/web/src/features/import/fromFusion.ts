@@ -134,6 +134,7 @@ export function fromFusion(
     provider: service.provider,
     pa: service.pa,
     serviceLabel: service.label,
+    ...(service.procedureCode && service.procedureCode !== service.serviceCode ? { fusionCode: service.procedureCode } : {}),
     serviceCode: service.serviceCode,
     plan,
     headerUnits: service.units,

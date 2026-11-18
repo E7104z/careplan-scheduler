@@ -72,7 +72,13 @@ describe("IMP-19 kept authorizations in the care plan", () => {
     const plan = ready(text.replace(/^HC\t/m, "XX\t").replace(/S5130/g, "S5170"), new Date("2026-10-21T12:00:00-05:00"));
     expect(plan.services.map((state) => state.serviceLabel)).toEqual(["PC - CDS"]);
     const sheet = planSheets(plan, [buildQuickModel(plan.services[0]!, MO_2026_07)], MO_2026_07, "2026-10-21") as ScheduleSheet;
-    expect(sheet.authorizedNote).toContain("Nurse visits are authorized by month and aren't in the week: General Health Evaluation, May 2026; General Health Evaluation, August 2026.");
+    // Once per authorization, with its tasks (Nov 17, 2026), and its own page at the end.
+    expect(sheet.authorizedNote).toContain(
+      "Nurse visits are authorized by month and aren't in the week; their page is at the end: GHE, PA 20260000000013: " +
+        "General Health Evaluation, 1 visit a month authorized; GHE, PA 20260000000015: General Health Evaluation, 1 visit a month authorized.",
+    );
+    expect(sheet.nurseVisits?.map((visit) => visit.title)).toEqual(["GHE · PA 20260000000013", "GHE · PA 20260000000015"]);
+    expect(sheet.authorizedNote).toMatch(/Arranged by date\. Each month's figures count all of its days, including the 20 before this schedule was made on Oct 21, 2026\.$/);
     expect(sheet.authorizedNote).toContain("XX (Home Delivered Meals · S5170): 5 meals a month, Feb 2026 to Oct 2026. Arranged by date.");
   });
 });

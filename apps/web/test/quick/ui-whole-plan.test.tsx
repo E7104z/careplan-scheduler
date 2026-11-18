@@ -141,7 +141,8 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
     expect(pages.map((page) => page.facts.find((fact) => fact.label === "Services" || fact.label === "Service")?.value)).toEqual([
       "PC - Agency, PC - CDS, HC",
       "PC - Agency · T1019",
-      "PC - CDS · T1019U2",
+      // Fusion prints T1019 for CDS too; the page says so (Nov 17, 2026).
+      "PC - CDS · T1019U2 (Fusion prints T1019)",
       "HC · S5130",
     ]);
     expect(pages[0]!.rows.map((row) => row.detail.split(" · ")[0])).toEqual([
@@ -149,7 +150,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
       "PC - CDS",
       "HC",
     ]);
-    expect(pages[0]!.facts).toContainEqual({ label: "Nurse visits", value: "May 2026 and Aug 2026" });
+    expect(pages[0]!.facts).toContainEqual({ label: "Nurse visits", value: "2 authorizations, May to Aug 2026" });
   });
 });
 

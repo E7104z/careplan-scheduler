@@ -14,6 +14,8 @@ describe("IMP-T34 fixture Q: APC and nurse visit tasks", () => {
       ["PC - Agency", "T1019"],
     ]);
     expect(result.issues.some((issue) => issue.code === "unknown-service")).toBe(false);
+    // What Fusion printed is kept, so the printout can say where the modifier came from.
+    expect(result.services.map((service) => service.procedureCode)).toEqual(["T1019", "T1019"]);
   });
 
   it("keeps every task of a nurse visit authorization, with its visits a month", () => {

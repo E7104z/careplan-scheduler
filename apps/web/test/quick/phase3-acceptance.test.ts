@@ -18,6 +18,7 @@ import { normalizeEvents, occurrencesIn } from "../../src/features/quick-schedul
 import { loadPlan, PLAN_KEY, savePlan } from "../../src/features/quick-schedule/persistence";
 import { applyEvent, eventAuthorizations, planEvents } from "../../src/features/quick-schedule/planEvents";
 import { planSheets } from "../../src/features/quick-schedule/planSheet";
+import type { ScheduleSheet } from "../../src/features/quick-schedule/scheduleSheet";
 import type { CarePlan, QuickState } from "../../src/features/quick-schedule/types";
 import fixtureB from "@fixtures/fusion/B-tabbed-7day-455.txt?raw";
 import fixtureF from "@fixtures/fusion/F-care-plan-report-multi.txt?raw";
@@ -125,7 +126,7 @@ describe("DATES-01 on the calendar path", () => {
 });
 
 describe("fixtures F and G end to end", () => {
-  it("F: every authorization appears once, events are placed, and the printout is untouched in this phase", () => {
+  it("F: every authorization appears once, events are placed, and the printout changes only by the dates placed", () => {
     const plan = build(fixtureF, "2026-04-15T12:00:00-05:00");
     const ids = [...plan.services.map((state) => state.id), ...plan.visits.map((visit) => visit.id!), ...(plan.others ?? []).map((other) => other.id!)];
     expect(ids).toHaveLength(5);
@@ -139,8 +140,12 @@ describe("fixtures F and G end to end", () => {
     // Every occurrence belongs to one of the five, and each of the five is its own.
     const occurrences = normalizeEvents(both, modelsOf(both), PACK);
     expect(new Set(occurrences.map((occurrence) => occurrence.authorizationId))).toEqual(new Set(ids));
-    // The PDF's pages are built from the same sheets as before: this phase doesn't change the printout.
-    expect(planSheets(both, modelsOf(both), PACK, "2026-04-15")).toEqual(planSheets(plan, modelsOf(plan), PACK, "2026-04-15"));
+    // The printout is the same but for the Nurse visits page, which shows the dates placed (Nov 17, 2026).
+    const placed = planSheets(both, modelsOf(both), PACK, "2026-04-15") as ScheduleSheet[];
+    const before = planSheets(plan, modelsOf(plan), PACK, "2026-04-15") as ScheduleSheet[];
+    expect(placed.map(({ nurseVisits: _visits, ...sheet }) => sheet)).toEqual(before.map(({ nurseVisits: _visits, ...sheet }) => sheet));
+    expect(placed[0]!.nurseVisits!.map((visit) => visit.months.map((month) => month.placed))).toEqual([["May 12"], ["Aug 20"]]);
+    expect(before[0]!.nurseVisits!.map((visit) => visit.months.map((month) => month.placed))).toEqual([["–"], ["–"]]);
   });
 
   it("G: six authorizations, each once; the dated ones take events, the unknown one stays kept and holds nothing", () => {

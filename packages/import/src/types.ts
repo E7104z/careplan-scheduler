@@ -28,6 +28,8 @@ export interface ImportedService {
   start: string | null; end: string | null;   // YYYY-MM-DD
   units: number;                 // Fusion's monthly units
   cost: string | null; pa: string | null;
+  /** The procedure code as Fusion's care plan report prints it ("T1019" for APC); absent elsewhere. */
+  procedureCode?: string;
   tasks: ImportedTask[];
   transport: { unitsPerMonth: number; minutesPerMonth: number } | null;
   unread: { raw: string; reason: "unreadable" | "task-numbers" | "transport-numbers" }[];

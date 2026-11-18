@@ -266,6 +266,7 @@ export function readReport(text: string, pack: RulePack, page = 1): ResultParts 
       source,
     }, rows, duplicates);
     service.serviceCode ??= codeFallback(block, blocks, pack);
+    if (code) service.procedureCode = code;
     services.push(service);
   }
 

@@ -78,7 +78,10 @@ describe("printed schedule: what it says", () => {
     // minutes) and 23 units of transportation: 6,920 minutes, so 115 of Fusion's 469 units are left.
     expect(sheet.months[0]).toEqual({ label: "Dec 2025", authorized: "469", scheduled: "461 + 5 min", left: "7 + 10 min", over: false, cut: "", cutFrom: "" });
     expect(sheet.months[2]).toMatchObject({ label: "Feb 2026", authorized: "434" });
-    expect(sheet.authorizedNote).toBe("Authorized is Fusion's figure, counted for each month's days as Fusion does.");
+    expect(sheet.authorizedNote).toBe(
+      "Authorized is Fusion's figure, counted for each month's days as Fusion does. Left is units authorized but not " +
+        "scheduled, not missed care: Dec 2025 has 31 care days, each with every task's minutes, and all 446 units would take about 32.",
+    );
     expect(sheet.cutNote).toBeNull();
     expect(sheet.checks.map((check) => [check.label, check.title])).toEqual([["Needs review", "Check CDS transportation against NEMT"]]);
   });
@@ -100,7 +103,10 @@ describe("printed schedule: what it says", () => {
     expect(sheet.days[1]).toMatchObject({ name: "Monday", care: true, visit: "4 h 5 min" });
     expect(sheet.summary).toContainEqual({ label: "Care days", value: "3 a week", note: "Monday, Wednesday, Friday" });
     expect(sheet.rows.some((row) => row.transport)).toBe(false);
-    expect(sheet.authorizedNote).toBe("Authorized is Fusion's figure for each month.");
+    expect(sheet.authorizedNote).toBe(
+      "Authorized is Fusion's figure for each month. Left is units authorized but not scheduled, not missed care: Apr 2026 " +
+        "has 13 care days, each with every task's minutes, and all 229 units would take about 15.",
+    );
   });
 
   it("a minute change is marked, and so are minutes above the task's own", () => {

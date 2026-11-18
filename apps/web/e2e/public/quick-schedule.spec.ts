@@ -27,13 +27,14 @@ test("AC-01: first visit shows the import panel and the 5-day example", async ({
 
   const tiles = page.locator("ol.grid-cols-7 > li");
   await expect(tiles).toHaveCount(7);
+  // Five spread care days (Nov 17, 2026): never two days in a row without care.
   await expect(tiles.nth(1)).toContainText("290 min");
   await expect(tiles.nth(2)).toContainText("285 min");
-  await expect(tiles.nth(3)).toContainText("275 min");
-  await expect(tiles.nth(4)).toContainText("270 min");
+  await expect(tiles.nth(3)).toContainText("Off");
+  await expect(tiles.nth(4)).toContainText("275 min");
   await expect(tiles.nth(5)).toContainText("195 min");
+  await expect(tiles.nth(6)).toContainText("270 min");
   await expect(tiles.nth(0)).toContainText("Off");
-  await expect(tiles.nth(6)).toContainText("Off");
 });
 
 test("AC-02: opening fixture B's PDF builds the schedule", async ({ page }) => {

@@ -199,10 +199,11 @@ describe("printed schedule: the PDF", () => {
     const models = outcome.plan.services.map((state) => buildQuickModel(state, MO_2026_07));
     const sheets = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
     const pdf = await readBack(await renderSchedulePdf(sheets, FONTS, NOW));
-    expect(pdf.pages).toBe(4);
+    // The week, a page for each of the three services, then the nurse visits' own page (Nov 17, 2026).
+    expect(pdf.pages).toBe(5);
     for (const text of [
       "SAMPLE PARTICIPANT F", "Services", "PC - Agency, PC - CDS, HC", "Feb 1, 2026 to Oct 31, 2026", "Nurse visits",
-      "May 2026 and Aug 2026", "Dietary", "Essential transportation", "Wash Windows/Blinds", "Ready to use",
+      "2 authorizations, May to Aug 2026", "Participant copy", "This care plan ends Oct 31, 2026", "Dietary", "Essential transportation", "Wash Windows/Blinds", "3 to review", "No clock times yet, so overlaps can't be checked",
       "226 units in Oct · PA 20260000000011", "14 h 10 min", "Day total", "No service", "Service days this week",
       "Each service's own page has its visit lengths for EVV.",
     ]) {
@@ -211,6 +212,16 @@ describe("printed schedule: the PDF", () => {
     expect(pdf.text).not.toContain("Units by month");
     expect(pdf.text).not.toContain("Visit length");
     expectTidy(pdf.items);
+    // The last page: each nurse visit authorization once, with its tasks, months and dates.
+    const all = await readBackAll(await renderSchedulePdf(sheets, FONTS, NOW));
+    expect(all.pages).toBe(5);
+    const nurse = all.text.slice(all.text.lastIndexOf("Participant copy"));
+    for (const text of [
+      "Participant copy", "Nurse visits", "GHE · PA 20260000000013", "GHE · PA 20260000000015", "T1001 · TEST HOME CARE LLC",
+      "General Health Evaluation 1 a month", "Visits authorized", "Dates placed", "May 2026", "Aug 2026",
+    ]) {
+      expect(nurse).toContain(text);
+    }
   });
 
   it("APP-SPEC 5.8: the plan page warns when the week has more service days than planned", async () => {
@@ -222,7 +233,10 @@ describe("printed schedule: the PDF", () => {
     const sheets = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
     if (!Array.isArray(sheets)) throw new Error("Expected a plan of several services");
     const plan = sheets[0]!;
-    expect(plan.warning).toBe("This week has more service days than the plan's 5 days a week. Check each service's care days.");
+    expect(plan.warning).toBe(
+      "This week has more service days than the plan's 5 days a week. Check each service's care days. This care plan ends " +
+        "Oct 31, 2026, 10 days after this schedule was made. Care after that date needs a new care plan; check with the care manager.",
+    );
     const pdf = await readBack(await renderSchedulePdf(sheets, FONTS, NOW));
     expect(pdf.text).toContain("This week has more service days than the plan's 5 days a week");
     expectTidy(pdf.items);

@@ -83,6 +83,7 @@ function isStoredState(value: unknown): value is StoredState {
     isStringOrNull(value.provider) &&
     isStringOrNull(value.pa) &&
     isStringOrNull(value.serviceLabel) &&
+    (value.fusionCode === undefined || (typeof value.fusionCode === "string" && /^[A-Z]\d{4}[A-Z0-9 ]{0,8}$/.test(value.fusionCode))) &&
     (value.id === undefined || typeof value.id === "string") &&
     (value.sourceRef === undefined || value.sourceRef === null || isSourceRef(value.sourceRef)) &&
     Array.isArray(value.tasks) &&

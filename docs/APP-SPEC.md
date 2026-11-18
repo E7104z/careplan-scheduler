@@ -407,11 +407,15 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
   landscape (792 × 612 pt, 30 pt margins), in Public Sans with the light theme's colors from
   tokens.css. `scheduleSheet.ts` works out what it says from the model and the screen's copy;
   `schedulePdf.ts` lays it out. It holds:
-  - Heading: the logo and "CarePlan Scheduler", "Weekly care schedule, Sunday to Saturday"; the
-    participant's name ("Example care plan" for the example; lines to write the name and DCN on
-    for a plan built by hand); the status as a pill ("Ready to use" or "N things to fix"); the
-    facts DCN, Service ("PC - CDS · T1019U2"), Plan, Schedule starts (when later than the plan),
-    Fusion units, Provider and Prior authorization.
+  - Heading: the logo and "CarePlan Scheduler", "Weekly care schedule, Sunday to Saturday ·
+    Participant copy" (or "· Agency copy", the copy with projected accruals, 5.10, so a reader
+    never has to guess which printout it is); the participant's name ("Example care plan" for
+    the example; lines to write the name and DCN on for a plan built by hand); the status as a
+    pill ("Ready to use", "N to review" in the review colors on the whole plan's page, or "N
+    things to fix"); the facts DCN, Service ("PC - CDS · T1019U2", with "(Fusion prints T1019)"
+    when Fusion's care plan report prints another code: APC is T1019TF in Appendix 1 and T1019
+    in Fusion), Plan, Schedule covers ("Nov 1 to Nov 30, 2026", when the schedule starts later
+    than the plan), Fusion units, Provider and Prior authorization.
   - The week, Sunday to Saturday: a row per task in care plan order with "45 min · 5 days a
     week" (beside the name when a long plan needs the room), then essential transportation on
     its usual day ("Set aside, not a task"); each day's minutes, changed minutes underlined,
@@ -423,7 +427,15 @@ Recompute on every change with `useMemo` (≤ 20 ms for an 11-month plan).
     "Reviewed with the participant" (the date, or a line to write it on) and a key.
   - Below: Units by month (month, authorized, scheduled, left, cut at month end, and "Starting"
     with the first date cut when a month is cut), a line saying where "authorized" comes from,
-    and, when months are cut, the INFO 09-25-02 note.
+    and, when months are cut, the INFO 09-25-02 note. When a month has a unit or more left and
+    nothing cut, the line says so in words (Nov 17, 2026 review: "Left 12" read as 10% under-
+    delivery): "Left is units authorized but not scheduled, not missed care: Nov 2026 has 17
+    care days, each with every task's minutes, and all 114 units would take about 19." When the
+    schedule's first month began before the day it was made: "Each month's figures count all of
+    its days, including the 16 before this schedule was made on Nov 17, 2026." A plan of one
+    service that ends within 30 days says so in the warn color: "This care plan ends Nov 30,
+    2026, 13 days after this schedule was made. Care after that date needs a new care plan;
+    check with the care manager."
   - Footer: "Checked with CarePlan Scheduler under rule pack mo-2026-07 on <date>" and "Set each
     EVV visit window to its visit length."
   - It stays one page up to the most a week can hold (25 CDS tasks and transportation, 12
@@ -577,8 +589,9 @@ service on its own, but the participant lives one week. So:
   (5.7), so the medically related household tasks stay under agency personal care and never
   count against homemaker.
 - **Care days across services (superseded Oct 31, 2026 review):** every service combines on one
-  shared set of care days, sized to the largest days-per-week across the client's services, the
-  first days from Monday (IMPORT-SPEC 4). Each service takes its own days from that set — a
+  shared set of care days, sized to the largest days-per-week across the client's services,
+  spread so the fewest days in a row go without care, weekdays first (IMPORT-SPEC 4, Nov 17,
+  2026: 4 days are Monday, Wednesday, Friday and Saturday, not Monday to Thursday). Each service takes its own days from that set — a
   service with the full count takes them all, one with fewer days takes the lightest subset, and
   transportation takes one weekday from it. All of it is editable in that service.
 - **Whole care plan view** (the default with several services): tabs "Whole care plan" and one
@@ -595,9 +608,24 @@ service on its own, but the participant lives one week. So:
   click back.
 - **Print**: one service prints its one page (5.4). Several print the whole week first (every
   service's rows, each naming its service; "Day total", since a day there holds several visits;
-  each service's units and PA; the visits' months), then each service with anything scheduled
-  on its own page, with its months, checks and visit lengths for EVV. Every printout, one
-  service or several, names the nurse visits by month and each kept authorization (IMP-19).
+  each service's units and PA; "Nurse visits": "2 authorizations, Jun to Nov 2026"), then each
+  service with anything scheduled on its own page, with its months, checks and visit lengths
+  for EVV. Every printout, one service or several, names each kept authorization (IMP-19) and
+  each nurse visit authorization once, by its PA, with its tasks ("RN, PA 20261520045221: Eval
+  APC Plan 2 a month and Train APC 1 a month, 2 visits a month authorized"), never once per
+  month; and ends with a **Nurse visits page** (Nov 17, 2026 review): each authorization's
+  label and PA, code and provider, its tasks with their visits a month, a table of every
+  authorized month (visits authorized, dates placed, "–" for none), and, when its tasks add up
+  to another number than Fusion authorized, "The tasks add up to 3 visits a month (Eval APC
+  Plan 2, Train APC 1), but Fusion authorized 2 a month. Ask the care manager which is right;
+  the plan keeps Fusion's 2." The whole plan's Checks are each service's, then the Visit checks
+  (planCheckLines: "No clock times yet, so overlaps can't be checked" with "APC and PC -
+  Agency: add a start time for each care day of each service, …"), then one "Nurse visit tasks
+  don't add up to the authorization" card per such authorization. Its status is "N things to
+  fix" when a visit rule blocks, "N to review" ("No service breaks a rule we check. 2 items
+  need review: see Checks.") when anything needs review, else "Ready to use"; before Nov 17,
+  2026 it said "Ready to use" with the visit checks left off the page. The whole plan's page
+  also carries the end-of-plan notice (5.4).
 - **Storage**: the whole plan under `cps.quick.v3` without any `identity` (5.6); a single
   service saved under `cps.quick.v2` by the version before still opens.
 - **Nurse visits on dates** (Coverage Phase 3, Nov 13, 2026; `NurseVisits.tsx`, `planEvents.ts`).
@@ -1269,7 +1297,7 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 
 | ID | Check | How |
 |---|---|---|
-| AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon..Fri `290, 285, 275, 270, 195`, "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
+| AC-01 | First visit to `/quick`: the import panel, and the 5-day example built beneath it: day totals Mon, Tue, Thu, Fri, Sat `290, 285, 275, 195, 270` (Mon..Fri `290, 285, 275, 270, 195` before Nov 17, 2026), "Every task read. Our total from these tasks matches Fusion's 466 units a month.", and "Ready to use". | Playwright |
 | AC-02 | On Nov 20, 2025 (before B's plan starts), opening fixture B's PDF (`fusion-table-with-banner.pdf`) builds the schedule: read summary "SAMPLE PARTICIPANT B", "Read from Fusion · DCN 10000002", the 455 match line for a 30-day month, import panel hidden, "Ready to use" and "Follows every rule we check, for all 11 months.", and the chip "Fusion, for a 31-day month: 469 units − 23 transportation" (IMP-10). | Playwright |
 | AC-03 | B with Fusion's figure at 440, in December 2025: "the schedule stops 320 minutes early, starting Dec 30, 2025", the line "Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Wash Dishes 15 min, Dressing/Grooming 5 min", and the Dec 31 cell shows "−195 min". | Playwright |
 | AC-04 | With B: changing Monday's Bathing to 60 is refused: "Not changed. That would put Bathing over its 93 units in October 2026." and "Bathing can't have more than 45 minutes on Monday."; the week is unchanged. | Playwright |
@@ -1316,7 +1344,8 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
 - Live figure beside the headline (stacks below on phones): the example plan's Day total row
   with unit tiles and "Ready to use", computed by the engine on the page (no screenshot).
   This is the page's one memorable element. The example plan is fixture A built by the Quick
-  Schedule model (Mon..Fri 290, 285, 275, 270, 195; Sunday and Saturday "Off"); the status is
+  Schedule model (Mon 290, Tue 285, Thu 275, Fri 195, Sat 270; Sunday and Wednesday "Off",
+  the five spread care days of IMPORT-SPEC 4); the status is
   that model's status line, so it says "Ready to use" only because the checks pass. Caption:
   "Day totals for the example care plan, built and checked on this page."
 - Four short sections, each a heading + 2 sentences + one concrete figure. Figures 1, 2
@@ -1331,8 +1360,8 @@ Playwright runs with the clock fixed at 2026-10-21 12:00 America/Chicago
      figure: the TC-01 week `70, 90, 90, 90, 90, 90, 70`.
   3. "Can't be edited out of compliance" — a change that breaks a rule is refused with the
      limit; figure: the refusal box for the 5-day example (starting this month), in its first
-     month where Bathing has no room left (23 weekdays), e.g. on Oct 21, 2026: "Not changed. That
-     would put Bathing over its 69 units in December 2026. Bathing can't have more than 45 minutes on Tuesday. To add time here, take
+     month where Bathing has no room left (23 care days), e.g. on Oct 21, 2026: "Not changed. That
+     would put Bathing over its 69 units in October 2026. Bathing can't have more than 45 minutes on Tuesday. To add time here, take
      it from another day first."
   4. "Every check names its source" — figure: one card with its source line.
 - For state reviewers: one paragraph and a link "See every rule and its source" → `/rules`.

@@ -12,7 +12,7 @@ import {
   accrualSentence,
   accrualUnitText,
 } from "./accrual";
-import type { ScheduleSheet, SheetAccrual, SheetCell, SheetMonth, SheetRow } from "./scheduleSheet";
+import type { ScheduleSheet, SheetAccrual, SheetCell, SheetMonth, SheetNurseVisit, SheetRow } from "./scheduleSheet";
 
 /**
  * APP-SPEC 5.4 Print: the schedule as one US Letter landscape page, drawn as a PDF so it comes out
@@ -236,18 +236,20 @@ function drawLogo(p: Painter, x: number, top: number, size: number): void {
 function drawHeader(p: Painter, sheet: ScheduleSheet): number {
   drawLogo(p, LEFT, MARGIN, 12);
   p.middle("CarePlan Scheduler", LEFT + 17, MARGIN + 6, { weight: "bold", size: 8.5, color: p.color.ink });
-  p.middle("Weekly care schedule, Sunday to Saturday", RIGHT, MARGIN + 6, {
+  // Which printout this is (ACC-06), so a reader never has to guess.
+  p.middle(`Weekly care schedule, Sunday to Saturday · ${sheet.copy}`, RIGHT, MARGIN + 6, {
     weight: "semibold", size: 8.5, color: p.color.brand, align: "right",
   });
 
-  // The status pill: "Ready to use" in the brand's tint, or what to fix in red.
+  // The status pill: "Ready to use" in the brand's tint, what needs review in amber, or what to fix in red.
   const status = sheet.status;
   const pillSize = 9;
   const pillWidth = p.width(status.title, "bold", pillSize) + 34;
   const nameTop = MARGIN + 22;
   const pillTop = nameTop + 1;
-  p.box(RIGHT - pillWidth, pillTop, pillWidth, 20, { fill: status.blocked ? p.color["block-bg"] : p.color["brand-tint"], radius: 10 });
-  const tone = status.blocked ? p.color.block : p.color.brand;
+  const fill = status.blocked ? p.color["block-bg"] : status.review ? p.color["review-bg"] : p.color["brand-tint"];
+  p.box(RIGHT - pillWidth, pillTop, pillWidth, 20, { fill, radius: 10 });
+  const tone = status.blocked ? p.color.block : status.review ? p.color.review : p.color.brand;
   p.mark(status.blocked ? CROSS_MARK : CHECK_MARK, RIGHT - pillWidth + 15, pillTop + 10, 1.05, tone);
   p.middle(status.title, RIGHT - pillWidth + 25, pillTop + 10, { weight: "bold", size: pillSize, color: tone });
 
@@ -626,7 +628,7 @@ function drawAccrualHeader(p: Painter, sheet: ScheduleSheet): number {
   drawLogo(p, LEFT, MARGIN, 12);
   p.middle("CarePlan Scheduler", LEFT + 17, MARGIN + 6, { weight: "bold", size: 8.5, color: p.color.ink });
   const service = sheet.facts.find((fact) => fact.label === "Service")?.value ?? sheet.name ?? "Service";
-  p.middle(service, RIGHT, MARGIN + 6, { weight: "semibold", size: 8.5, color: p.color.brand, align: "right" });
+  p.middle(`${service} · ${sheet.copy}`, RIGHT, MARGIN + 6, { weight: "semibold", size: 8.5, color: p.color.brand, align: "right" });
 
   let y = MARGIN + 28;
   p.text(ACCRUAL_SECTION_TITLE, LEFT, y, { weight: "bold", size: 14, color: p.color.ink });
@@ -690,6 +692,104 @@ function drawAccrualPages(doc: PDFDocument, fonts: Fonts, palette: Palette, shee
   }
 }
 
+/** A page heading for the pages after the week: the logo, the copy, and the title. */
+function drawPageHeader(p: Painter, sheet: ScheduleSheet, title: string, note: string): number {
+  drawLogo(p, LEFT, MARGIN, 12);
+  p.middle("CarePlan Scheduler", LEFT + 17, MARGIN + 6, { weight: "bold", size: 8.5, color: p.color.ink });
+  p.middle(sheet.copy, RIGHT, MARGIN + 6, { weight: "semibold", size: 8.5, color: p.color.brand, align: "right" });
+  let y = MARGIN + 28;
+  p.text(title, LEFT, y, { weight: "bold", size: 14, color: p.color.ink });
+  if (sheet.name) p.text(sheet.name, RIGHT, y + 3, { weight: "semibold", size: 9, color: p.color["ink-2"], align: "right" });
+  y += 20;
+  for (const line of p.wrap(note, "regular", 7.5, RIGHT - LEFT)) {
+    p.text(line, LEFT, y, { size: 7.5, color: p.color["ink-3"] });
+    y += 9.5;
+  }
+  return y + 6;
+}
+
+const NURSE_NOTE =
+  "Nurse visits are authorized by month and aren't part of the weekly schedule. Each authorization is listed once, " +
+  "with its tasks and the visits Fusion authorized each month. Pick each visit's date in its own month.";
+
+/** How tall one authorization's block is, so a block never splits across a page. */
+function nurseBlockHeight(p: Painter, visit: SheetNurseVisit): number {
+  const width = RIGHT - LEFT;
+  let height = 13 + 10;
+  height += p.wrap(visit.tasks, "regular", 8, width).length * 10;
+  height += 3 * MONTH_ROW + 6;
+  if (visit.review) height += p.wrap(visit.review, "semibold", 7.5, width).length * 9.5;
+  return height + 12;
+}
+
+/** One nurse visit authorization: who, its tasks, each month's visits and dates, and any review. */
+function drawNurseBlock(p: Painter, visit: SheetNurseVisit, top: number): number {
+  let y = top;
+  p.text(visit.title, LEFT, y, { weight: "bold", size: 10, color: p.color.brand });
+  y += 13;
+  p.text(visit.detail, LEFT, y, { size: 7.5, color: p.color["ink-3"] });
+  y += 10;
+  for (const line of p.wrap(visit.tasks, "regular", 8, RIGHT - LEFT)) {
+    p.text(line, LEFT, y, { size: 8, color: p.color.ink });
+    y += 10;
+  }
+  // Month, Authorized, Dates placed: one column a month.
+  const labelWidth = 84;
+  const columnWidth = Math.min(64, (RIGHT - LEFT - labelWidth) / Math.max(visit.months.length, 1));
+  const tableWidth = labelWidth + columnWidth * visit.months.length;
+  const lines: [string, (month: SheetNurseVisit["months"][number]) => string][] = [
+    ["Month", (month) => month.label],
+    ["Visits authorized", (month) => month.authorized],
+    ["Dates placed", (month) => month.placed],
+  ];
+  p.box(LEFT, y, tableWidth, MONTH_ROW, { fill: p.color.sunk, radius: 2 });
+  lines.forEach(([label, value], index) => {
+    const middle = y + index * MONTH_ROW + MONTH_ROW / 2;
+    const first = index === 0;
+    p.middle(label, LEFT + 6, middle, { weight: "semibold", size: 7, color: first ? p.color.ink : p.color["ink-2"] });
+    visit.months.forEach((month, at) => {
+      const text = value(month);
+      const weight = first ? "semibold" : "regular";
+      p.middle(text, LEFT + labelWidth + columnWidth * at + columnWidth / 2, middle, {
+        weight, size: p.sizeToFit(text, weight, 7, 5.5, columnWidth - 4), color: first ? p.color.ink : p.color["ink-2"], align: "center",
+      });
+    });
+    if (!first) p.line(LEFT, y + index * MONTH_ROW, LEFT + tableWidth, y + index * MONTH_ROW, p.color.line, 0.4);
+  });
+  y += lines.length * MONTH_ROW + 6;
+  if (visit.review) {
+    for (const line of p.wrap(visit.review, "semibold", 7.5, RIGHT - LEFT)) {
+      p.text(line, LEFT, y, { weight: "semibold", size: 7.5, color: p.color.review });
+      y += 9.5;
+    }
+  }
+  return y + 12;
+}
+
+/** The Nurse visits page at the end (Nov 17, 2026 review), when the plan has any. */
+function drawNursePages(doc: PDFDocument, fonts: Fonts, palette: Palette, sheet: ScheduleSheet): void {
+  const visits = sheet.nurseVisits ?? [];
+  if (visits.length === 0) return;
+  const measure = new Painter(null, fonts, palette);
+  const bottom = FOOTER_TOP - 12;
+  let painter = new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette);
+  let y = drawPageHeader(painter, sheet, "Nurse visits", NURSE_NOTE);
+  drawFooterText(painter, sheet.footer);
+  for (const visit of visits) {
+    if (y + nurseBlockHeight(measure, visit) > bottom) {
+      painter = new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette);
+      y = drawPageHeader(painter, sheet, "Nurse visits", NURSE_NOTE);
+      drawFooterText(painter, sheet.footer);
+    }
+    y = drawNurseBlock(painter, visit, y);
+  }
+}
+
+function drawFooterText(p: Painter, footer: string): void {
+  p.line(LEFT, FOOTER_TOP - 5, RIGHT, FOOTER_TOP - 5, p.color.line, 0.5);
+  p.text(footer, LEFT, FOOTER_TOP, { size: 6.5, color: p.color["ink-3"] });
+}
+
 /** Lays the sheet out on the page (or, without a page, only measures). */
 function layOut(p: Painter, sheet: ScheduleSheet): void {
   const headerBottom = drawHeader(p, sheet);
@@ -711,10 +811,13 @@ export async function renderSchedulePdf(sheets: ScheduleSheet | ScheduleSheet[],
     bold: await doc.embedFont(files.bold, { subset: true }),
   };
   const palette = printPalette();
-  for (const sheet of Array.isArray(sheets) ? sheets : [sheets]) {
+  const all = Array.isArray(sheets) ? sheets : [sheets];
+  for (const sheet of all) {
     layOut(new Painter(doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]), fonts, palette), sheet);
     drawAccrualPages(doc, fonts, palette, sheet);
   }
+  // The nurse visits are the plan's, so their page comes once, at the end.
+  if (all[0]) drawNursePages(doc, fonts, palette, all[0]);
 
   // No name in the title: a PDF viewer shows it in its tab and window list.
   doc.setTitle("Weekly care schedule", { showInWindowTitleBar: true });
