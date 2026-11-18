@@ -18,11 +18,15 @@ export interface ServiceHeader {
   source: SourceRef;
 }
 
+// A group row's cells are separated by pipes on the clipboard, tabs in a screen PDF's text, or 2+ spaces.
+const SEP = "(?:[ \\t]*\\|[ \\t]*|\\t+| {2,})";
+
 // "PC - CDS | PROVIDER | 5555550100 | 12/01/2025 - 10/31/2026 | 455 units | $2,436.53 | PA: 2025..."
 const HEADER_RE = new RegExp(
-  "([A-Z]{2,6}\\s*-\\s*[A-Z][A-Za-z]*(?:[ ][A-Z][A-Za-z]*)*)\\s*\\|\\s*([^|\\n]*?)\\s*\\|\\s*(?:(\\d{10})\\s*\\|\\s*)?" +
-    MDY + "\\s*-\\s*" + MDY +
-    "\\s*\\|\\s*(\\d{1,4})\\s*units\\s*(?:\\|\\s*\\$\\s*([\\d,]+\\.\\d{2})\\s*)?(?:\\|\\s*PA:\\s*(\\d+))?",
+  "([A-Z]{2,6}\\s*-\\s*[A-Z][A-Za-z]*(?:[ ][A-Z][A-Za-z]*)*)" + SEP +
+    "([^|\\t\\n]*?)" + SEP + "(?:(\\d{10})" + SEP + ")?" +
+    MDY + "\\s*-\\s*" + MDY + SEP +
+    "(\\d{1,4})\\s*units" + "(?:" + SEP + "\\$\\s*([\\d,]+\\.[\\d]{2}))?" + "(?:" + SEP + "PA:\\s*(\\d+))?",
   "g",
 );
 

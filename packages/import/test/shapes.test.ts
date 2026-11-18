@@ -225,6 +225,29 @@ describe("IMP-04 / IMP-05 group rows and the end of the table", () => {
     ]);
   });
 
+  it("reads a group row whose cells are separated by tabs or 2+ spaces (Fusion screen PDF)", () => {
+    for (const sep of ["\t", "  "]) {
+      const text = [
+        `PC - CDS${sep}TEST HOME CARE LLC${sep}5555550100${sep}04/01/2026 - 01/31/2027${sep}95 units${sep}$1,234.56${sep}PA: 20260000000000`,
+        `95 units${sep}Change Linens${sep}10${sep}2`,
+      ].join("\n");
+      const result = parseFusionText(text, PACK);
+      expect(result.services[0]).toMatchObject({
+        label: "PC - CDS",
+        provider: "TEST HOME CARE LLC",
+        phone: "5555550100",
+        start: "2026-04-01",
+        end: "2027-01-31",
+        units: 95,
+        cost: "1234.56",
+        pa: "20260000000000",
+      });
+      expect(tupleOf(result.services[0]!.tasks)).toEqual([["Change Linens", 10, 2]]);
+      expect(result.services[0]!.unread).toEqual([]);
+      expect(result.issues).toEqual([]);
+    }
+  });
+
   it("cuts the last row at the text that follows the table", () => {
     const tails = ["Showing 1 to 1 of 1 entries", "Previous", "Next", "Search:", "Export ...", "Total Units Task Type"];
     // In the single-space and run-together shapes, tail text left on the row makes it unreadable.
