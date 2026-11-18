@@ -11,8 +11,8 @@ import { daysInMonth, type RulePack, type ServiceCode } from "@careplan/engine";
 import { niceDate } from "../../lib/format";
 import { dayLoad } from "../quick-schedule/carePlan.js";
 import { newId } from "../quick-schedule/ids.js";
-import { localMonth, MONDAY_FIRST } from "../quick-schedule/model.js";
-import { fromFusion, serviceDates } from "./fromFusion.js";
+import { localMonth } from "../quick-schedule/model.js";
+import { fromFusion, serviceDates, SPREAD_DAYS } from "./fromFusion.js";
 import type { CarePlan, Plan, PlanOther, PlanVisit, QuickState } from "../quick-schedule/types.js";
 
 /** IMPORT-SPEC 3.1: issues that stop a plan from building until the person resolves them. */
@@ -109,6 +109,7 @@ function planVisit(visit: ImportedVisit, pack: RulePack): PlanVisit {
   return {
     id: newId(), label: visit.label, serviceCode: visit.serviceCode, name, provider: visit.provider,
     start: visit.start, end: visit.end, units: visit.units, pa: visit.pa,
+    tasks: visit.tasks.map((task) => ({ ...task })),
   };
 }
 
@@ -197,14 +198,15 @@ export function next(flow: ImportFlow, pack: RulePack, today: Date): ImportOutco
     (issue) => !SERVICE_NOTES.includes(issue.code) && (!HARD_STOPS.includes(issue.code) || issue.code === "incomplete"),
   );
   // APP-SPEC 5.8 (superseded Oct 31, 2026): the client's services combine on one shared set of
-  // care days, sized to the largest days-per-week among the services being scheduled. Each service
+  // care days, sized to the largest days-per-week among the services being scheduled, spread
+  // across the week (Nov 17, 2026 review). Each service
   // then takes its own days from that set, so none spreads onto its own days of the week.
   const scheduled = parsed.services.filter((service) => !ended(service) && !keptByChoice(service));
   const sharedSize = scheduled.reduce((max, service) => {
     const daysPerWeek = service.tasks.reduce((largest, task) => Math.max(largest, task.daysPerWeek), 1);
     return Math.max(max, daysPerWeek);
   }, 1);
-  const sharedDays = MONDAY_FIRST.slice(0, sharedSize);
+  const sharedDays = [...SPREAD_DAYS[Math.min(sharedSize, 7)]!];
   parsed.services.forEach((service, index) => {
     if (ended(service)) {
       notes.push({

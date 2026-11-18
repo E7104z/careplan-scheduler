@@ -53,6 +53,39 @@ function rowName(line: string): string {
   return (line.split(/\t| {2,}/)[0] ?? "").replace(/\s+\d.*$/, "").trim();
 }
 
+/**
+ * A nurse visit's task row: its name and its visits a month. The row has only #Units/Month
+ * filled ("Eval APC Plan⇥2⇥N/A"), so its one number is that; anything else is null.
+ */
+function visitTask(line: string): { name: string; unitsPerMonth: number | null } {
+  const numbers = line.replace(/\s+N\/A\s*$/, "").slice(rowName(line).length).match(/\d+/g) ?? [];
+  return { name: rowName(line), unitsPerMonth: numbers.length === 1 ? Number(numbers[0]) : null };
+}
+
+/**
+ * When a nurse visit authorization's tasks add up to a different number of visits a month than
+ * Fusion authorized, a note asks for it to be checked; the plan keeps Fusion's figure. A note
+ * only when every task has a number: a row without one can't be added up.
+ */
+function visitUnitsIssue(
+  label: string | null,
+  pa: string | null,
+  tasks: { name: string; unitsPerMonth: number | null }[],
+  authorized: number,
+): ImportIssue | null {
+  if (tasks.length === 0 || tasks.some((task) => task.unitsPerMonth === null)) return null;
+  const total = tasks.reduce((sum, task) => sum + task.unitsPerMonth!, 0);
+  if (total === authorized) return null;
+  const who = `${label ?? "A nurse visit"}${pa ? ` (PA ${pa})` : ""}`;
+  const parts = tasks.map((task) => `${task.name} ${task.unitsPerMonth}`).join(", ");
+  return {
+    level: "warn", code: "visit-units", label: label ?? undefined,
+    message:
+      `${who}: its tasks add up to ${total} ${total === 1 ? "visit" : "visits"} a month (${parts}), but Fusion authorized ` +
+      `${authorized} a month. Ask the care manager which is right; the plan keeps Fusion's ${authorized}.`,
+  };
+}
+
 /** The most common value, the first seen on a tie. */
 function mostCommon(values: number[]): number {
   let best = values[0] ?? 0;
@@ -185,25 +218,25 @@ export function readReport(text: string, pack: RulePack, page = 1): ResultParts 
   const visits: ImportedVisit[] = [];
   const others: ImportedOther[] = [];
   const blocks = readBlocks(text);
+  // Each nurse visit label's task names, across its authorizations, for one note per label.
+  const visitLabels = new Map<string, string[]>();
   for (const block of blocks) {
     const source: SourceRef = { page, line: block.line };
     const code = block.months[0]?.code ?? null;
     const label = block.label ?? code;
     const visitService = code ? pack.services.find((service) => service.code === code && service.unit === "visit") : undefined;
     if (visitService) {
-      const what = block.rows[0] ? rowName(block.rows[0]) : "";
+      const tasks = block.rows.map(visitTask).filter((task) => task.name !== "");
+      const what = tasks.map((task) => task.name).join(", ");
       for (const month of block.months) {
         visits.push({
-          label, serviceCode: visitService.code, name: what || null, provider: block.provider,
+          label, serviceCode: visitService.code, name: what || null, tasks, provider: block.provider,
           start: month.start, end: month.end, units: month.units, pa: block.pa, source,
         });
       }
-      if (!skipped.some((note) => note.label === label)) {
-        skipped.push({
-          level: "warn", code: "not-scheduled", label: label ?? undefined,
-          message: `${label}${what ? ` (${what})` : ""} is a nurse visit, so it's listed by month, not in the week.`,
-        });
-      }
+      const mismatch = visitUnitsIssue(label, block.pa, tasks, mostCommon(block.months.map((month) => month.units)));
+      if (mismatch) skipped.push(mismatch);
+      visitLabels.set(label ?? "", [...new Set([...(visitLabels.get(label ?? "") ?? []), ...tasks.map((task) => task.name)])]);
       continue;
     }
     const monthly = block.months.map(({ start, end, units }) => ({ start, end, units }));
@@ -233,7 +266,15 @@ export function readReport(text: string, pack: RulePack, page = 1): ResultParts 
       source,
     }, rows, duplicates);
     service.serviceCode ??= codeFallback(block, blocks, pack);
+    if (code) service.procedureCode = code;
     services.push(service);
+  }
+
+  for (const [label, names] of visitLabels) {
+    skipped.push({
+      level: "warn", code: "not-scheduled", label: label || undefined,
+      message: `${label}${names.length > 0 ? ` (${names.join(", ")})` : ""} is a nurse visit, so it's listed by month, not in the week.`,
+    });
   }
 
   const participantRef: SourceRef | null = participantMatch

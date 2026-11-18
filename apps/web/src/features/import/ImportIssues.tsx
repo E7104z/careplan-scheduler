@@ -64,15 +64,33 @@ function PlanDates({ onChoose }: { onChoose: (choice: ImportChoice) => void }) {
 
 /** IMP-11: a Fusion service label we haven't seen; the person says which service it is. */
 function ServiceChoice({ label, onChoose }: { label: string; onChoose: (choice: ImportChoice) => void }) {
-  const [code, setCode] = useState<ServiceCode>("T1019U2");
+  // No service is chosen for the person: a default once put an unknown APC label under CDS rules.
+  const [code, setCode] = useState<ServiceCode | "">("");
+  const [error, setError] = useState<string | undefined>();
+  const use = () => {
+    if (code === "") {
+      setError("Choose the service first.");
+      return;
+    }
+    onChoose({ kind: "serviceCode", label, code });
+  };
   return (
     <div className="flex flex-wrap items-end gap-2.5">
-      <Field label="Service" className="w-[320px] max-w-full">
-        <Select value={code} onChange={(event) => setCode(event.target.value as ServiceCode)}>
+      <Field label="Service" className="w-[320px] max-w-full" error={error}>
+        <Select
+          value={code}
+          onChange={(event) => {
+            setCode(event.target.value as ServiceCode | "");
+            setError(undefined);
+          }}
+        >
+          <option value="" disabled>
+            Choose a service
+          </option>
           <ServiceOptions pack={MO_2026_07} />
         </Select>
       </Field>
-      <Button size="sm" onClick={() => onChoose({ kind: "serviceCode", label, code })}>
+      <Button size="sm" onClick={use}>
         Use this service
       </Button>
       <Button variant="secondary" size="sm" onClick={() => onChoose({ kind: "keep", label })}>

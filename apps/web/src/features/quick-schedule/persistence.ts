@@ -83,6 +83,7 @@ function isStoredState(value: unknown): value is StoredState {
     isStringOrNull(value.provider) &&
     isStringOrNull(value.pa) &&
     isStringOrNull(value.serviceLabel) &&
+    (value.fusionCode === undefined || (typeof value.fusionCode === "string" && /^[A-Z]\d{4}[A-Z0-9 ]{0,8}$/.test(value.fusionCode))) &&
     (value.id === undefined || typeof value.id === "string") &&
     (value.sourceRef === undefined || value.sourceRef === null || isSourceRef(value.sourceRef)) &&
     Array.isArray(value.tasks) &&
@@ -145,8 +146,14 @@ function isVisit(value: unknown): boolean {
     ISO_DATE.test(value.end) &&
     isInt(value.units, 0) &&
     isStringOrNull(value.pa) &&
+    (value.tasks === undefined || (Array.isArray(value.tasks) && value.tasks.every(isVisitTask))) &&
     authorizationExtrasValid(value)
   );
+}
+
+/** A nurse visit's task row: a name and its visits a month (or null). */
+function isVisitTask(value: unknown): boolean {
+  return isRecord(value) && typeof value.name === "string" && (value.unitsPerMonth === null || isInt(value.unitsPerMonth, 0));
 }
 
 const isDateOrNull = (value: unknown): boolean => value === null || (typeof value === "string" && ISO_DATE.test(value));

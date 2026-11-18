@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MO_2026_07 } from "@careplan/engine";
 import { parseFusionText } from "@careplan/import";
-import { fromFusion } from "../../src/features/import/fromFusion";
+import { fromFusion, longestWithoutCare, SPREAD_DAYS, spreadSubset } from "../../src/features/import/fromFusion";
 import { buildQuickModel, combinedRespiteFigure, monthFigures } from "../../src/features/quick-schedule/model";
 import { manualState, reduce } from "../../src/features/quick-schedule/state";
 import type { QuickState } from "../../src/features/quick-schedule/types";
@@ -90,14 +90,32 @@ describe("Quick Schedule model", () => {
     expect(state.viewMonth).toBe("2026-10");
   });
 
-  it("IMP-T18: A has Mon–Fri care days, Friday transport, and the expected day totals", () => {
+  // Nov 17, 2026 review: Mon–Thu left Friday to Sunday without bowel program, catheter care or
+  // toileting. Care days now leave the participant the fewest days in a row without care.
+  it("spreads the care days so no more days in a row go without care than the count needs", () => {
+    expect(SPREAD_DAYS).toEqual({
+      1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [1, 3, 5, 6], 5: [1, 2, 4, 5, 6], 6: [1, 2, 3, 4, 5, 6], 7: [1, 2, 3, 4, 5, 6, 0],
+    });
+    expect(longestWithoutCare([1, 3, 5, 6])).toBe(1);
+    expect(longestWithoutCare([1, 2, 3, 4])).toBe(3);
+    expect(longestWithoutCare([1, 2, 4, 5, 6])).toBe(1);
+    expect(longestWithoutCare([1, 4])).toBe(3);
+    // A service with fewer days takes the spread-out subset of the shared days, then the lightest.
+    expect(spreadSubset([1, 3, 5, 6], 3, [])).toEqual([1, 3, 5]);
+    expect(spreadSubset([1, 3, 5, 6], 2, [])).toEqual([1, 5]);
+    expect(spreadSubset([1, 2, 3, 4, 5], 1, [0, 50, 10, 0, 0, 20, 0])).toEqual([3]);
+  });
+
+  // Nov 17, 2026: five days are spread (Monday, Tuesday, Thursday, Friday, Saturday), so no two
+  // days in a row go without care; the same 1,315 minutes a week.
+  it("IMP-T18: A has spread care days, Friday transport, and the expected day totals", () => {
     const state = fromFusion(parseFusionText(fixtureA, MO_2026_07), 0, TODAY);
-    expect(state.activeDays).toEqual([false, true, true, true, true, true, false]);
+    expect(state.activeDays).toEqual([false, true, true, false, true, true, true]);
     expect(state.transport.day).toBe(5);
 
     const model = buildQuickModel(state, MO_2026_07);
     expect(model.allowance?.weeklyMinutes).toBe(150);
-    expect(dayTotals(model)).toEqual([0, 290, 285, 275, 270, 195, 0]);
+    expect(dayTotals(model)).toEqual([0, 290, 285, 0, 275, 195, 270]);
     // The one thing to review is CDS-04 (CP4-7): A has CDS transportation, and NEMT trips can't be CDS time.
     expect(model.results.filter((r) => r.severity === "BLOCK" || r.severity === "REVIEW").map((r) => r.ruleId)).toEqual(["CDS-04"]);
   });

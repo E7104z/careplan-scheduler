@@ -13,7 +13,7 @@ import { daysText } from "./WeeklyPanel";
 const WEEKDAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 
 /** The checks the printout lists, most serious first; Good to know stays on the screen. */
-const PRINTED_SEVERITIES = { BLOCK: "Must fix", REVIEW: "Needs review", WARN: "Worth checking" } as const;
+export const PRINTED_SEVERITIES = { BLOCK: "Must fix", REVIEW: "Needs review", WARN: "Worth checking" } as const;
 
 export interface SheetFact {
   label: string;
@@ -78,6 +78,23 @@ export interface SheetCheck {
   context: string;
 }
 
+/** One nurse visit authorization, for the printout's Nurse visits page (Nov 17, 2026 review). */
+export interface SheetNurseVisit {
+  /** "RN · PA 20261520045221" */
+  title: string;
+  /** "T1001 · AT HOME CARE" */
+  detail: string;
+  /** "Eval APC Plan 2 a month, Train APC 1 a month" */
+  tasks: string;
+  /** Each authorized month: its visits and the dates placed ("–" for none). */
+  months: { label: string; authorized: string; placed: string }[];
+  /** Tasks that don't add up to the authorization, to check with the care manager; else null. */
+  review: string | null;
+}
+
+/** Who a printout is for (ACC-06): the participant's copy, or the agency's with projected accruals. */
+export type SheetCopy = "Participant copy" | "Agency copy";
+
 /** One service's one month, for the agency-only accrual page (ACC-06, ACC-08). */
 export interface SheetAccrual extends AccrualProjection {
   month: string;
@@ -95,8 +112,11 @@ export interface ScheduleSheet {
   kind?: "service" | "plan";
   /** The participant's name from Fusion, "Example care plan", or null: lines to write name and DCN on. */
   name: string | null;
+  /** Printed beside the title, so nobody has to guess which of the two printouts this is. */
+  copy: SheetCopy;
   facts: SheetFact[];
-  status: { title: string; detail: string; blocked: boolean };
+  /** `review`: nothing must be fixed, but something needs review (the whole plan's page). */
+  status: { title: string; detail: string; blocked: boolean; review?: boolean };
   rows: SheetRow[];
   /** Sunday to Saturday. */
   days: SheetDay[];
@@ -113,6 +133,48 @@ export interface ScheduleSheet {
   footer: string;
   /** The agency-only accrual sections (ACC-06). Absent on the client printout. */
   accruals?: SheetAccrual[];
+  /** The nurse visits' own page, after this sheet (first sheet only); absent when the plan has none. */
+  nurseVisits?: SheetNurseVisit[];
+}
+
+/** "Nov 1 to Nov 30, 2026", or "Dec 1, 2026 to Jan 31, 2027" across years. */
+export function dateRange(start: string, end: string): string {
+  return start.slice(0, 4) === end.slice(0, 4)
+    ? `${niceDate(start).replace(/, \d+$/, "")} to ${niceDate(end)}`
+    : `${niceDate(start)} to ${niceDate(end)}`;
+}
+
+/**
+ * "Each month's figures count all of its days, including the 16 before this schedule was made on
+ * Nov 17, 2026.", when the schedule's first month began before today; else "". A month's
+ * authorization is for the whole month, so its figures are too.
+ */
+export function pastDaysNote(scheduleStart: string, today: string): string {
+  if (today.slice(0, 7) !== scheduleStart.slice(0, 7) || today <= scheduleStart) return "";
+  const before = Number(today.slice(8)) - Number(scheduleStart.slice(8));
+  return ` Each month's figures count all of its days, including the ${before} before this schedule was made on ${niceDate(today)}.`;
+}
+
+/**
+ * Why units are left in a month (Nov 17, 2026 review: "Left 12" read as under-delivery): the first
+ * month with a whole unit left and nothing cut, its care days and how many care days all of its
+ * units would take. "" when no month has units left.
+ */
+function leftNote(model: QuickModel): string {
+  for (const month of model.months) {
+    const figures = monthFigures(model, month);
+    const { leftMinutes } = monthBalance(figures);
+    if (leftMinutes < 15 || figures.trimmedMinutes > 0) continue;
+    const careDays = Object.values(figures.expanded).filter((day) => Object.values(day).some((minutes) => minutes > 0)).length;
+    if (careDays === 0 || figures.scheduledTaskMinutes === 0) return "";
+    const taskUnits = figures.authorizedUnits - figures.transportUnits;
+    const days = Math.round((taskUnits * 15) / (figures.scheduledTaskMinutes / careDays));
+    return (
+      ` Left is units authorized but not scheduled, not missed care: ${shortMonth(month)} has ${careDays} care ` +
+      `${careDays === 1 ? "day" : "days"}, each with every task's minutes, and all ${taskUnits} units would take about ${days}.`
+    );
+  }
+  return "";
 }
 
 const grouped = new Intl.NumberFormat("en-US");
@@ -156,9 +218,11 @@ export function buildScheduleSheet(
   const identity = state.isExample ? null : state.identity;
   const facts: SheetFact[] = [];
   if (identity) facts.push({ label: "DCN", value: identity.dcn });
-  facts.push({ label: "Service", value: `${state.serviceLabel ?? model.svc.name} · ${model.svc.code}` });
+  // The rule pack's code, and Fusion's when it prints another (T1019 for APC, which is T1019TF).
+  const fusion = state.fusionCode && state.fusionCode !== model.svc.code ? ` (Fusion prints ${state.fusionCode})` : "";
+  facts.push({ label: "Service", value: `${state.serviceLabel ?? model.svc.name} · ${model.svc.code}${fusion}` });
   facts.push({ label: "Plan", value: `${niceDate(state.plan.start)} to ${niceDate(state.plan.end)}` });
-  if (model.auth.start > state.plan.start) facts.push({ label: "Schedule starts", value: niceDate(model.auth.start) });
+  if (model.auth.start > state.plan.start) facts.push({ label: "Schedule covers", value: dateRange(model.auth.start, model.auth.end) });
   if (state.headerUnits !== null) facts.push({ label: "Fusion units", value: fusionUnitsText(model.checksum, state.headerUnits) });
   if (state.provider) facts.push({ label: "Provider", value: state.provider });
   if (state.pa) facts.push({ label: "Prior authorization", value: state.pa });
@@ -271,6 +335,7 @@ export function buildScheduleSheet(
 
   return {
     name: state.isExample ? "Example care plan" : (identity?.name ?? null),
+    copy: audience === "agency" ? "Agency copy" : "Participant copy",
     facts,
     status: { title: status.title, detail: status.detail, blocked: status.blocked },
     rows,
@@ -278,7 +343,7 @@ export function buildScheduleSheet(
     week: { visit: formatDuration(weekMinutes), minutes: grouped.format(weekMinutes), units: unitsCell(weekMinutes) },
     summary,
     months,
-    authorizedNote: authorizedNote(model, calculated),
+    authorizedNote: authorizedNote(model, calculated) + leftNote(model) + pastDaysNote(model.auth.start, today),
     cutNote,
     warning: null,
     checks,

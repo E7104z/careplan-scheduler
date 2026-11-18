@@ -123,6 +123,11 @@ export interface QuickState {
   pa: string | null;
   serviceLabel: string | null;
   serviceCode: ServiceCode;
+  /**
+   * The procedure code as Fusion's care plan report prints it, when that isn't `serviceCode`
+   * (Fusion prints T1019 for APC, T1019TF). Absent otherwise, and in plans saved before Nov 17, 2026.
+   */
+  fusionCode?: string;
   /** Where the authorization's service row was read (SOURCE-01); absent for a plan by hand. */
   sourceRef?: SourceRef | null;
   plan: Plan;
@@ -176,6 +181,17 @@ export interface PlanVisit {
   end: string;
   units: number;
   pa: string | null;
+  /**
+   * Fusion's task rows for this authorization, each with its visits a month (IMP-18), such as
+   * "Eval APC Plan" 2 and "Train APC" 1. Absent in plans saved before Nov 17, 2026.
+   */
+  tasks?: VisitTask[];
+}
+
+/** A nurse visit authorization's task row: its name and visits a month, or null when Fusion gave none. */
+export interface VisitTask {
+  name: string;
+  unitsPerMonth: number | null;
 }
 
 /**

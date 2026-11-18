@@ -52,11 +52,11 @@ describe("Quick Schedule: for the caregiver, the participant and EVV", () => {
     expect(within(monday).getByText("Meal Prep/Eating").nextSibling).toHaveTextContent("60 min");
     expect(within(monday).getByText("Visit length 5 h 15 min")).toBeInTheDocument();
     expect(within(monday).getByText("315 minutes = 21 units")).toBeInTheDocument();
-    // Sunday is the usual transportation day: 175 minutes of tasks and 60 of transportation.
-    const sunday = within(list).getByRole("region", { name: "Sunday" });
-    expect(within(sunday).getByText("Essential transportation")).toBeInTheDocument();
-    expect(within(sunday).getByText("Visit length 3 h 55 min")).toBeInTheDocument();
-    expect(within(sunday).getByText("235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)")).toBeInTheDocument();
+    // Friday, the last weekday care day, is the usual transportation day: 175 minutes of tasks and 60 of transportation.
+    const friday = within(list).getByRole("region", { name: "Friday" });
+    expect(within(friday).getByText("Essential transportation")).toBeInTheDocument();
+    expect(within(friday).getByText("Visit length 3 h 55 min")).toBeInTheDocument();
+    expect(within(friday).getByText("235 minutes = 15 units + 10 min (175 for tasks, 60 for transportation)")).toBeInTheDocument();
   });
 
   it("AC-26: reviewed with the participant: today's date by default, printed, and cleared by a change", async () => {

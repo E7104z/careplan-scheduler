@@ -36,7 +36,10 @@ export function mergeFusionText(texts: string[], pack: RulePack): ImportResult {
       }
     }
     for (const note of next.skipped) {
-      if (!merged.skipped.some((kept) => kept.label === note.label)) merged.skipped.push(note);
+      // One note of each kind per label, and each authorization's own visit-units note.
+      const same = (kept: (typeof merged.skipped)[number]) =>
+        kept.label === note.label && kept.code === note.code && (note.code !== "visit-units" || kept.message === note.message);
+      if (!merged.skipped.some(same)) merged.skipped.push(note);
     }
 
     for (const service of next.services) {

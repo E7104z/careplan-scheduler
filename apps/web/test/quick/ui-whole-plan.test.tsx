@@ -79,10 +79,11 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
     expect(within(day("Monday")).getByText("Dietary")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("PC - CDS")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("Essential transportation")).toBeInTheDocument();
-    expect(within(day("Friday")).getByText("Total 4 h 5 min")).toBeInTheDocument();
+    expect(within(day("Friday")).getByText("Total 4 h 10 min")).toBeInTheDocument();
     expect(within(day("Thursday")).getByText("HC")).toBeInTheDocument();
     expect(within(day("Thursday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("No service")).toBeInTheDocument();
+    // Five spread care days (Nov 17, 2026): Wednesday and Sunday have none.
+    expect(within(day("Wednesday")).getByText("No service")).toBeInTheDocument();
     expect(within(day("Sunday")).getByText("No service")).toBeInTheDocument();
   });
 
@@ -112,7 +113,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
 
     await user.click(within(views()).getByRole("button", { name: /Whole care plan/ }));
     expect(within(day("Wednesday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("No service")).toBeInTheDocument();
+    expect(within(day("Sunday")).getByText("No service")).toBeInTheDocument();
   });
 
   it("a reload keeps every service and the view, without the name or DCN", async () => {
@@ -140,7 +141,8 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
     expect(pages.map((page) => page.facts.find((fact) => fact.label === "Services" || fact.label === "Service")?.value)).toEqual([
       "PC - Agency, PC - CDS, HC",
       "PC - Agency · T1019",
-      "PC - CDS · T1019U2",
+      // Fusion prints T1019 for CDS too; the page says so (Nov 17, 2026).
+      "PC - CDS · T1019U2 (Fusion prints T1019)",
       "HC · S5130",
     ]);
     expect(pages[0]!.rows.map((row) => row.detail.split(" · ")[0])).toEqual([
@@ -148,7 +150,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
       "PC - CDS",
       "HC",
     ]);
-    expect(pages[0]!.facts).toContainEqual({ label: "Nurse visits", value: "May 2026 and Aug 2026" });
+    expect(pages[0]!.facts).toContainEqual({ label: "Nurse visits", value: "2 authorizations, May to Aug 2026" });
   });
 });
 

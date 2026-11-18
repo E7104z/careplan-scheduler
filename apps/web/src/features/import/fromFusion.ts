@@ -14,12 +14,65 @@ function reportFigures(monthly: ImportedService["monthly"], months: string[]): R
   return figures;
 }
 
-/** The n days with the fewest minutes already scheduled, ties in Monday-first order, in week order. */
-function quietestDays(load: number[], n: number, from: Weekday[] = MONDAY_FIRST): Weekday[] {
-  return [...from]
-    .sort((a, b) => (load[a] ?? 0) - (load[b] ?? 0) || from.indexOf(a) - from.indexOf(b))
-    .slice(0, n)
-    .sort((a, b) => MONDAY_FIRST.indexOf(a) - MONDAY_FIRST.indexOf(b));
+/**
+ * IMPORT-SPEC 4 (Nov 17, 2026 review): a client's care days for each number of days a week, spread
+ * so the fewest days in a row go without care, weekdays first. Four days are Monday, Wednesday,
+ * Friday and Saturday, never Monday to Thursday, which leaves three days in a row without care.
+ */
+export const SPREAD_DAYS: Readonly<Record<number, readonly Weekday[]>> = {
+  1: [1],
+  2: [1, 4],
+  3: [1, 3, 5],
+  4: [1, 3, 5, 6],
+  5: [1, 2, 4, 5, 6],
+  6: [1, 2, 3, 4, 5, 6],
+  7: [1, 2, 3, 4, 5, 6, 0],
+};
+
+/** The most days in a row without care in a week that repeats (Sunday follows Saturday). */
+export function longestWithoutCare(days: readonly Weekday[]): number {
+  if (days.length === 0) return 7;
+  let longest = 0;
+  for (let start = 0; start < 7; start++) {
+    let run = 0;
+    while (run < 7 && !days.includes(((start + run) % 7) as Weekday)) run++;
+    longest = Math.max(longest, run);
+  }
+  return longest;
+}
+
+function weekOrder(days: Weekday[]): Weekday[] {
+  return [...days].sort((a, b) => MONDAY_FIRST.indexOf(a) - MONDAY_FIRST.indexOf(b));
+}
+
+/**
+ * `n` of the days in `from`, in week order: the fewest days in a row without care first, then the
+ * fewest weekend days, then the fewest minutes the client's other services already have on them
+ * (`load`), then the earliest days from Monday.
+ */
+export function spreadSubset(from: readonly Weekday[], n: number, load: readonly number[]): Weekday[] {
+  const pool = weekOrder([...from]);
+  let best: Weekday[] | null = null;
+  let bestKey: number[] = [];
+  const subsets = (start: number, chosen: Weekday[]): void => {
+    if (chosen.length === n) {
+      const key = [
+        longestWithoutCare(chosen),
+        chosen.filter((day) => day === 0 || day === 6).length,
+        chosen.reduce<number>((sum, day) => sum + (load[day] ?? 0), 0),
+        ...chosen.map((day) => MONDAY_FIRST.indexOf(day)),
+      ];
+      const differs = key.findIndex((value, at) => value !== bestKey[at]);
+      if (best === null || (differs >= 0 && key[differs]! < bestKey[differs]!)) {
+        best = [...chosen];
+        bestKey = key;
+      }
+      return;
+    }
+    for (let i = start; i < pool.length; i++) subsets(i + 1, [...chosen, pool[i]!]);
+  };
+  subsets(0, []);
+  return best ?? [];
 }
 
 /**
@@ -37,8 +90,8 @@ export function serviceDates(parsed: ImportResult, service: ImportedService): { 
  *
  * `sharedDays` is the client's one set of care days (APP-SPEC 5.8, superseded Oct 31, 2026):
  * every service takes its own days from it — a service with the full number takes them all, one
- * with fewer days takes the lightest subset, and transportation takes one weekday from it.
- * Without it (a plan of one service), the care days are the first days from Monday. `load` is
+ * with fewer days takes the most spread-out, then lightest, subset, and transportation takes one
+ * weekday from it. Without it (a plan of one service), the care days are SPREAD_DAYS. `load` is
  * the minutes a day the participant's other services already have, used to pick that subset.
  */
 export function fromFusion(
@@ -60,12 +113,15 @@ export function fromFusion(
   const maxDaysPerWeek = service.tasks.reduce((max, task) => Math.max(max, task.daysPerWeek), 1);
   const transportOnly = service.tasks.length === 0 && service.transport !== null;
   // Every service shares one set of care days; a transport-only service still only uses weekdays.
-  const pool = sharedDays ?? MONDAY_FIRST;
-  const candidates = transportOnly ? pool.filter((day) => day !== 0 && day !== 6) : pool;
-  const careDays = quietestDays(load ?? [], Math.min(maxDaysPerWeek, candidates.length), candidates);
+  const pool = sharedDays ?? SPREAD_DAYS[Math.min(maxDaysPerWeek, 7)] ?? MONDAY_FIRST;
+  const weekdays = pool.filter((day) => day !== 0 && day !== 6);
+  const candidates = transportOnly && weekdays.length > 0 ? weekdays : pool;
+  const careDays = spreadSubset(candidates, Math.min(maxDaysPerWeek, candidates.length), load ?? []);
   const activeDays: boolean[] = [false, false, false, false, false, false, false];
   for (const day of careDays) activeDays[day] = true;
-  const lastActive: Weekday = careDays.slice(-1)[0]!;
+  // Transportation's usual day: the last weekday among the care days (errands and appointments).
+  const careWeekdays = careDays.filter((day) => day !== 0 && day !== 6);
+  const lastActive: Weekday = (careWeekdays.length > 0 ? careWeekdays : careDays).slice(-1)[0]!;
 
   const currentMonth = localMonth(today);
   const months = monthsBetween(plan.start, plan.end);
@@ -78,6 +134,7 @@ export function fromFusion(
     provider: service.provider,
     pa: service.pa,
     serviceLabel: service.label,
+    ...(service.procedureCode && service.procedureCode !== service.serviceCode ? { fusionCode: service.procedureCode } : {}),
     serviceCode: service.serviceCode,
     plan,
     headerUnits: service.units,

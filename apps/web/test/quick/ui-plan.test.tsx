@@ -104,17 +104,17 @@ describe("Quick Schedule: care plan pane from Fusion", () => {
       ),
     ).toBeInTheDocument();
 
-    // Usual day: the last care day, Monday first (7 care days: Sunday). Changing it is guarded.
+    // Usual day: the last weekday care day (7 care days: Friday). Changing it is guarded.
     const usualDay = screen.getByRole("combobox", { name: "Usual day" });
-    expect(usualDay).toHaveValue("0");
+    expect(usualDay).toHaveValue("5");
     await user.selectOptions(usualDay, "1");
     expect(usualDay).toHaveValue("1");
   });
 
-  it("QS-07: a task's non-care days can't be chosen (5-day plan: Saturday and Sunday)", () => {
+  it("QS-07: a task's non-care days can't be chosen (5-day plan: Wednesday and Sunday)", () => {
     renderQuick();
-    for (const day of ["Saturday", "Sunday"]) expect(dayButton("Bathing", day)).toBeDisabled();
-    for (const day of ["Monday", "Friday"]) expect(dayButton("Bathing", day)).toBeEnabled();
+    for (const day of ["Wednesday", "Sunday"]) expect(dayButton("Bathing", day)).toBeDisabled();
+    for (const day of ["Monday", "Saturday"]) expect(dayButton("Bathing", day)).toBeEnabled();
     expect(within(screen.getByRole("group", { name: "Care days" })).getByRole("button", { name: "Sunday" })).toBeEnabled();
   });
 

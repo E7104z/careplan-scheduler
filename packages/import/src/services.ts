@@ -8,6 +8,9 @@ const SERVICE_LABELS: ReadonlyMap<string, ServiceCode> = new Map<string, Service
   ["PC - CDS", "T1019U2"],
   ["PC - Agency", "T1019"], // Fusion's care plan report, Oct 2026
   ["HC", "S5130"], // Homemaker, Fusion's care plan report, Oct 2026
+  // Advanced Personal Care, Fusion's care plan report, Nov 2026. Fusion prints T1019 for it, which
+  // never names a service alone; APC is T1019TF in HCBS Manual 3.00 Appendix 1.
+  ["APC", "T1019TF"],
 ]);
 
 /** The engine service for a Fusion label, or null for a label we haven't seen yet. */

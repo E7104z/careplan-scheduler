@@ -1,0 +1,93 @@
+Participant Information: SAMPLE PARTICIPANT Q
+Physical Address:	DCN: 10000017
+100 Sample Street	DOB: 01/01/1950
+Apt 1	COOP Priority: 2 - Medium
+Sampletown, MO 650000000
+Primary Phone: N/A
+Secondary Phone: (555) 555-0101
+Home & Community Based Services Care Plan
+The information below lists the services you have been authorized to receive. These services are intended to help you remain in
+your home. The services will be paid for by MO HealthNet as long as you have active MO HealthNet benefits.
+Each service and its unit description are listed on a separate line. The dates you are eligible to receive the service, the total
+monthly units, and the provider who is to deliver your service are also on the line. Under each service, the specific task(s) and/or
+days of the week for service delivery is shown.
+Care Plan Information 06/03/2026 - 11/30/2026
+Date Generated: 11/01/2026 | Page 1 of 5
+SAMPLE PARTICIPANT Q - DCN:10000017
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+06/03	11/30	TEST HOME CARE LLC , (555) 555-
+APC	N/A	N/A	20260000000051
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+06/03/2026	06/30/2026	T1019	114
+07/01/2026	07/31/2026	T1019	114
+08/01/2026	08/31/2026	T1019	114
+09/01/2026	09/30/2026	T1019	114
+10/01/2026	10/31/2026	T1019	114
+11/01/2026	11/30/2026	T1019	114
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Asst Trans Device	30	4	N/A
+Bowel Program	30	4	N/A
+Catheter Hygiene	30	4	N/A
+Date Generated: 11/01/2026 | Page 2 of 5
+SAMPLE PARTICIPANT Q - DCN:10000017
+Service	Start	GHE	Prior
+End Date	Provider	GHE 2
+Type	Date	1	Authorization
+06/03	11/30	TEST HOME CARE LLC , (555) 555-
+RN	April	October	20260000000052
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+06/03/2026	06/30/2026	T1001	2
+07/01/2026	07/31/2026	T1001	2
+08/01/2026	08/31/2026	T1001	2
+09/01/2026	09/30/2026	T1001	2
+10/01/2026	10/31/2026	T1001	2
+11/01/2026	11/30/2026	T1001	2
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Eval APC Plan	2	N/A
+Train APC	1	N/A
+Date Generated: 11/01/2026 | Page 3 of 5
+SAMPLE PARTICIPANT Q - DCN:10000017
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+06/03	11/30	TEST HOME CARE LLC , (555) 555-
+PC - Agency	N/A	N/A	20260000000053
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+06/03/2026	06/30/2026	T1019	336
+07/01/2026	07/31/2026	T1019	336
+08/01/2026	08/31/2026	T1019	336
+09/01/2026	09/30/2026	T1019	336
+10/01/2026	10/31/2026	T1019	336
+11/01/2026	11/30/2026	T1019	336
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Med Rel HC Tasks: Make Bed/Change Linens	10	4	N/A
+Bathing	60	4	N/A
+Dressing/Grooming	30	4	N/A
+Med Rel HC Tasks: Laundry (Home/Off Site)	30	4	N/A
+Mobility/Transfer/Position	45	4	N/A
+Toileting	30	4	N/A
+Dietary	45	4	N/A
+Med Rel HC Tasks: Clean Living Area	15	4	N/A
+Date Generated: 11/01/2026 | Page 4 of 5
+SAMPLE PARTICIPANT Q - DCN:10000017
+Service	Start	GHE	GHE	Prior
+End Date	Provider
+Type	Date	1	2	Authorization
+06/03	11/30	TEST HOME CARE LLC , (555) 555-
+RN	N/A	N/A	20260000000054
+/2026	/2026	0100
+Start Date	End Date	Procedure Code	Authorized Units
+06/03/2026	06/30/2026	T1001	1
+07/01/2026	07/31/2026	T1001	1
+08/01/2026	08/31/2026	T1001	1
+09/01/2026	09/30/2026	T1001	1
+10/01/2026	10/31/2026	T1001	1
+11/01/2026	11/30/2026	T1001	1
+Task	#Min/Day	#Units/Day	#Days/Week	#Units/Month	Comments
+Eval APC Plan	1	N/A
+Date Generated: 11/01/2026 | Page 5 of 5
