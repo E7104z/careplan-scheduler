@@ -56,5 +56,21 @@ describe("Quick Schedule: other authorizations (IMP-19)", () => {
       expect(await screen.findByRole("heading", { name: "Nothing in this care plan goes in the week" })).toBeInTheDocument();
       expect(screen.getByText(/has tasks to place in the week: PC - Foo\./)).toBeInTheDocument();
     });
+
+    // Nov 17, 2026 review: the picker started on CDS, so one click scheduled an unknown label
+    // (APC, on a real plan) under CDS rules. It now starts on no service and asks for one.
+    it("starts on no service and asks for one before it builds", async () => {
+      const { user } = renderQuick();
+      await openCarePlanText(user, fixtureA.replace("PC - CDS", "PC - Foo"));
+      await screen.findByRole("heading", { name: 'Which service is "PC - Foo"?' });
+      const select = screen.getByRole("combobox", { name: "Service" });
+      expect(select).toHaveValue("");
+      await user.click(screen.getByRole("button", { name: "Use this service" }));
+      expect(screen.getByText("Choose the service first.")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: 'Which service is "PC - Foo"?' })).toBeInTheDocument();
+      await user.selectOptions(select, "T1019U2");
+      await user.click(screen.getByRole("button", { name: "Use this service" }));
+      expect(await screen.findByRole("heading", { level: 2, name: "SAMPLE PARTICIPANT A" })).toBeInTheDocument();
+    });
   });
 });

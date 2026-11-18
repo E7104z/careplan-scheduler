@@ -216,8 +216,8 @@ describe("printed schedule: the PDF", () => {
   it("APP-SPEC 5.8: the plan page warns when the week has more service days than planned", async () => {
     const outcome = next(addPage(emptyImportFlow(), fixtureF), MO_2026_07, new Date("2026-10-21T12:00:00-05:00"));
     if (outcome.kind !== "ready") throw new Error("Expected a ready outcome");
-    // Move CDS transportation onto Saturday: six service days, still five planned.
-    outcome.plan.services[1]!.transport.day = 6;
+    // Move CDS transportation onto Wednesday, not a care day: six service days, still five planned.
+    outcome.plan.services[1]!.transport.day = 3;
     const models = outcome.plan.services.map((state) => buildQuickModel(state, MO_2026_07));
     const sheets = planSheets(outcome.plan, models, MO_2026_07, "2026-10-21");
     if (!Array.isArray(sheets)) throw new Error("Expected a plan of several services");

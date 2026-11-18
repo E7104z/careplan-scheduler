@@ -176,6 +176,17 @@ export interface PlanVisit {
   end: string;
   units: number;
   pa: string | null;
+  /**
+   * Fusion's task rows for this authorization, each with its visits a month (IMP-18), such as
+   * "Eval APC Plan" 2 and "Train APC" 1. Absent in plans saved before Nov 17, 2026.
+   */
+  tasks?: VisitTask[];
+}
+
+/** A nurse visit authorization's task row: its name and visits a month, or null when Fusion gave none. */
+export interface VisitTask {
+  name: string;
+  unitsPerMonth: number | null;
 }
 
 /**

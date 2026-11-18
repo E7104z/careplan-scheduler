@@ -53,20 +53,21 @@ describe("printed schedule: what it says", () => {
     expect(laundry.detail).toBe("140 min · 1 day a week");
     expect(laundry.cells.filter((cell) => cell !== null)).toHaveLength(1);
     expect(sheet.rows[15]).toMatchObject({ name: "Essential transportation", detail: "Set aside, not a task", transport: true, weekMinutes: 60 });
-    expect(sheet.rows[15]!.cells.map((cell) => cell?.minutes ?? null)).toEqual([60, null, null, null, null, null, null]);
+    // Its usual day is the last weekday care day, Friday (Nov 17, 2026), not Sunday.
+    expect(sheet.rows[15]!.cells.map((cell) => cell?.minutes ?? null)).toEqual([null, null, null, null, null, 60, null]);
   });
 
   it("B: Sunday to Saturday with each visit's length, minutes and units (APP-SPEC 5.4 daily task list)", () => {
     const sheet = sheetFor(stateFor(fixtureB, BEFORE_B));
     expect(sheet.days.map((day) => day.name)).toEqual(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]);
-    // Sunday: 175 minutes of tasks and 60 of transportation.
-    expect(sheet.days[0]).toEqual({ name: "Sunday", care: true, visit: "3 h 55 min", minutes: "235", units: "15 + 10 min" });
+    // Sunday: 185 minutes of tasks; transportation is on Friday.
+    expect(sheet.days[0]).toEqual({ name: "Sunday", care: true, visit: "3 h 5 min", minutes: "185", units: "12 + 5 min" });
     expect(sheet.days[1]).toEqual({ name: "Monday", care: true, visit: "5 h 15 min", minutes: "315", units: "21" });
     expect(sheet.week).toEqual({ visit: "25 h 25 min", minutes: "1,525", units: "101 + 10 min" });
     expect(sheet.summary).toEqual([
       { label: "Task minutes a week", value: "1,465", note: "97 units + 10 min" },
       { label: "Care days", value: "7 a week", note: "Sunday to Saturday" },
-      { label: "Essential transportation", value: "60 min on Sunday", note: "345 minutes a month (23 units), set aside before tasks" },
+      { label: "Essential transportation", value: "60 min on Friday", note: "345 minutes a month (23 units), set aside before tasks" },
     ]);
   });
 
@@ -97,7 +98,7 @@ describe("printed schedule: what it says", () => {
     const sheet = sheetFor(stateFor(fixtureE, BEFORE_E), "2026-03-15");
     expect(sheet.days[0]).toEqual({ name: "Sunday", care: false, visit: null, minutes: "", units: "" });
     expect(sheet.days[1]).toMatchObject({ name: "Monday", care: true, visit: "4 h 5 min" });
-    expect(sheet.summary).toContainEqual({ label: "Care days", value: "3 a week", note: "Monday, Tuesday, Wednesday" });
+    expect(sheet.summary).toContainEqual({ label: "Care days", value: "3 a week", note: "Monday, Wednesday, Friday" });
     expect(sheet.rows.some((row) => row.transport)).toBe(false);
     expect(sheet.authorizedNote).toBe("Authorized is Fusion's figure for each month.");
   });

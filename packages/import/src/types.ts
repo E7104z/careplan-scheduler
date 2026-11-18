@@ -41,7 +41,9 @@ export interface ImportedService {
 export interface ImportedVisit {
   label: string | null;          // "GHE"
   serviceCode: ServiceCode;      // a visit in the rule pack, such as T1001
-  name: string | null;           // the task row: "General Health Evaluation"
+  name: string | null;           // its task rows' names: "Eval APC Plan, Train APC"
+  /** Every task row, with its visits a month (#Units/Month), or null when the row has no number. */
+  tasks: { name: string; unitsPerMonth: number | null }[];
   provider: string | null;
   start: string; end: string;    // YYYY-MM-DD: the period it is authorized for
   units: number;                 // visits authorized in that period
@@ -75,6 +77,8 @@ export type ImportIssueCode =
   | "no-rows" | "nothing-to-schedule" | "kept" | "incomplete" | "unknown-service" | "no-plan-dates" | "bad-dates"
   | "different-participant" | "unread-row" | "unknown-task" | "odd-minutes" | "duplicate-task"
   | "not-scheduled"
+  // A nurse visit authorization whose tasks add up to more or fewer visits a month than Fusion authorized.
+  | "visit-units"
   // Set by the app, which knows today's date (the reader has no clock): the plan ended before this month.
   | "plan-ended";
 

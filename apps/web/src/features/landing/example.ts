@@ -83,7 +83,7 @@ export interface ExampleRefusal {
 /**
  * APP-SPEC 12.3: the refusal box Quick Schedule shows for raising Bathing on Tuesday to 50
  * minutes in the example plan, from the real guard (APP-SPEC 5.7), viewing the first plan month
- * where Bathing has no room left (one with 23 weekdays).
+ * where Bathing has no room left (one with 23 care days).
  */
 export function exampleRefusal(today = new Date()): ExampleRefusal {
   const base = exampleState(today);

@@ -79,10 +79,11 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
     expect(within(day("Monday")).getByText("Dietary")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("PC - CDS")).toBeInTheDocument();
     expect(within(day("Friday")).getByText("Essential transportation")).toBeInTheDocument();
-    expect(within(day("Friday")).getByText("Total 4 h 5 min")).toBeInTheDocument();
+    expect(within(day("Friday")).getByText("Total 4 h 10 min")).toBeInTheDocument();
     expect(within(day("Thursday")).getByText("HC")).toBeInTheDocument();
     expect(within(day("Thursday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("No service")).toBeInTheDocument();
+    // Five spread care days (Nov 17, 2026): Wednesday and Sunday have none.
+    expect(within(day("Wednesday")).getByText("No service")).toBeInTheDocument();
     expect(within(day("Sunday")).getByText("No service")).toBeInTheDocument();
   });
 
@@ -112,7 +113,7 @@ describe("Quick Schedule: the whole care plan (APP-SPEC 5.8)", () => {
 
     await user.click(within(views()).getByRole("button", { name: /Whole care plan/ }));
     expect(within(day("Wednesday")).getByText("Wash Windows/Blinds")).toBeInTheDocument();
-    expect(within(day("Saturday")).getByText("No service")).toBeInTheDocument();
+    expect(within(day("Sunday")).getByText("No service")).toBeInTheDocument();
   });
 
   it("a reload keeps every service and the view, without the name or DCN", async () => {

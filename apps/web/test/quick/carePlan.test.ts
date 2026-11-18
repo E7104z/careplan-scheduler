@@ -93,17 +93,18 @@ describe("AC-28 fixture F: one schedule for the participant", () => {
     expect(models.flatMap((model) => model.results).filter((result) => result.severity === "BLOCK")).toEqual([]);
   });
 
-  it("keeps every service on one shared set of care days, not spread across the week", () => {
+  it("keeps every service on one shared set of care days, not each on days of its own", () => {
     const week = planWeek(plan, models);
-    // Sunday to Saturday: agency Monday to Friday; transportation and homemaker stay inside those days.
+    // Sunday to Saturday: agency on its five spread days (Nov 17, 2026); transportation and
+    // homemaker stay inside those days, on weekdays.
     expect(week.map((day) => day.byService)).toEqual([
       [0, 0, 0],
       [160, 0, 0],
       [160, 0, 0],
-      [140, 0, 0],
-      [130, 0, 15],
-      [125, 120, 0],
       [0, 0, 0],
+      [140, 0, 15],
+      [130, 120, 0],
+      [125, 0, 0],
     ]);
     expect(week.reduce((sum, day) => sum + day.minutes, 0)).toBe(715 + 120 + 15);
     expect(week[5]!.items.at(-1)).toEqual({ service: 1, name: "Essential transportation", minutes: 120, transport: true });
@@ -178,9 +179,10 @@ describe("AC-28 APC + PC-Agency: two four-day services share the same days", () 
     ]);
   });
 
-  it("puts both services on the same four days, 355 minutes a day, nothing the other three", () => {
+  // Nov 17, 2026 review: Monday, Wednesday, Friday and Saturday, never three days in a row without care.
+  it("puts both services on the same four spread days, 355 minutes a day, nothing the other three", () => {
     const week = planWeek(plan, models);
-    expect(week.map((day) => day.minutes)).toEqual([0, 355, 355, 355, 355, 0, 0]);
+    expect(week.map((day) => day.minutes)).toEqual([0, 355, 0, 355, 0, 355, 355]);
     expect(week.reduce((sum, day) => sum + day.minutes, 0)).toBe(1420);
     expect(serviceDays(plan, models)).toBe(4);
     expect(maxServiceDays(models)).toBe(4);
@@ -215,8 +217,8 @@ describe("service day warning", () => {
 
   it("warns when the week has more service days than the plan's largest days-a-week", () => {
     const plan = planF();
-    // Move CDS transportation onto Saturday: six service days, still five planned.
-    plan.services[1]!.transport.day = 6;
+    // Move CDS transportation onto Wednesday, not a care day: six service days, still five planned.
+    plan.services[1]!.transport.day = 3;
     const models = plan.services.map((state) => buildQuickModel(state, PACK));
     expect(serviceDays(plan, models)).toBe(6);
     expect(maxServiceDays(models)).toBe(5);

@@ -63,8 +63,9 @@ describe("Landing", () => {
     // The four figures come from the engine and the import package, not hardcoded output.
     const matchLine = "Every task read. Our total from these tasks matches Fusion's 466 units a month.";
     const weekText = "70, 90, 90, 90, 90, 90, 70";
-    // December 2026: the plan's first month with 23 weekdays, so Bathing has no room left.
-    const refusalSentence = "That would put Bathing over its 69 units in December 2026.";
+    // October 2026: the plan's first month with 23 care days (five Thursdays, Fridays and
+    // Saturdays), so Bathing has no room left.
+    const refusalSentence = "That would put Bathing over its 69 units in October 2026.";
     const refusalFix =
       "Bathing can't have more than 45 minutes on Tuesday. To add time here, take it from another day first.";
 
@@ -81,10 +82,11 @@ describe("Landing", () => {
   });
 
   it("APP-SPEC 12: the headline figure is the example plan's Day total row, with its checked status", () => {
-    // The 5-day example (fixture A), as Quick Schedule builds it (AC-01: Mon..Fri 290, 285, 275, 270, 195).
+    // The 5-day example (fixture A), as Quick Schedule builds it on its spread days (AC-01:
+    // Mon 290, Tue 285, Thu 275, Fri 195, Sat 270).
     const figure = exampleDayTotals();
-    expect(figure.dayTotals).toEqual([0, 290, 285, 275, 270, 195, 0]);
-    expect(figure.activeDays).toEqual([false, true, true, true, true, true, false]);
+    expect(figure.dayTotals).toEqual([0, 290, 285, 0, 275, 195, 270]);
+    expect(figure.activeDays).toEqual([false, true, true, false, true, true, true]);
     expect(figure.status).toBe("Ready to use");
 
     render(<Landing />, { wrapper: MemoryRouter });
