@@ -5,7 +5,7 @@ before its behavior is presented to the state as DSDS's rule. Each lists what th
 until then and where that is written down. Send to **LTSS@health.mo.gov** (the contact INFO
 09-25-02 gives for questions about it).
 
-## 1. Months whose authorized units don't cover the care plan's tasks (asked: not yet)
+## 1. Months whose authorized units don't cover the care plan's tasks (answered Nov 24, 2026)
 
 **What the app does now (decided Oct 25, 2026):**
 - Each month is checked against Fusion's figure for that month. From the care plan report
@@ -45,5 +45,22 @@ until then and where that is written down. Send to **LTSS@health.mo.gov** (the c
 >
 > (name, agency, phone)
 
-**When DSDS answers:** record the answer here with its date, then update SCH-17 (ENGINE-SPEC
-section 5, status and source), IMP-10 and APP-SPEC 5.4's month view to match.
+**Answered Nov 24, 2026 (LTSS email):**
+
+> "Total Units" are "the total units authorized for the month." Fusion calculates "the maximum
+> case scenario" based on days in the month, assuming extra weekday occurrences are delivered;
+> actual units used depend on the weekly schedule. Time should not be equally distributed across
+> days unless all tasks are authorized for the same number of days per week.
+>
+> When authorized units do not align with the care plan's tasks and frequency, "providers should
+> make reasonable scheduling adjustments to stay within the authorized units while continuing to
+> address the participant's needs. Providers should not simply stop visits when units are
+> exhausted if doing so would leave needs unmet."
+>
+> If units are "consistently insufficient," notify DSDS and request a review. A care plan change
+> request is appropriate when the issue is "ongoing or recurring, rather than for isolated
+> scheduling variances."
+
+Applied: SCH-17 (end-of-month trims) removed; SCH-08 overage is a WARN; the care plan screen's one
+figure is validation-only. See `docs/SPEC-FOLLOWUPS.md` for the still-frozen IMP-10 and APP-SPEC
+5.4 items.

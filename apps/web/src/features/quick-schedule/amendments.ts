@@ -158,7 +158,7 @@ export function recordAmendment(plan: CarePlan, service: number, draft: Amendmen
   }
   const version = built.versions.find((candidate) => candidate.amendment?.id === amendment.id);
   const blocks = version?.model.results.filter((result) => result.severity === "BLOCK") ?? [];
-  if (version && blocks.length > 0) return refuse(plan, refusalText(blocks, version.state, version.model));
+  if (version && blocks.length > 0) return refuse(plan, refusalText(blocks, version.state));
   const services = plan.services.map((existing, index) => (index === service ? next : existing));
   return { plan: { ...plan, services } };
 }

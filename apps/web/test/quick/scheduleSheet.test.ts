@@ -71,30 +71,27 @@ describe("printed schedule: what it says", () => {
     ]);
   });
 
-  it("B: every month's units, with Fusion's figure counted for each month's days", () => {
+  it("B: every month's units are calculated from the tasks (the screen's one figure is a check, not the schedule)", () => {
     const sheet = sheetFor(stateFor(fixtureB, BEFORE_B));
     expect(sheet.months).toHaveLength(11);
-    // December 2025: 175 minutes of daily tasks x 31 days, the 1-day tasks on their weekdays (1,150
-    // minutes) and 23 units of transportation: 6,920 minutes, so 115 of Fusion's 469 units are left.
-    expect(sheet.months[0]).toEqual({ label: "Dec 2025", authorized: "469", scheduled: "461 + 5 min", left: "7 + 10 min", over: false, cut: "", cutFrom: "" });
+    expect(sheet.months[0]).toMatchObject({ label: "Dec 2025", authorized: "469", over: false });
     expect(sheet.months[2]).toMatchObject({ label: "Feb 2026", authorized: "434" });
     expect(sheet.authorizedNote).toBe(
-      "Authorized is Fusion's figure, counted for each month's days as Fusion does. Left is units authorized but not " +
+      "Authorized is calculated from the tasks: there's no Fusion figure for these months. Left is units authorized but not " +
         "scheduled, not missed care: Dec 2025 has 31 care days, each with every task's minutes, and all 446 units would take about 32.",
     );
-    expect(sheet.cutNote).toBeNull();
     expect(sheet.checks.map((check) => [check.label, check.title])).toEqual([["Needs review", "Check CDS transportation against NEMT"]]);
   });
 
-  it("B at 440 units: the months cut at the end, from which date, and what to do", () => {
-    const sheet = sheetFor(stateFor(fixtureB.replaceAll("455 units", "440 units"), BEFORE_B));
-    expect(sheet.months[0]).toMatchObject({ label: "Dec 2025", authorized: "440", cut: "320 min", cutFrom: "Dec 30" });
-    expect(sheet.months[2]).toMatchObject({ label: "Feb 2026", cut: "", cutFrom: "" });
-    expect(sheet.cutNote).toBe(
-      "When a month's units run out, its last visits are shorter, starting on the date shown. If the units run out every " +
-        "month, the care plan needs more than Fusion authorizes. DSDS says a consistent need to change a task should " +
-        "prompt a request to the care plan change team (INFO 09-25-02).",
-    );
+  it("a month over its Fusion figure is flagged (a warning), not cut", () => {
+    const state: QuickState = {
+      ...manualState(TODAY),
+      tasks: [{ id: "t1", taskCode: "BATHING", name: "Bathing", minPerDay: 120, daysPerWeek: 7, pinned: null, locked: false }],
+    };
+    state.fusion["2026-11"] = 100;
+    const sheet = buildScheduleSheet(state, buildQuickModel(state, MO_2026_07), MO_2026_07, "2026-10-21");
+    const november = sheet.months.find((month) => month.label === "Nov 2026");
+    expect(november).toMatchObject({ authorized: "100", over: true });
   });
 
   it("E: days without care are shaded and have no visit", () => {

@@ -309,7 +309,6 @@ export function buildPlanSheet(
       "Each scheduled service has its own page after this one, with its units month by month." +
       outsideWeekNote(plan) +
       pastDaysNote(scheduleStart, today),
-    cutNote: null,
     warning,
     checks,
     reviewed: reviewed.length === 1 && reviewed[0] !== null ? niceDate(reviewed[0]!) : null,

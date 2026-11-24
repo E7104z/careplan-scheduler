@@ -23,7 +23,6 @@ export * from "./compose/attendance.js";
 export * from "./compose/meals.js";
 export * from "./rules/auth.js";
 export * from "./rules/sch.js";
-export * from "./rules/fit.js";
 export * from "./rules/conflicts.js";
 export * from "./rules/weeklyHours.js";
 export * from "./rules/cds.js";

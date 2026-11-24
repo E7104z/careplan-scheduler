@@ -22,6 +22,13 @@ authorization model: `AmendmentDirection`, `AuthorizationVersion`, `Authorizatio
 chain of one version and behaves exactly as before. The Manual 4.20 effective-date behaviors
 are not applied here; they are Coverage Phase 3 (CP3-6). No formula or expected value changed.
 
+**Amendment E (Nov 24, 2026, DSDS/LTSS scheduling answers):** rule SCH-17 (fit a month to its
+authorization by cutting the last days) is removed. DSDS: providers make reasonable scheduling
+adjustments to stay within the authorized units while continuing to address the participant's
+needs, and must not simply stop visits when units are exhausted. SCH-08's overage result becomes
+WARN instead of BLOCK (an overage is a warning, not a stop). SCH-08's source gains the LTSS email
+(Nov 24, 2026). No formula or expected value changed.
+
 ---
 
 ## 1. Principles (apply to every module)
@@ -273,12 +280,11 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 |---|---|---|---|---|
 | SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
 | SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
-| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK. | BLOCK | VERIFIED | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2 |
+| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → WARN (overage is a warning, not a stop). | WARN | VERIFIED | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026 |
 | SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). Exceptions with `kind: "fit"` are not counted (Amendment A). | WARN | APPROVED | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
 | SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |
 | SCH-15 | Visit minutes = real elapsed minutes in America/Chicago, split by calendar date. | — | APPROVED | Product decision approved Oct 20, 2026 |
-| SCH-17 | Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: "fit"`, `reason: "Units for the month run out"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results. | — | APPROVED | Product decision approved Oct 21, 2026 (schedules never exceed SCH-08) |
 | AMEND-01 | A care plan amendment whose effective date is not confirmed from the care plan → REVIEW "amendment effective date needs confirmation, Manual 4.20", one for each such amendment, on its effective date. A decrease takes effect on the first day of a month (one dated mid-month, on the first of the next month); an increase on its date, which may be mid-month; a participant-requested reduction on its date. Occurrences are recalculated from the effective date forward only and keep the version in effect on their date, so history is never rewritten. | REVIEW | PARTIAL | HCBS Manual 4.20 (care plan amendments: decreases effective the first of a later month, increases may take effect mid-month, participant-requested reductions immediate) |
 | EVT-01 | A billable dated event (nurse visit, adult day care day, meal delivery, structured family caregiver day) outside its authorization's dates, or in a month Fusion did not authorize → BLOCK; the placement is refused. A reminder is not checked. | BLOCK | APPROVED | The authorization's own dates and months as Fusion prints them; product decision Nov 13, 2026 |
 | EVT-02 | Billable dated events in a month above the quantity Fusion authorized for that month, counted in the service's own unit (visits, meals, days, adult day care minutes) → BLOCK; Fusion's count controls. A quantity is a whole number above zero; a structured family caregiver day is one day, covered once. | BLOCK | APPROVED | Fusion's authorized quantity for the month; 3.00 Appendix 1 (rev. Jul 2026) units and limits |
@@ -373,8 +379,7 @@ Output: `TemplateEntry[]` plus `dayTotals: number[7]`.
 | TC-35 | ILW attendant `fcsrRegistered` undefined | REVIEW CON-17 |
 | TC-37 | 7-day task, 61 weekly minutes (10×6 + 1) | F-2b 18; F-2a 19; REVIEW AUTH-03 |
 
-| TC-38 | IMPORT-SPEC fixture B (7-day plan, Fusion 455, transport 345 min) composed with all seven days active, `weeklyTransportMinutes` 60 on Sunday (transportDay 0), no overrides; authorization 2025-12-01–2026-10-31; Fusion 455 for every month | `fitToAuthorization` returns exactly: 2025-12-31 Meal Prep/Eating −60, Bathing −35; 2026-03-31 Meal Prep/Eating −60, Bathing −15; 2026-08-31 Meal Prep/Eating −55; all `kind: "fit"`; validateSchedule with those exceptions has no BLOCK |
-| TC-39 | the TC-38 trims (Dec, Mar, Aug) plus a second `kind: "fit"` trim on 2026-01-31 for Meal Prep/Eating | no SCH-11 result; the same four as `kind: "change"` → one SCH-11 WARN |
+| TC-39 | two `kind: "fit"` exceptions in consecutive months for the same task | no SCH-11 result; the same two as `kind: "change"` → one SCH-11 WARN |
 | TC-40 | "Essential Correspond" | `findTaskByName` → ESSENTIAL_CORRESPONDENCE |
 
 TC-19 (app-level), TC-23 (amendment), TC-34 (GHE) and TC-36 (exports) belong to later phases.

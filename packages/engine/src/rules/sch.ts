@@ -70,7 +70,7 @@ export function ruleSCH03TemplateMinutes(
 
 /**
  * @rule SCH-08
- * @source DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2
+ * @source DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026
  */
 export function ruleSCH08CalendarCheck(
   authorizations: ServiceAuthorization[],
@@ -102,7 +102,7 @@ export function ruleSCH08CalendarCheck(
       if (total > budget) {
         results.push({
           ruleId: "SCH-08",
-          severity: "BLOCK",
+          severity: "WARN",
           message: `Scheduled ${total} min exceeds ${label} authorization ${budget} min in ${month}`,
           refs: { serviceAuthId: auth.id, month },
         });
@@ -118,7 +118,7 @@ export function ruleSCH08CalendarCheck(
         if (minutes > 15 * taskUnits) {
           results.push({
             ruleId: "SCH-08",
-            severity: "BLOCK",
+            severity: "WARN",
             message: `Task limit (derived): Scheduled ${minutes} min exceeds ${15 * taskUnits} min (${taskUnits} units) in ${month}`,
             refs: { taskId: task.id, serviceAuthId: auth.id, month },
           });

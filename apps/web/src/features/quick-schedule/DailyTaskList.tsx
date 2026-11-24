@@ -108,9 +108,6 @@ export function DailyTaskList({ state, model }: { state: QuickState; model: Quic
     <Panel title="Daily task list" meta="For the caregiver and EVV" className="min-w-0 print:break-before-page">
       <p className="mb-3 text-sm text-ink-2">
         The tasks for each visit and their minutes. Set each EVV visit window to its visit length.
-        {model.trims.length > 0
-          ? " On the dates marked in Month, the visit is shorter because the month's units run out."
-          : ""}
       </p>
       <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 print:grid-cols-4">
         {visits.map((visit) => (

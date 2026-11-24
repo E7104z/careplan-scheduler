@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import {
   exampleDayTotals,
   exampleMatchLine,
-  exampleRefusal,
+  exampleOverageWarning,
   exampleRuleCard,
   exampleWeek,
 } from "../features/landing/example";
@@ -64,7 +64,7 @@ export function Landing() {
   const hero = exampleDayTotals();
   const matchLine = exampleMatchLine();
   const week = exampleWeek();
-  const refusal = exampleRefusal();
+  const overage = exampleOverageWarning();
   const card = exampleRuleCard();
 
   return (
@@ -136,14 +136,13 @@ export function Landing() {
           }
         />
         <Section
-          heading="Can't be edited out of compliance"
-          lead="Schedules can be changed, but not into something that breaks a rule."
-          detail="A change that would break a rule is refused, and the limit is named."
+          heading="Warns before a month runs over"
+          lead="A month that needs more than it's authorized isn't cut short."
+          detail="Every visit stays, and the month is flagged, so the scheduler can make reasonable adjustments (DSDS)."
           figure={
-            <div className="rounded-md border border-block bg-block-bg p-4 text-block">
-              <p className="font-semibold">Not changed.</p>
-              <p className="mt-1">{refusal.sentence}</p>
-              <p className="mt-1">{refusal.fix}</p>
+            <div className="rounded-md border border-warn bg-warn-bg p-4 text-warn">
+              <p className="font-semibold">{overage.title}</p>
+              <p className="mt-1">{overage.whatToDo}</p>
             </div>
           }
         />

@@ -1,10 +1,9 @@
 import { MO_2026_07, composeWeek, ruleById, type AuthorizedTask, type RuleCatalogEntry } from "@careplan/engine";
-import { monthName } from "../../lib/format";
 import { checksumLines } from "../quick-schedule/checksumText";
-import { cellRefusal } from "../quick-schedule/guard";
 import { groupResults } from "../quick-schedule/grouping";
 import { exampleStateA } from "../quick-schedule/initialStates";
 import { buildQuickModel } from "../quick-schedule/model";
+import { copyFor } from "../quick-schedule/ruleCopy";
 import type { QuickState } from "../quick-schedule/types";
 
 /**
@@ -75,27 +74,20 @@ export function exampleWeek(): ExampleWeek {
   };
 }
 
-export interface ExampleRefusal {
-  sentence: string;
-  fix: string;
+export interface ExampleOverage {
+  title: string;
+  whatToDo: string;
 }
 
 /**
- * APP-SPEC 12.3: the refusal box Quick Schedule shows for raising Bathing on Tuesday to 50
- * minutes in the example plan, from the real guard (APP-SPEC 5.7), viewing the first plan month
- * where Bathing has no room left (one with 23 care days).
+ * APP-SPEC 12.3: what a month that needs more than its authorization says, from the real SCH-08
+ * copy (WARN, DSDS Nov 24, 2026). Over-authorization is a warning to make reasonable adjustments,
+ * not a hard refusal and not a reason to stop visits.
  */
-export function exampleRefusal(today = new Date()): ExampleRefusal {
-  const base = exampleState(today);
-  const bathing = base.tasks.find((task) => task.name === "Bathing");
-  if (!bathing) throw new Error("The example care plan has no Bathing task.");
-  for (const month of buildQuickModel(base, MO_2026_07).months) {
-    const refusal = cellRefusal({ ...base, viewMonth: month }, `${bathing.id}:2`, 50, MO_2026_07);
-    if (refusal && refusal.useMinutes === null && refusal.sentence.includes(monthName(month))) {
-      return { sentence: refusal.sentence, fix: refusal.hint };
-    }
-  }
-  throw new Error("The example change was not refused.");
+export function exampleOverageWarning(): ExampleOverage {
+  const copy = copyFor("SCH-08", "WARN");
+  if (!copy) throw new Error("The SCH-08 WARN copy is missing.");
+  return { title: copy.title, whatToDo: copy.whatToDo };
 }
 
 /** APP-SPEC 12.4: one rule card with its source line. */

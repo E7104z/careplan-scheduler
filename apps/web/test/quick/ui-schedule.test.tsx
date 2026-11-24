@@ -61,19 +61,18 @@ describe("Quick Schedule: weekly grid", () => {
   it("QS-10: minutes above the task's own get the warn fill, and Undo my minute changes clears it", async () => {
     const { user } = renderQuick();
     await buildB(user);
-    // Taking 15 minutes off Monday leaves room for 10 more on Tuesday.
     await changeCell(user, "Bathing", "Monday", 45, 30);
+    // Tuesday 45 -> 60 goes over the task's minutes a day and over the month; accepted now (a warning, not a refusal).
     await changeCell(user, "Bathing", "Tuesday", 45, 60);
-    await user.click(screen.getByRole("button", { name: "Use 55 minutes" }));
-    expect(changed(cell("Bathing", "Tuesday", 55))).toBe(true);
-    expect(cell("Bathing", "Tuesday", 55)).toHaveClass("bg-warn-bg", "text-warn");
+    expect(changed(cell("Bathing", "Tuesday", 60))).toBe(true);
+    expect(cell("Bathing", "Tuesday", 60)).toHaveClass("bg-warn-bg", "text-warn");
 
     await user.click(screen.getByRole("button", { name: "Undo my minute changes" }));
     expect(changed(cell("Bathing", "Tuesday", 45))).toBe(false);
     expect(cell("Bathing", "Tuesday", 45)).not.toHaveClass("bg-warn-bg");
   });
 
-  it("a cell opens with its minutes selected; Enter, Escape and Use N minutes leave focus on the cell", async () => {
+  it("a cell opens with its minutes selected; Enter commits and Escape leaves focus on the cell", async () => {
     const select = vi.spyOn(HTMLInputElement.prototype, "select");
     const { user } = renderQuick();
     await buildB(user);
@@ -87,12 +86,9 @@ describe("Quick Schedule: weekly grid", () => {
     await changeCell(user, "Bathing", "Monday", 45, 30);
     await waitFor(() => expect(cell("Bathing", "Monday", 30)).toHaveFocus());
 
+    // Tuesday 45 -> 60 is accepted: over-authorization is a warning, not a refusal.
     await changeCell(user, "Bathing", "Tuesday", 45, 60);
-    expect(screen.getByRole("alert")).toHaveTextContent("The most Bathing can have on Tuesday is 55 minutes.");
-    await waitFor(() => expect(cell("Bathing", "Tuesday", 45)).toHaveFocus());
-
-    await user.click(screen.getByRole("button", { name: "Use 55 minutes" }));
-    await waitFor(() => expect(cell("Bathing", "Tuesday", 55)).toHaveFocus());
+    await waitFor(() => expect(cell("Bathing", "Tuesday", 60)).toHaveFocus());
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     select.mockRestore();
   });
@@ -106,23 +102,13 @@ describe("Quick Schedule: weekly grid", () => {
 });
 
 describe("Quick Schedule: month", () => {
-  it("says exactly which tasks are cut on which dates when the month's units run out, and why", async () => {
+  it("a lower header figure doesn't cut the month: December is still calculated at 469 units", async () => {
     const { user } = renderQuick();
     await buildB(user, B_AT_440);
-    expect(screen.getByLabelText("Units in December 2025")).toBeInTheDocument();
-
-    expect(
-      screen.getByText(/This month's tasks need more than Fusion's 440 units, so the schedule stops 320 minutes early, starting Dec 30, 2025\./),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Dressing/Grooming 15 min, Wash Dishes 5 min")).toBeInTheDocument();
-    expect(screen.getByText(/^Dec 31, 2025: Meal Prep\/Eating 60 min, Bathing 45 min, Clean Bath 20 min, /)).toBeInTheDocument();
-    expect(screen.getByText(/a consistent need to change a task should prompt a request to the care plan change team \(INFO 09-25-02\)/)).toBeInTheDocument();
-
-    const label = screen.getByText(/^Wednesday 31: \d+ minutes, 195 minutes trimmed because the month's units run out$/);
-    expect(label).toHaveClass("sr-only");
-    expect(label.parentElement).toHaveTextContent("−195 min");
-    expect(label.parentElement).toHaveClass("border-warn");
-    expect(screen.getByText(/^Monday 1: \d+ minutes$/)).toHaveClass("sr-only");
+    const balance = screen.getByLabelText("Units in December 2025");
+    expect(within(balance).getByText("469 units")).toBeInTheDocument();
+    // The header figure is a check, not the schedule, so nothing is marked trimmed.
+    expect(screen.queryByText(/trimmed because the month's units run out/)).not.toBeInTheDocument();
   });
 
   it("AC-26: shows the month's units authorized, scheduled and left, and every month on request", async () => {
@@ -130,9 +116,9 @@ describe("Quick Schedule: month", () => {
     await buildB(user);
     const balance = screen.getByLabelText("Units in December 2025");
     expect(within(balance).getByText("469 units")).toBeInTheDocument();
-    expect(within(balance).getByText("Fusion, for 31 days")).toBeInTheDocument();
+    expect(within(balance).getByText("Calculated from the tasks")).toBeInTheDocument();
     expect(within(balance).getByText(/for tasks, 23 for transportation$/)).toBeInTheDocument();
-    expect(screen.getByText("Fusion, for a 31-day month: 469 units − 23 transportation")).toBeInTheDocument();
+    expect(screen.getByText("Calculated: 469 units − 23 transportation")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Show every month" }));
     const table = screen.getByRole("table", { name: "Units by month" });

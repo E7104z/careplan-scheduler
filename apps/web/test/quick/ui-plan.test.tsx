@@ -160,21 +160,14 @@ describe("Quick Schedule: care plan pane from Fusion", () => {
     ).toBeInTheDocument();
   });
 
-  it("a task-day change the guard refuses shows its sentence in that task's hint line", async () => {
+  it("a task-day change that would put the month over is accepted: over-authorization is a warning, not a refusal", async () => {
     saveQuickState(tightNovemberState());
     const { user } = renderQuick();
     const trash = taskGroup("Trash");
     expect(within(taskGroup("Trash days")).queryAllByRole("button", { pressed: true })).toHaveLength(0);
 
     await user.click(dayButton("Trash", "Sunday"));
-    expect(
-      within(trash).getByText("That would put November 2026 over the 17 units Fusion authorizes."),
-    ).toBeInTheDocument();
-    expect(dayButton("Trash", "Sunday")).toHaveAttribute("aria-pressed", "false");
-
-    // The next accepted change clears the sentence.
-    await user.click(dayButton("Trash", "Wednesday"));
-    expect(dayButton("Trash", "Wednesday")).toHaveAttribute("aria-pressed", "true");
+    expect(dayButton("Trash", "Sunday")).toHaveAttribute("aria-pressed", "true");
     expect(within(trash).queryByText(/That would put/)).not.toBeInTheDocument();
   });
 });
@@ -273,16 +266,14 @@ describe("Quick Schedule: care plan pane by hand", () => {
     expect(screen.getByText("Choose at least one care day.")).toBeInTheDocument();
   });
 
-  it("a refused minutes change goes to a toast and the field shows the minutes the schedule holds", async () => {
+  it("a minutes change that would put the month over is accepted and the field shows it", async () => {
     saveQuickState(tightNovemberState());
     const { user } = renderQuick();
     const minutes = within(taskGroup("Clean Bath")).getByRole("textbox", { name: "Minutes per day" });
     await user.clear(minutes);
     await user.type(minutes, "40");
     await user.keyboard("{Enter}");
-    const toasts = await screen.findAllByText("That would put November 2026 over the 17 units Fusion authorizes.");
-    expect(toasts.length).toBeGreaterThan(0);
-    expect(minutes).toHaveValue("20");
+    expect(minutes).toHaveValue("40");
   });
 
   it("removing a task returns focus to the picker", async () => {

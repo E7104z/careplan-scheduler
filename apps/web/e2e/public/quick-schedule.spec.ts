@@ -45,28 +45,21 @@ test("AC-02: opening fixture B's PDF builds the schedule", async ({ page }) => {
   await expect(page.getByText("Read from Fusion · DCN 10000002")).toBeVisible();
   await expect(page.getByText("Our total from these tasks matches Fusion's 455 units for a 30-day month. Fusion counts the days in each month for daily tasks, so a 31-day month has 469 and a 28-day month 434.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Open the care plan PDF from Fusion" })).toBeHidden();
-  // Each month gets Fusion's proration of its 455 (IMP-10), so nothing differs and nothing is cut.
+  // The screen's one figure is a check, not the schedule: each month is calculated from the tasks.
   await expect(statusPanel(page)).toContainText("Ready to use");
   // B has CDS transportation, so CDS-04 (CP4-7) asks for a look at NEMT trips.
   await expect(statusPanel(page)).toContainText("Follows every rule we check. 1 item is worth a look in Checks.");
-  await expect(page.getByText("Fusion, for a 31-day month: 469 units − 23 transportation")).toBeVisible();
+  await expect(page.getByText("Calculated: 469 units − 23 transportation")).toBeVisible();
 });
 
-test("AC-03: B at 440 units: December 2025 is cut at the end, with the tasks listed", async ({ page, isMobile }) => {
-  test.skip(isMobile, "the trim and calendar are viewport-independent; covered on desktop");
+test("AC-03: a lower header figure doesn't cut the month: December 2025 is still calculated at 469 units", async ({ page }) => {
   await page.goto("/quick");
   await openCarePlanText(page, fixtureText("B-tabbed-7day-455").replaceAll("455 units", "440 units"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
 
-  await expect(page.getByLabel("Units in December 2025")).toBeVisible();
-  await expect(page.getByText("This month's tasks need more than Fusion's 440 units")).toBeVisible();
-  await expect(page.getByText("320 minutes early, starting Dec 30, 2025")).toBeVisible();
-  await expect(
-    page.getByText("Dec 30, 2025: Meal Prep/Eating 60 min, Bathing 45 min, Dressing/Grooming 15 min, Wash Dishes 5 min"),
-  ).toBeVisible();
-  const dec31 = page.getByText(/^Wednesday 31: \d+ minutes, 195 minutes trimmed because the month's units run out$/);
-  await expect(dec31).toHaveCount(1);
-  await expect(dec31.locator("..")).toContainText("−195 min");
+  const december = page.getByLabel("Units in December 2025");
+  await expect(december).toContainText("469 units");
+  await expect(page.getByText(/trimmed because the month's units run out/)).toHaveCount(0);
 });
 
 test("AC-25: on Oct 21, 2026, no month before October 2026 is scheduled, and an ended plan isn't built", async ({ page }) => {

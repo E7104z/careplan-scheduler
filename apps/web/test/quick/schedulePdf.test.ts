@@ -169,8 +169,8 @@ describe("printed schedule: the PDF", () => {
     expectTidy(pdf.items);
   });
 
-  it("long names, a long provider, twelve months cut at the end and more checks than fit stay on the page", async () => {
-    const base = sheetFor(fromFusion(parseFusionText(fixtureB.replaceAll("455 units", "440 units"), MO_2026_07), 0, NOW));
+  it("long names, a long provider, twelve months and more checks than fit stay on the page", async () => {
+    const base = sheetFor(fromFusion(parseFusionText(fixtureB, MO_2026_07), 0, NOW));
     const sheet: ScheduleSheet = {
       ...base,
       name: "PARTICIPANT WITH A VERY LONG FIRST, MIDDLE AND LAST NAME FOR THE TEST",
@@ -189,7 +189,6 @@ describe("printed schedule: the PDF", () => {
     expect(pdf.pages).toBe(1);
     expect(pdf.text).toMatch(/And \d+ more checks\. See Checks in Quick Schedule\./);
     expect(pdf.text).toContain("Nov 19, 2025");
-    expect(pdf.text).toContain("When a month's units run out");
     expectTidy(pdf.items);
   });
 

@@ -29,7 +29,7 @@ export function changeDay(plan: CarePlan, service: number, change: DayChange, pa
   const others = (state.dayChanges ?? []).filter((existing) => !(existing.date === change.date && existing.taskId === change.taskId));
   const next: QuickState = { ...state, dayChanges: [...others, change], reviewed: null };
   const result = tryChange(next, pack, state);
-  if (!result.ok) return refuse(refusalText(result.blocks, { ...next, viewMonth: change.date.slice(0, 7) }, result.model));
+  if (!result.ok) return refuse(refusalText(result.blocks, { ...next, viewMonth: change.date.slice(0, 7) }));
   // A change equal to what the pattern gives that date is no change: it leaves no exception behind.
   const kept = result.model.dayExceptions.some((exception) => exception.date === change.date && exception.taskId === change.taskId);
   const services = plan.services.map((existing, index) =>

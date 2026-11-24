@@ -8,6 +8,7 @@ import {
   ruleSCH02TemplateDays,
   ruleSCH03TemplateMinutes,
   ruleSCH08CalendarCheck,
+  ruleSCH11RepeatedExceptions,
   ruleSCH12PartialMonth,
   ruleSCH14VisitDates,
   type AuthorizedTask,
@@ -130,7 +131,7 @@ describe("authorization rules", () => {
 });
 
 describe("schedule rules", () => {
-  it("TC-16: SCH-08 BLOCK and SCH-03 WARN", () => {
+  it("TC-16: SCH-08 WARN and SCH-03 WARN", () => {
     const t = task("bathing", 15, 4);
     const tpl = template([
       { taskId: "bathing", weekday: 1, minutes: 51 },
@@ -144,7 +145,7 @@ describe("schedule rules", () => {
       tasks: [t],
     };
     const sch08 = ruleSCH08CalendarCheck([a], [], tpl, [], ["2027-03"]);
-    expect(sch08.some((r) => r.severity === "BLOCK")).toBe(true);
+    expect(sch08.some((r) => r.severity === "WARN")).toBe(true);
     expect(sch08[0]!.message).toContain("297");
     expect(sch08[0]!.message).toContain("285");
 
@@ -205,5 +206,36 @@ describe("schedule rules", () => {
     });
     const results = ruleSCH14VisitDates([visit("v-1", "T1019U6", "2026-10-07")], [a]);
     expect(results.some((r) => r.severity === "BLOCK")).toBe(true);
+  });
+});
+
+describe("SCH-11 ignores automatic trims (kind \"fit\")", () => {
+  const ex = (date: string, kind?: "change" | "fit") => ({
+    id: `ex-${date}`,
+    participantId: "P-TEST-01",
+    date,
+    taskId: "bathing",
+    minutesDelta: -15,
+    reason: "Units for the month run out",
+    author: "CarePlan Scheduler",
+    createdAt: "",
+    kind,
+  });
+
+  it("TC-39: fit exceptions in consecutive months give no SCH-11 result", () => {
+    expect(ruleSCH11RepeatedExceptions([ex("2026-01-31", "fit"), ex("2026-02-28", "fit")])).toEqual([]);
+  });
+
+  it("TC-39: the same as kind \"change\" give one SCH-11 WARN", () => {
+    const expected = [
+      {
+        ruleId: "SCH-11",
+        severity: "WARN",
+        message: "Exception repeated in consecutive months; consider a care plan change request",
+        refs: { taskId: "bathing" },
+      },
+    ];
+    expect(ruleSCH11RepeatedExceptions([ex("2026-01-31", "change"), ex("2026-02-28", "change")])).toEqual(expected);
+    expect(ruleSCH11RepeatedExceptions([ex("2026-01-31"), ex("2026-02-28")])).toEqual(expected);
   });
 });

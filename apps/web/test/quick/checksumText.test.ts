@@ -38,8 +38,8 @@ describe("IMP-15 / APP-SPEC 5.1 checksum line", () => {
       lead: "Our total doesn't match Fusion's 402 units.",
       detail:
         "From these tasks we get 374 in a 28-day month, 391 in a 30-day month, 401 in a 31-day month. " +
-        "Check that every row came through. We schedule against Fusion's figure, lowered in shorter months by what " +
-        "the daily tasks lose there.",
+        "Check that every row came through. Fusion's figure is a check on the tasks, not the schedule: each month " +
+        "is scheduled from the tasks and their days.",
     });
   });
 });

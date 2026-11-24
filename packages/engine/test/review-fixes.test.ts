@@ -111,10 +111,10 @@ describe("FIX-1 SCH-08 checks the imported Fusion authorization", () => {
   });
   const dietary = template(everyDay("pc-dietary", 30)); // 900 min in November 2026
 
-  it("900 min against Fusion 40 units (600 min) → one BLOCK naming Fusion", () => {
+  it("900 min against Fusion 40 units (600 min) → one WARN naming Fusion", () => {
     const results = ruleSCH08CalendarCheck([pc], [fusion("A-PC", "2026-11", 40)], dietary, [], ["2026-11"]);
     expect(results).toHaveLength(1);
-    expect(results[0]!.severity).toBe("BLOCK");
+    expect(results[0]!.severity).toBe("WARN");
     expect(results[0]!.message).toBe("Scheduled 900 min exceeds Fusion authorization 600 min in 2026-11");
   });
 
@@ -131,13 +131,13 @@ describe("FIX-1 SCH-08 checks the imported Fusion authorization", () => {
     expect(ruleSCH08CalendarCheck([cds], [fusion("A-CDS", "2026-11", 90)], bathing, [], ["2026-11"])).toEqual([]);
   });
 
-  it("validateSchedule blocks 900 min against Fusion 40 units", () => {
+  it("validateSchedule warns 900 min against Fusion 40 units", () => {
     const results = byRule(
       validate({ authorizations: [pc], monthlyAuthorizations: [fusion("A-PC", "2026-11", 40)], template: dietary }),
       "SCH-08",
     );
     expect(results).toHaveLength(1);
-    expect(results[0]!.severity).toBe("BLOCK");
+    expect(results[0]!.severity).toBe("WARN");
     expect(results[0]!.message).toContain("Fusion");
   });
 });
