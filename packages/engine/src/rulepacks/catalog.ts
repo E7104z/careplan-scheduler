@@ -74,9 +74,9 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     source: "Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid",
   },
   {
-    id: "SCH-08", area: "Schedule", severities: ["BLOCK"], status: "VERIFIED",
-    rule: "Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → BLOCK.",
-    source: "DHSS 14a/14b \"Example Month\" sheet; 13 CSR 70-91.010(1)(B)2",
+    id: "SCH-08", area: "Schedule", severities: ["WARN"], status: "VERIFIED",
+    rule: "Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → WARN (overage is a warning, not a stop).",
+    source: "DHSS 14a/14b \"Example Month\" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026",
   },
   {
     id: "SCH-11", area: "Schedule", severities: ["WARN"], status: "APPROVED",
@@ -97,11 +97,6 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
     id: "SCH-15", area: "Schedule", severities: [], status: "APPROVED",
     rule: "Visit minutes = real elapsed minutes in America/Chicago, split by calendar date.",
     source: "Product decision approved Oct 20, 2026",
-  },
-  {
-    id: "SCH-17", area: "Schedule", severities: [], status: "APPROVED",
-    rule: "Fit to the month's authorization: for each month with an imported Fusion figure, if the template's minutes exceed `(Fusion units − transport units) × 15`, remove the excess starting from the last scheduled date and working backward; on each date take daily (7-day) tasks first, then longer occurrences first, then task id; output `CalendarException`s with `kind: \"fit\"`, `reason: \"Units for the month run out\"`. Months without a Fusion figure are never trimmed (derived units fit by construction). Emits no results.",
-    source: "Product decision approved Oct 21, 2026 (schedules never exceed SCH-08)",
   },
   {
     id: "AMEND-01", area: "Schedule", severities: ["REVIEW"], status: "PARTIAL",

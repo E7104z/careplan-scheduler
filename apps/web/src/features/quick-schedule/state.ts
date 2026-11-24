@@ -70,7 +70,7 @@ function guard(
   mutate(next);
   const result = tryChange(next, pack, state);
   if (!result.ok) {
-    return { state, refusal: refusalText(result.blocks, next, result.model) };
+    return { state, refusal: refusalText(result.blocks, next) };
   }
   const placed = new Set(result.model.pattern.map((entry) => `${entry.taskId}:${entry.weekday}`));
   for (const key of Object.keys(next.edits)) {

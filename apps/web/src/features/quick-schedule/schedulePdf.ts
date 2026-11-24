@@ -547,24 +547,19 @@ interface MonthLine {
   flag?: (month: SheetMonth) => "block" | "warn" | null;
 }
 
-/** The table's lines: a "Starting" line only when some month is cut short. */
+/** The table's lines: month, authorized, scheduled and left, with over-authorization flagged. */
 function monthLines(sheet: ScheduleSheet): MonthLine[] {
-  const lines: MonthLine[] = [
+  return [
     { label: "Month", value: (month) => month.label },
     { label: "Authorized", value: (month) => month.authorized },
     { label: "Scheduled", value: (month) => month.scheduled },
-    { label: "Left", value: (month) => month.left, flag: (month) => (month.over ? "block" : null) },
-    { label: "Cut at month end", value: (month) => month.cut || "–", flag: (month) => (month.cut ? "warn" : null) },
+    { label: "Left", value: (month) => month.left, flag: (month) => (month.over ? "warn" : null) },
   ];
-  if (sheet.months.some((month) => month.cut)) {
-    lines.push({ label: "Starting", value: (month) => month.cutFrom || "–", flag: (month) => (month.cut ? "warn" : null) });
-  }
-  return lines;
 }
 
 /** Each month's authorized, scheduled and left units and the minutes cut at month end. */
 function stripHeight(p: Painter, sheet: ScheduleSheet): number {
-  const notes = [sheet.authorizedNote, sheet.cutNote, sheet.warning].filter((note): note is string => note !== null);
+  const notes = [sheet.authorizedNote, sheet.warning].filter((note): note is string => note !== null);
   const lines = notes.reduce((sum, note) => sum + p.wrap(note, "regular", 6.5, RIGHT - LEFT).length, 0);
   // The whole care plan's page has no months of its own (APP-SPEC 5.8): only its notes.
   const table = sheet.months.length > 0 ? 12 + monthLines(sheet).length * MONTH_ROW + 4 : 0;
@@ -604,7 +599,6 @@ function drawMonths(p: Painter, sheet: ScheduleSheet, top: number): number {
 
   for (const [note, color] of [
     [sheet.authorizedNote, p.color["ink-3"]],
-    [sheet.cutNote, p.color.warn],
     [sheet.warning, p.color.warn],
   ] as const) {
     if (note === null) continue;

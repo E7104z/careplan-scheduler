@@ -5,7 +5,7 @@ import { MO_2026_07, RULE_CATALOG } from "@careplan/engine";
 import {
   exampleDayTotals,
   exampleMatchLine,
-  exampleRefusal,
+  exampleOverageWarning,
   exampleWeek,
 } from "../src/features/landing/example";
 import { Landing } from "../src/pages/Landing";
@@ -60,25 +60,24 @@ describe("Landing", () => {
     ]);
     expect(within(agencies).getByRole("link", { name: "Set up your agency" })).toHaveAttribute("href", "/sign-up");
 
-    // The four figures come from the engine and the import package, not hardcoded output.
+    // The figures come from the engine and the import package, not hardcoded output.
     const matchLine = "Every task read. Our total from these tasks matches Fusion's 466 units a month.";
     const weekText = "70, 90, 90, 90, 90, 90, 70";
-    // October 2026: the plan's first month with 23 care days (five Thursdays, Fridays and
-    // Saturdays), so Bathing has no room left.
-    const refusalSentence = "That would put Bathing over its 69 units in October 2026.";
-    const refusalFix =
-      "Bathing can't have more than 45 minutes on Tuesday. To add time here, take it from another day first.";
+    // A month over its authorization is flagged as a warning (DSDS Nov 24, 2026), not cut short.
+    const overageTitle = "The schedule goes over the month's authorization";
+    const overageWhatToDo =
+      "Make reasonable scheduling adjustments to stay within the authorized units while still meeting the participant's needs. Don't simply stop visits when units run out.";
 
     expect(exampleMatchLine()).toBe(matchLine);
     expect(exampleWeek().weekText).toBe(weekText);
-    const refusal = exampleRefusal();
-    expect(refusal.sentence).toBe(refusalSentence);
-    expect(refusal.fix).toBe(refusalFix);
+    const overage = exampleOverageWarning();
+    expect(overage.title).toBe(overageTitle);
+    expect(overage.whatToDo).toBe(overageWhatToDo);
 
     expect(screen.getByText(matchLine)).toBeInTheDocument();
     expect(screen.getByText(weekText)).toBeInTheDocument();
-    expect(screen.getByText(refusalSentence)).toBeInTheDocument();
-    expect(screen.getByText(refusalFix)).toBeInTheDocument();
+    expect(screen.getByText(overageTitle)).toBeInTheDocument();
+    expect(screen.getByText(overageWhatToDo)).toBeInTheDocument();
   });
 
   it("APP-SPEC 12: the headline figure is the example plan's Day total row, with its checked status", () => {
@@ -110,8 +109,6 @@ describe("Rules", () => {
     for (const rule of RULE_CATALOG) {
       expect(screen.getByText(rule.id)).toBeInTheDocument();
     }
-    // SCH-17 (October 2025 end-of-month trim) is part of the catalog.
-    expect(screen.getByText("SCH-17")).toBeInTheDocument();
     // Every status a rule has is explained in the legend (APP-SPEC 12).
     const legend = screen.getByRole("heading", { name: "Statuses" }).parentElement!;
     for (const status of new Set(RULE_CATALOG.map((rule) => rule.status))) {

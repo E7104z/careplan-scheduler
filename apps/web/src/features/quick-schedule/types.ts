@@ -273,14 +273,11 @@ export interface QuickModel {
   entries: TemplateEntry[];
   auth: ServiceAuthorization;
   template: ScheduleTemplate;
-  trims: CalendarException[];
-  /** The person's one-day changes as calendar exceptions over the pattern (after the trims). */
+  /** The person's one-day changes as calendar exceptions over the pattern. */
   dayExceptions: CalendarException[];
   allowance: QuickAllowance | null;
   months: string[];
   monthlyAuthorizations: MonthlyAuthorization[];
-  /** The monthly figures are the care plan screen's one figure, prorated to each month (IMP-10). */
-  prorated: boolean;
   results: ScheduleValidationResult[];
   checksum: QuickChecksum | null;
 }
@@ -289,15 +286,11 @@ export interface MonthFigures {
   expanded: Record<string, Record<string, number>>;
   authorizedUnits: number;
   source: "fusion" | "calculated";
-  /** Fusion's figure for a month of this many days, from the care plan screen's one figure (IMP-10). */
-  proratedDays: number | null;
   calculatedUnits: number;
   transportUnits: number;
   taskBudgetMinutes: number;
   scheduledTaskMinutes: number;
   over: boolean;
-  trims: CalendarException[];
-  trimmedMinutes: number;
 }
 
 export interface CheckGroup {

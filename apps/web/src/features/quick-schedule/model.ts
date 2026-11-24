@@ -4,7 +4,6 @@ import {
   daysInMonth,
   derivedServiceMonthUnits,
   expandMonth,
-  fitToAuthorization,
   monthTransportUnits,
   transportAllowance,
   validatePlan,
@@ -177,38 +176,30 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   const checksum = state.source === "fusion" && scheduled ? checksumFor(state, auth) : null;
 
   // Step 7: monthly figures. Each month's own figure (QS-11 by hand, or Fusion's care plan
-  // report, IMP-17); else the care plan screen's one figure, prorated to each full month (IMP-10).
+  // report, IMP-17). The care plan screen's one "Total Units" figure is validation-only: it
+  // feeds the checksum (IMP-15) but never sets a month's authorization (DSDS Nov 24, 2026).
   const fusionFigure = (month: string, units: number): MonthlyAuthorization => ({
     serviceAuthId: state.id, month, units, source: "fusion", revision: 1,
   });
-  const ownFigures = Object.entries(state.fusion)
+  const monthlyAuthorizations: MonthlyAuthorization[] = Object.entries(state.fusion)
     .filter(([month, units]) => months.includes(month) && Number.isInteger(units) && units >= 0)
     .map(([month, units]) => fusionFigure(month, units));
-  const prorated =
-    state.source === "fusion" && ownFigures.length === 0 && state.headerUnits !== null && Number.isInteger(state.headerUnits);
-  const monthlyAuthorizations: MonthlyAuthorization[] = prorated
-      ? months
-          .filter((month) => isFullMonth(month, auth.start, auth.end))
-          .map((month) => fusionFigure(month, proratedUnits(state.headerUnits as number, checksum, auth, month)))
-      : ownFigures;
 
-  // Step 8: trims come from the pattern, never from a person's cell changes (SCH-17).
-  const pattern: ScheduleTemplate = {
+  // Step 8: the schedule keeps every task. No end-of-month trims (DSDS Nov 24, 2026: don't
+  // simply stop visits when units run out); a month that needs more is shown as a warning.
+  const template: ScheduleTemplate = {
     id: `${state.id}-template`,
     participantId: state.id,
     start: auth.start,
     end: auth.end,
-    entries: composed.entries,
+    entries,
     rulePackVersion: pack.id,
   };
-  const template: ScheduleTemplate = { ...pattern, entries };
-  const trims: CalendarException[] =
-    scheduled ? fitToAuthorization(pattern, auth, monthlyAuthorizations, months) : [];
 
   // One-day changes (Coverage Phase 3): what a task has on one date instead of the pattern's
-  // minutes, as calendar exceptions applied after the trims. Changes for a task or a date no longer
-  // in the schedule are ignored.
-  const dayExceptions = dayChangeExceptions(state, template, trims, auth);
+  // minutes, as calendar exceptions applied after the weekly pattern. Changes for a task or a
+  // date no longer in the schedule are ignored.
+  const dayExceptions = dayChangeExceptions(state, template, auth);
 
   // Step 9: validate. Quick Schedule has no visits, so the plan rules run, with CON-09 on the
   // expanded template (ENGINE-SPEC Amendment B): CON-13 would otherwise ask for a referral date
@@ -216,7 +207,7 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
   const results: ScheduleValidationResult[] =
     scheduled
       ? validatePlan({
-          pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: [...trims, ...dayExceptions], months,
+          pack, authorizations: [auth], monthlyAuthorizations, template, exceptions: dayExceptions, months,
           // The plan's own first date: the schedule may start later, at this month (step 5).
           authorizedStarts: { [auth.id]: state.plan.start },
         })
@@ -229,29 +220,26 @@ export function buildQuickModel(state: QuickState, pack: RulePack): QuickModel {
     entries,
     auth,
     template,
-    trims,
     dayExceptions,
     allowance,
     months,
     monthlyAuthorizations,
-    prorated,
     results,
     checksum,
   };
 }
 
-/** The person's one-day changes as engine exceptions: the difference from what that date holds after the trims. */
+/** The person's one-day changes as engine exceptions: the difference from what that date holds on the weekly pattern. */
 function dayChangeExceptions(
   state: QuickState,
   template: ScheduleTemplate,
-  trims: CalendarException[],
   auth: ServiceAuthorization,
 ): CalendarException[] {
   const exceptions: CalendarException[] = [];
   for (const change of state.dayChanges ?? []) {
     if (change.date < auth.start || change.date > auth.end || !auth.tasks.some((task) => task.id === change.taskId)) continue;
     const [year, monthNumber] = change.date.split("-").map(Number);
-    const before = expandMonth(template, trims, year ?? 0, monthNumber ?? 1, auth.start, auth.end)[change.date]?.[change.taskId] ?? 0;
+    const before = expandMonth(template, [], year ?? 0, monthNumber ?? 1, auth.start, auth.end)[change.date]?.[change.taskId] ?? 0;
     if (change.minutes === before) continue;
     exceptions.push({
       id: `day-${change.date}-${change.taskId}`, participantId: auth.participantId, date: change.date, taskId: change.taskId,
@@ -277,22 +265,6 @@ function checksumFor(state: QuickState, auth: ServiceAuthorization): QuickChecks
     if (!(key in byMonthLength)) byMonthLength[key] = derivedServiceMonthUnits(auth, year ?? 0, monthNumber ?? 1);
   }
   return { fusion, byMonthLength, matches: Object.values(byMonthLength).includes(fusion) };
-}
-
-/**
- * IMP-10: the care plan screen's one figure, prorated to a month as Fusion does (Fusion FAQ, Jun
- * 4, 2025): tasks done every day count that month's days, other tasks a set number of days. When
- * our total from the tasks matches Fusion's figure, the month's figure is our total for that
- * month: Fusion's own method on the same tasks. When it doesn't, rows may be missing, so the
- * figure is never raised: Fusion's figure, lowered in a shorter month by what the daily tasks
- * read lose there.
- */
-function proratedUnits(fusion: number, checksum: QuickChecksum | null, auth: ServiceAuthorization, month: string): number {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const derived = derivedServiceMonthUnits(auth, year ?? 0, monthNumber ?? 1);
-  if (checksum?.matches) return derived;
-  const thirtyDay = checksum?.byMonthLength["30"];
-  return thirtyDay === undefined ? fusion : Math.min(fusion, fusion + derived - thirtyDay);
 }
 
 function validTask(task: QuickTask): task is QuickTask & { minPerDay: number } {
@@ -323,7 +295,7 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
   const [year, monthNumber] = month.split("-").map(Number);
   const y = year ?? 0;
   const m = monthNumber ?? 1;
-  const expanded = expandMonth(model.template, [...model.trims, ...model.dayExceptions], y, m, model.auth.start, model.auth.end);
+  const expanded = expandMonth(model.template, model.dayExceptions, y, m, model.auth.start, model.auth.end);
   const imported = model.monthlyAuthorizations.find((authorization) => authorization.month === month);
   const calculatedUnits = derivedServiceMonthUnits(model.auth, y, m);
   const authorizedUnits = imported ? imported.units : calculatedUnits;
@@ -333,20 +305,15 @@ export function monthFigures(model: QuickModel, month: string): MonthFigures {
   for (const day of Object.values(expanded)) {
     for (const minutes of Object.values(day)) scheduledTaskMinutes += minutes;
   }
-  const trims = model.trims.filter((trim) => trim.date.slice(0, 7) === month);
-  const trimmedMinutes = trims.reduce((sum, trim) => sum - trim.minutesDelta, 0);
   return {
     expanded,
     authorizedUnits,
     source: imported ? "fusion" : "calculated",
-    proratedDays: imported && model.prorated ? daysInMonth(y, m) : null,
     calculatedUnits,
     transportUnits,
     taskBudgetMinutes,
     scheduledTaskMinutes,
     over: scheduledTaskMinutes > taskBudgetMinutes,
-    trims,
-    trimmedMinutes,
   };
 }
 

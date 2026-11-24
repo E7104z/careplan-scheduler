@@ -3,6 +3,7 @@ import { MO_2026_07 } from "@careplan/engine";
 import { parseFusionText } from "@careplan/import";
 import { fromFusion, longestWithoutCare, SPREAD_DAYS, spreadSubset } from "../../src/features/import/fromFusion";
 import { buildQuickModel, combinedRespiteFigure, monthFigures } from "../../src/features/quick-schedule/model";
+import { recurringShortfall, shortfallMonths } from "../../src/features/quick-schedule/shortfall";
 import { manualState, reduce } from "../../src/features/quick-schedule/state";
 import type { QuickState } from "../../src/features/quick-schedule/types";
 import fixtureA from "@fixtures/fusion/A-run-together-5day-466.txt?raw";
@@ -47,38 +48,43 @@ describe("Quick Schedule model", () => {
     expect(c?.matches).toBe(false);
   });
 
-  it("IMP-T17: B's figure is for a 30-day month; each month gets Fusion's proration, so nothing is cut", () => {
+  it("IMP-T17: B's header figure is validation-only; each month is calculated from the tasks (daily tasks by days in month)", () => {
     const model = modelAt(fixtureB, BEFORE_B);
     expect(model.months).toHaveLength(11);
-    expect(Object.fromEntries(model.monthlyAuthorizations.map((a) => [a.month, a.units]))).toMatchObject({
-      "2025-12": 469, // 31 days
-      "2026-02": 434, // 28 days
-      "2026-04": 455, // 30 days, Fusion's figure
-    });
-    expect(model.trims).toEqual([]);
+    // The care plan screen has one "Total Units" figure and no per-month rows, so none are imported.
+    expect(model.monthlyAuthorizations).toEqual([]);
     expect(model.results.filter((r) => r.severity === "BLOCK" || r.ruleId === "AUTH-07")).toEqual([]);
-    expect(monthFigures(model, "2025-12")).toMatchObject({ authorizedUnits: 469, source: "fusion", proratedDays: 31 });
+    expect(monthFigures(model, "2025-12")).toMatchObject({ authorizedUnits: 469, source: "calculated" });
+    expect(monthFigures(model, "2026-02")).toMatchObject({ authorizedUnits: 434 });
+    expect(monthFigures(model, "2026-04")).toMatchObject({ authorizedUnits: 455 });
   });
 
-  it("SCH-17: with Fusion's figure below the tasks (B at 440), a month that needs more is cut to it at the end", () => {
-    const model = modelAt(fixtureB.replaceAll("455 units", "440 units"), BEFORE_B);
-    const units = Object.fromEntries(model.monthlyAuthorizations.map((a) => [a.month, a.units]));
-    // Rows don't add up to Fusion's figure: never raised above it, lowered in February.
-    expect(units).toMatchObject({ "2025-12": 440, "2026-02": 419, "2026-04": 440 });
-    const cut: string[] = [];
-    for (const month of model.months) {
-      const figures = monthFigures(model, month);
-      expect(figures.scheduledTaskMinutes, month).toBeLessThanOrEqual(figures.taskBudgetMinutes);
-      if (figures.trimmedMinutes === 0) continue;
-      cut.push(month);
-      // Cut exactly to the figure, from the end of the month.
-      expect(figures.scheduledTaskMinutes, month).toBe(figures.taskBudgetMinutes);
-      expect(figures.trims.every((trim) => trim.date >= `${month}-25`), month).toBe(true);
-    }
-    // February and April fit: their once-a-week tasks come 4 times, against the factor's 5.
-    expect(cut).toEqual(model.months.filter((month) => month !== "2026-02" && month !== "2026-04"));
-    expect(model.results.filter((r) => r.ruleId === "AUTH-07").map((r) => r.refs.month)).toEqual(model.months);
-    expect(model.results.filter((r) => r.severity === "BLOCK")).toEqual([]);
+  it("a month whose Fusion figure is below the tasks is not cut: it is flagged as a SCH-08 WARN", () => {
+    let state = manualState(TODAY);
+    state = reduce(state, { type: "addTask", taskCode: "BATHING", name: "Bathing" }, MO_2026_07).state;
+    const bathing = state.tasks[0]!.id;
+    state = reduce(state, { type: "setMinutes", taskId: bathing, minutes: 120 }, MO_2026_07).state;
+    state = reduce(state, { type: "setFusionUnits", month: "2026-11", units: 100 }, MO_2026_07).state;
+    const model = buildQuickModel(state, MO_2026_07);
+    const figures = monthFigures(model, "2026-11");
+    expect(figures.source).toBe("fusion");
+    expect(figures.authorizedUnits).toBe(100);
+    expect(figures.over).toBe(true);
+    const november = model.results.filter((r) => r.ruleId === "SCH-08" && r.refs.month === "2026-11");
+    expect(november.length).toBeGreaterThan(0);
+    expect(november.every((r) => r.severity === "WARN")).toBe(true);
+  });
+
+  it("flags a recurring shortfall after two consecutive months over authorization", () => {
+    let state = manualState(TODAY);
+    state = reduce(state, { type: "addTask", taskCode: "BATHING", name: "Bathing" }, MO_2026_07).state;
+    const bathing = state.tasks[0]!.id;
+    state = reduce(state, { type: "setMinutes", taskId: bathing, minutes: 120 }, MO_2026_07).state;
+    state = reduce(state, { type: "setFusionUnits", month: "2026-11", units: 100 }, MO_2026_07).state;
+    state = reduce(state, { type: "setFusionUnits", month: "2026-12", units: 100 }, MO_2026_07).state;
+    const model = buildQuickModel(state, MO_2026_07);
+    expect(shortfallMonths(model)).toEqual(expect.arrayContaining(["2026-11", "2026-12"]));
+    expect(recurringShortfall(model)).toBe(true);
   });
 
   it("a plan that started before this month is scheduled from this month; its dates stay Fusion's", () => {

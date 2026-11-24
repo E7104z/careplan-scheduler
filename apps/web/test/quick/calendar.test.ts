@@ -39,7 +39,7 @@ describe("normalizeEvents: one list of every occurrence", () => {
     const occurrences = normalizeEvents(plan, models, PACK);
     plan.services.forEach((state, index) => {
       const model = models[index]!;
-      const expanded = expandMonth(model.template, [...model.trims, ...model.dayExceptions], 2026, 5, model.auth.start, model.auth.end);
+      const expanded = expandMonth(model.template, model.dayExceptions, 2026, 5, model.auth.start, model.auth.end);
       const expected = Object.entries(expanded).flatMap(([date, tasks]) =>
         Object.entries(tasks).filter(([, minutes]) => minutes > 0).map(([taskId, minutes]) => `${date}|${taskId}|${minutes}`),
       );
@@ -174,13 +174,13 @@ describe("Change this day: a one-day change over the weekly pattern", () => {
     expect(model.dayExceptions).toMatchObject([{ date: first.date, taskId: first.taskId, minutesDelta: -first.minutes!, kind: "change" }]);
   });
 
-  it("is refused with the limit when it would put the month over its units, and nothing changes", () => {
+  it("a one-day change that puts the month over its units is accepted, not refused", () => {
     const plan = planF();
     const first = normalizeEvents(plan, modelsOf(plan), PACK, ["2026-05"]).find((occurrence) => occurrence.kind === "TASK" && occurrence.service === "PC - Agency")!;
     const service = plan.services.findIndex((state) => state.id === first.authorizationId);
-    const refused = changeDay(plan, service, { date: first.date, taskId: first.taskId!, minutes: 1440 }, PACK);
-    expect(refused.plan).toBe(plan);
-    expect(refused.refusal).toMatch(/^Not changed\. That would put .* over /);
+    const changed = changeDay(plan, service, { date: first.date, taskId: first.taskId!, minutes: 1440 }, PACK);
+    expect(changed.refusal).toBeUndefined();
+    expect(changed.plan).not.toBe(plan);
   });
 
   it("setting the pattern's own minutes back leaves no change behind", () => {

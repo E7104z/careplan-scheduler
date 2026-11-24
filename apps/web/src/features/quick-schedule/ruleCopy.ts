@@ -29,7 +29,7 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
   "AUTH-07/REVIEW": {
     title: "Fusion's monthly figure differs from this month's task units",
     whatToDo:
-      "We schedule against Fusion's figure. If the tasks need more, the last days of the month are cut, and the month view lists them. If that happens every month, ask the care plan change team for a change.",
+      "We schedule the tasks and flag a month when they need more than Fusion authorizes. Make reasonable scheduling adjustments to stay within the units while still meeting the participant's needs. If it's ongoing or recurring, ask the care plan change team for a change.",
   },
   "AUTH-08/INFO": {
     title: "Transportation time is set aside",
@@ -70,13 +70,14 @@ const AUTH_SCH_COPY: Record<string, RuleCopy> = {
     whatToDo:
       "One day's minutes for this task are above its minutes per day. That's allowed while the month stays within its units.",
   },
-  "SCH-08/BLOCK": {
+  "SCH-08/WARN": {
     title: "The schedule goes over the month's authorization",
-    whatToDo: "Lower some minutes or days, or check the monthly units against Fusion.",
+    whatToDo:
+      "Make reasonable scheduling adjustments to stay within the authorized units while still meeting the participant's needs. Don't simply stop visits when units run out.",
   },
   "SCH-08/task": {
     title: "A task goes over its monthly units",
-    whatToDo: "Lower this task's minutes on the longer days.",
+    whatToDo: "Make reasonable scheduling adjustments to stay within this task's monthly units.",
   },
   "SCH-11/WARN": {
     title: "The same change two months running",
@@ -271,8 +272,8 @@ const STATE_FORMULA_COPY: Record<string, RuleCopy> = {
 
 /**
  * APP-SPEC 5.5 copy table, verbatim, and the State formula checks. Keys are `ID/SEVERITY`;
- * `SCH-08/task` is the task-level variant of SCH-08. AUTH-13, SCH-15 and SCH-17 emit nothing
- * and are intentionally absent.
+ * `SCH-08/task` is the task-level variant of SCH-08. AUTH-13 and SCH-15 emit nothing and are
+ * intentionally absent.
  */
 export const RULE_COPY: Record<string, RuleCopy> = {
   ...AUTH_SCH_COPY,

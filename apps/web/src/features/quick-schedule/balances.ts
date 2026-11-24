@@ -89,8 +89,8 @@ export function ilwSwitchProjection(models: QuickModel[], month: string): string
   const ilwUnits = importedUnitsForProgram(authorizations, monthly, "ILW", month);
   if (statePlanUnits === undefined || ilwUnits === undefined) return null;
   const taskIds = new Set([...cds.tasks, ...ilw.tasks].map((task) => task.id));
-  const cdsDaily = dailyUnitsForMonth(cds.template, [...cds.trims, ...cds.dayExceptions], month, taskIds);
-  const ilwDaily = dailyUnitsForMonth(ilw.template, [...ilw.trims, ...ilw.dayExceptions], month, taskIds);
+  const cdsDaily = dailyUnitsForMonth(cds.template, cds.dayExceptions, month, taskIds);
+  const ilwDaily = dailyUnitsForMonth(ilw.template, ilw.dayExceptions, month, taskIds);
   const dailyUnits = cdsDaily.map((units, day) => units + (ilwDaily[day] ?? 0));
   const projected = ruleAUTH11ProjectIlwSwitch(dailyUnits, statePlanUnits, ilwUnits);
   if (projected.length === 0) return null;

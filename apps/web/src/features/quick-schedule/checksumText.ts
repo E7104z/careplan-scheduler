@@ -51,7 +51,7 @@ export function checksumLines(checksum: QuickChecksum): ChecksumLines {
   return {
     lead: `Our total doesn't match Fusion's ${checksum.fusion} units.`,
     detail:
-      `From these tasks we get ${figures}. Check that every row came through. We schedule against Fusion's figure, ` +
-      "lowered in shorter months by what the daily tasks lose there.",
+      `From these tasks we get ${figures}. Check that every row came through. Fusion's figure is a check on the tasks, ` +
+      "not the schedule: each month is scheduled from the tasks and their days.",
   };
 }

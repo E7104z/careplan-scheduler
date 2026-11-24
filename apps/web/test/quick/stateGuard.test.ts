@@ -20,7 +20,7 @@ function placedDay(state: QuickState, taskId: string): Weekday {
 }
 
 describe("APP-SPEC 5.7 / .clinerules 19a: every schedule change goes through the guard", () => {
-  it("QS-04: adding a task that would put a month over its Fusion units is refused", () => {
+  it("QS-04: adding a task that would put a month over its Fusion units is accepted and flagged", () => {
     // Clean Bath 20 min once a week, raised to 21 on its day: fits its 7 units (105 min) in every month.
     let state = run(manualState(TODAY), { type: "addTask", taskCode: "CLEAN_BATH", name: "Clean Bath" });
     const cleanBath = state.tasks[0]!.id;
@@ -34,15 +34,13 @@ describe("APP-SPEC 5.7 / .clinerules 19a: every schedule change goes through the
     state = run(state, { type: "setFusionUnits", month: "2026-11", units: 7 });
     expect(blocks(state)).toEqual([]);
 
-    // Bathing pushes November over: the month-end trims cut the pattern back to 7 units, but the
-    // person's +1 minute on each Monday is not trimmed, so November would be 5 minutes over.
+    // Bathing pushes November over 7 units. That is a warning now (SCH-08), not a refusal.
     const result = reduce(state, { type: "addTask", taskCode: "BATHING", name: "Bathing" }, pack);
-    expect(result.refusal).toBe("That would put November 2026 over the 7 units Fusion authorizes.");
-    expect(result.state).toBe(state);
-    expect(blocks(result.state)).toEqual([]);
+    expect(result.refusal).toBeUndefined();
+    expect(result.state.tasks.map((task) => task.name)).toContain("Bathing");
   });
 
-  it("a plan that already breaks a rule can still be changed, but not into a new break", () => {
+  it("a plan that already breaks a rule can still be changed, and over-authorization is a warning, not a new break", () => {
     // Respite over its 868-unit monthly limit is a BLOCK (AUTH-09) that comes from the plan's own
     // figure, not from anything the person changed (APP-SPEC 5.7: "no new Must fix").
     const state = run(
@@ -59,12 +57,13 @@ describe("APP-SPEC 5.7 / .clinerules 19a: every schedule change goes through the
     expect(removed.state.tasks.map((task) => task.name)).toEqual(["Basic Respite"]);
     expect(blocks(removed.state).map((result) => result.ruleId)).toEqual(["AUTH-09"]);
 
-    // Raising Monday to 60 minutes would add a break of its own: refused, and the sentence names
-    // the new break, not the one the plan already had.
+    // Raising Monday to 60 minutes no longer adds a break of its own: over-authorization is a
+    // warning now, so the change is accepted while the plan's own AUTH-09 break stays.
     const basic = removed.state.tasks[0]!.id;
     const raised = reduce(removed.state, { type: "setCell", key: `${basic}:1`, minutes: 60 }, pack);
-    expect(raised.refusal).toBe("That would put Basic Respite over its 30 units in November 2026.");
-    expect(raised.state).toBe(removed.state);
+    expect(raised.refusal).toBeUndefined();
+    expect(raised.state.edits[`${basic}:1`]).toBe(60);
+    expect(blocks(raised.state).map((result) => result.ruleId)).toEqual(["AUTH-09"]);
   });
 });
 

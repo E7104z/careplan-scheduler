@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState, type Dispatch, type ReactNode } from "react";
 import { daysInMonth, weekdayOf, type Weekday } from "@careplan/engine";
-import { cn } from "../../lib/cn";
 import { formatUnits, monthName, weekdayName } from "../../lib/format";
 import { Button } from "../../ui/Button";
 import { Field } from "../../ui/Field";
@@ -83,9 +82,6 @@ export function MonthPanel({ state, model, models, dispatch }: MonthPanelProps) 
   const firstMonth = model.months[0] ?? month;
   const lastMonth = model.months[model.months.length - 1] ?? month;
 
-  const trimByDate: Record<string, number> = {};
-  for (const trim of figures.trims) trimByDate[trim.date] = (trimByDate[trim.date] ?? 0) - trim.minutesDelta;
-
   const first = weekdayOf(year ?? 0, monthNumber ?? 1, 1);
   const days = daysInMonth(year ?? 0, monthNumber ?? 1);
   const cells: ReactNode[] = [];
@@ -97,7 +93,6 @@ export function MonthPanel({ state, model, models, dispatch }: MonthPanelProps) 
     const weekday = (first + d - 1) % 7;
     const inPlan = date >= state.plan.start && date <= state.plan.end;
     const minutes = Object.values(figures.expanded[date] ?? {}).reduce((sum, value) => sum + value, 0);
-    const trim = trimByDate[date];
     const label = `${weekdayName(weekday as Weekday)} ${d}`;
     // A generic div's aria-label isn't read, so each date says what it holds in screen-reader text.
     if (!inPlan) {
@@ -112,26 +107,21 @@ export function MonthPanel({ state, model, models, dispatch }: MonthPanelProps) 
           </span>
         </div>,
       );
-    } else if (minutes || trim) {
+    } else if (minutes) {
       cells.push(
         <div
           key={date}
-          className={cn(
-            "flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-sm border p-1.5",
-            trim ? "border-warn" : "border-line",
-          )}
+          className="flex min-h-[64px] flex-col items-center justify-center gap-0.5 rounded-sm border border-line p-1.5"
         >
-          <span className="sr-only">
-            {`${label}: ${minutes} minutes${trim ? `, ${trim} minutes trimmed because the month's units run out` : ""}`}
-          </span>
+          <span className="sr-only">{`${label}: ${minutes} minutes`}</span>
           <span aria-hidden="true" className="text-[13px] font-medium text-ink-2">
             {d}
           </span>
           <span aria-hidden="true" className="font-semibold text-ink">
             {minutes}
           </span>
-          <span aria-hidden="true" className={cn("text-[12px]", trim ? "font-medium text-warn" : "text-ink-3")}>
-            {trim ? `−${trim} min` : formatUnits(minutes)}
+          <span aria-hidden="true" className="text-[12px] text-ink-3">
+            {formatUnits(minutes)}
           </span>
         </div>,
       );

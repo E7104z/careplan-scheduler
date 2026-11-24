@@ -40,11 +40,11 @@ const EVENT_UNIT: Record<PlanEventKind, [one: string, many: string]> = {
   REMINDER: ["", ""],
 };
 
-/** A version's own exceptions: its trims and one-day changes, on its own dates only. */
+/** A version's own exceptions: its one-day changes, on its own dates only. */
 function versionExceptions(versions: ServiceVersion[], index: number): CalendarException[] {
   const version = versions[index]!;
   const nextFrom = versions[index + 1]?.effectiveFrom;
-  return [...version.model.trims, ...version.model.dayExceptions].filter(
+  return version.model.dayExceptions.filter(
     (exception) => exception.date >= version.effectiveFrom && (nextFrom === undefined || exception.date < nextFrom),
   );
 }
@@ -56,8 +56,8 @@ function versionOnDate(versions: ServiceVersion[], date: string): ServiceVersion
 
 /**
  * One list of every occurrence in the plan (CP3-7): the weekly pattern of each service expanded to
- * real dates (the engine's expansion, with the trims, one-day changes and recorded care plan
- * changes applied, each occurrence on the version in effect that day), transportation on its day,
+ * real dates (the engine's expansion, with the one-day changes and recorded care plan changes
+ * applied, each occurrence on the version in effect that day), transportation on its day,
  * and every dated event. Sorted by date, then by the plan's order. **This list is the only source
  * the calendar, the list view and the whole-plan PDF read from.** `onlyMonths` limits it to those
  * months (the screen shows one month at a time); without it, the whole plan.

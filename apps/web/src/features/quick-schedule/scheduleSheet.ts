@@ -65,10 +65,6 @@ export interface SheetMonth {
   scheduled: string;
   left: string;
   over: boolean;
-  /** Minutes cut at month end (SCH-17), or "". */
-  cut: string;
-  /** The first date cut short ("Dec 30"), or "". */
-  cutFrom: string;
 }
 
 export interface SheetCheck {
@@ -124,7 +120,6 @@ export interface ScheduleSheet {
   summary: SheetFigure[];
   months: SheetMonth[];
   authorizedNote: string;
-  cutNote: string | null;
   /** A non-blocking warning about the whole plan (APP-SPEC 5.8); null on a service's own page. */
   warning: string | null;
   checks: SheetCheck[];
@@ -164,7 +159,7 @@ function leftNote(model: QuickModel): string {
   for (const month of model.months) {
     const figures = monthFigures(model, month);
     const { leftMinutes } = monthBalance(figures);
-    if (leftMinutes < 15 || figures.trimmedMinutes > 0) continue;
+    if (leftMinutes < 15) continue;
     const careDays = Object.values(figures.expanded).filter((day) => Object.values(day).some((minutes) => minutes > 0)).length;
     if (careDays === 0 || figures.scheduledTaskMinutes === 0) return "";
     const taskUnits = figures.authorizedUnits - figures.transportUnits;
@@ -191,11 +186,9 @@ function daysList(days: Weekday[]): string {
   return days.map(weekdayName).join(", ");
 }
 
-function authorizedNote(model: QuickModel, calculated: boolean[]): string {
+function authorizedNote(calculated: boolean[]): string {
   if (calculated.every(Boolean)) return "Authorized is calculated from the tasks: there's no Fusion figure for these months.";
-  const fusion = model.prorated
-    ? "Authorized is Fusion's figure, counted for each month's days as Fusion does."
-    : "Authorized is Fusion's figure for each month.";
+  const fusion = "Authorized is Fusion's figure for each month.";
   return calculated.some(Boolean) ? `${fusion} * Calculated from the tasks: no Fusion figure for that month.` : fusion;
 }
 
@@ -293,14 +286,13 @@ export function buildScheduleSheet(
     });
   }
 
-  // Every month of the schedule, and where its units run out (SCH-17). When some months have
-  // Fusion's figure and others don't, the calculated ones are starred.
+  // Every month of the schedule, and where a month is over its authorization (a warning, not a
+  // stop). When some months have Fusion's figure and others don't, the calculated ones are starred.
   const calculated: boolean[] = [];
   const someFromFusion = model.monthlyAuthorizations.length > 0;
   const months: SheetMonth[] = model.months.map((month) => {
     const figures = monthFigures(model, month);
     const { scheduledMinutes, leftMinutes } = monthBalance(figures);
-    const firstCut = figures.trims.map((trim) => trim.date).sort()[0];
     calculated.push(figures.source !== "fusion");
     return {
       label: shortMonth(month),
@@ -308,16 +300,8 @@ export function buildScheduleSheet(
       scheduled: unitsCell(scheduledMinutes),
       left: leftMinutes >= 0 ? unitsCell(leftMinutes) : `${-leftMinutes} min over`,
       over: leftMinutes < 0,
-      cut: figures.trimmedMinutes ? `${figures.trimmedMinutes} min` : "",
-      // "Dec 30, 2025" -> "Dec 30": the month is in the column's heading.
-      cutFrom: figures.trimmedMinutes && firstCut ? niceDate(firstCut).replace(/, \d+$/, "") : "",
     };
   });
-  const cutNote = months.some((month) => month.cut)
-    ? "When a month's units run out, its last visits are shorter, starting on the date shown. If the units run out every " +
-      "month, the care plan needs more than Fusion authorizes. DSDS says a consistent need to change a task should " +
-      "prompt a request to the care plan change team (INFO 09-25-02)."
-    : null;
 
   const taskNames = new Map(model.tasks.map((task) => [task.id, task.name]));
   const checks: SheetCheck[] = groupResults(model.results).flatMap((group) => {
@@ -343,8 +327,7 @@ export function buildScheduleSheet(
     week: { visit: formatDuration(weekMinutes), minutes: grouped.format(weekMinutes), units: unitsCell(weekMinutes) },
     summary,
     months,
-    authorizedNote: authorizedNote(model, calculated) + leftNote(model) + pastDaysNote(model.auth.start, today),
-    cutNote,
+    authorizedNote: authorizedNote(calculated) + leftNote(model) + pastDaysNote(model.auth.start, today),
     warning: null,
     checks,
     reviewed: state.reviewed !== null ? niceDate(state.reviewed) : null,

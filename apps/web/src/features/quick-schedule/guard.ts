@@ -1,8 +1,8 @@
-import { daysInMonth, monthTaskUnits, type RulePack, type ValidationResult, type Weekday } from "@careplan/engine";
+import { type RulePack, type ValidationResult, type Weekday } from "@careplan/engine";
 import type { QuickModel, QuickState } from "./types.js";
-import { buildQuickModel, monthFigures } from "./model.js";
+import { buildQuickModel } from "./model.js";
 import { copyFor } from "./ruleCopy.js";
-import { monthName, weekdayName } from "../../lib/format";
+import { weekdayName } from "../../lib/format";
 
 export type TryChangeResult =
   | { ok: true; model: QuickModel }
@@ -62,19 +62,11 @@ export function maxCellMinutes(
   return low * 5;
 }
 
-/** A task's monthly units in a month, computed exactly as SCH-08 computes its task limit. */
-function taskMonthUnits(model: QuickModel, taskId: string, month: string): number | null {
-  const task = model.tasks.find((t) => t.id === taskId);
-  const [year, monthNumber] = month.split("-").map(Number);
-  if (!task || year === undefined || monthNumber === undefined) return null;
-  return monthTaskUnits(task.minPerDay * task.daysPerWeek, task.daysPerWeek, daysInMonth(year, monthNumber)).units;
-}
-
 /**
  * APP-SPEC 5.7 refusal sentence from the first BLOCK, preferring the viewed month and then a
  * task-level result.
  */
-export function refusalText(blocks: ValidationResult[], state: QuickState, model: QuickModel): string {
+export function refusalText(blocks: ValidationResult[], state: QuickState): string {
   const block =
     blocks.find((b) => b.refs.month === state.viewMonth && b.refs.taskId) ??
     blocks.find((b) => b.refs.month === state.viewMonth) ??
@@ -82,18 +74,7 @@ export function refusalText(blocks: ValidationResult[], state: QuickState, model
     blocks[0];
   if (!block) return "";
   const task = block.refs.taskId ? state.tasks.find((t) => t.id === block.refs.taskId) : undefined;
-  const month = block.refs.month;
 
-  if (block.ruleId === "SCH-08" && task && month) {
-    const units = taskMonthUnits(model, task.id, month);
-    if (units !== null) return `That would put ${task.name} over its ${units} units in ${monthName(month)}.`;
-  }
-  if (block.ruleId === "SCH-08" && !task && month) {
-    const figures = monthFigures(model, month);
-    return `That would put ${monthName(month)} over the ${figures.authorizedUnits} units ${
-      figures.source === "fusion" ? "Fusion authorizes" : "the plan allows"
-    }.`;
-  }
   if (block.ruleId === "SCH-02" && task) {
     return `${task.name} is authorized for ${task.daysPerWeek} ${task.daysPerWeek === 1 ? "day" : "days"} a week.`;
   }
@@ -129,7 +110,7 @@ export function cellRefusal(
   const result = tryChange(next, pack, state);
   if (result.ok) return null;
 
-  const sentence = refusalText(result.blocks, next, result.model);
+  const sentence = refusalText(result.blocks, next);
   const [taskId, weekdayText] = key.split(":");
   const weekday = Number(weekdayText);
   const task = state.tasks.find((t) => t.id === taskId);

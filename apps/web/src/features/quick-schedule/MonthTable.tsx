@@ -45,7 +45,6 @@ export function MonthTable({ model }: { model: QuickModel }) {
               <th scope="col" className={cn(number, "font-semibold")}>Authorized</th>
               <th scope="col" className={cn(number, "font-semibold")}>Scheduled</th>
               <th scope="col" className={cn(number, "font-semibold")}>Left</th>
-              <th scope="col" className={cn(number, "font-semibold")}>Cut at month end</th>
             </tr>
           </thead>
           <tbody>
@@ -57,10 +56,9 @@ export function MonthTable({ model }: { model: QuickModel }) {
                   <th scope="row" className={cn(cell, "font-normal")}>{monthName(month)}</th>
                   <td className={number}>{figures.authorizedUnits}</td>
                   <td className={number}>{formatUnits(scheduled)}</td>
-                  <td className={cn(number, left < 0 && "text-block")}>
+                  <td className={cn(number, left < 0 && "text-warn")}>
                     {left >= 0 ? formatUnits(left) : `${-left} min over`}
                   </td>
-                  <td className={number}>{figures.trimmedMinutes ? `${figures.trimmedMinutes} min` : "—"}</td>
                 </tr>
               );
             })}
