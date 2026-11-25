@@ -47,7 +47,7 @@ test("AC-19: /quick with the example, then an import issue, at phone size", asyn
   await expectPhoneLayout(page);
 });
 
-test("AC-19: /quick with a built plan and a refused change at phone size", async ({ page }) => {
+test("AC-19: /quick with a built plan and an over-day change at phone size", async ({ page }) => {
   await page.goto("/quick");
   await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
@@ -62,16 +62,15 @@ test("AC-19: /quick with a built plan and a refused change at phone size", async
   await expectPhoneLayout(page);
   await page.getByRole("button", { name: "Hide what we read" }).click();
 
-  // A refused cell change and its "Use 55 minutes" button. As in AC-05, Monday's Bathing comes
-  // down to 30 first; without that the month has no room for Tuesday and there's no suggestion.
+  // A cell change that goes over the task's day and the month. As in AC-05, Monday's Bathing
+  // comes down to 30 first, then Tuesday's 60 is accepted (a warning, not a refusal).
   await changeCell(page, "Bathing", "Monday", 45, 30);
   await expect(page.getByRole("button", { name: "Bathing, Monday, 30 minutes. Change minutes" })).toBeVisible();
   await changeCell(page, "Bathing", "Tuesday", 45, 60);
-  await expect(page.getByRole("button", { name: "Use 55 minutes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 60 minutes. Change minutes" })).toBeVisible();
   await expectPhoneLayout(page);
 
-  // "Show in week" on a check about one task: 55 minutes is above Bathing's 45 (SCH-03).
-  await page.getByRole("button", { name: "Use 55 minutes" }).click();
+  // "Show in week" on a check about one task: 60 minutes is above Bathing's 45 (SCH-03).
   await page.getByText("A day has more minutes than the task allows").click();
   await expect(page.getByRole("button", { name: "Show in week" })).toBeVisible();
   await expectPhoneLayout(page);
