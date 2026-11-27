@@ -40,6 +40,7 @@ export * from "./validate.js";
 export * from "./stateparity/rowMath.js";
 export * from "./stateparity/calc3c.js";
 export * from "./stateparity/calc3a.js";
+export * from "./stateparity/calc14.js";
 export * from "./stateparity/guidance.js";
 export * from "./stateparity/rules.js";
 export * from "./stateparity/validate.js";

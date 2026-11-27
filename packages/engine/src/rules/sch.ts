@@ -70,7 +70,7 @@ export function ruleSCH03TemplateMinutes(
 
 /**
  * @rule SCH-08
- * @source DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026
+ * @source DHSS 14a/14b "Example Month" sheet (calendar expansion); 13 CSR 70-91.010(1)(B)2; overage check: LTSS email Nov 24, 2026
  */
 export function ruleSCH08CalendarCheck(
   authorizations: ServiceAuthorization[],

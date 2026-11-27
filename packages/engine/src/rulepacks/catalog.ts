@@ -76,7 +76,7 @@ export const RULE_CATALOG: readonly RuleCatalogEntry[] = [
   {
     id: "SCH-08", area: "Schedule", severities: ["WARN"], status: "VERIFIED",
     rule: "Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → WARN (overage is a warning, not a stop).",
-    source: "DHSS 14a/14b \"Example Month\" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026",
+    source: "DHSS 14a/14b \"Example Month\" sheet (calendar expansion); 13 CSR 70-91.010(1)(B)2; overage check: LTSS email Nov 24, 2026",
   },
   {
     id: "SCH-11", area: "Schedule", severities: ["WARN"], status: "APPROVED",

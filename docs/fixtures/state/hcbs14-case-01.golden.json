@@ -1,0 +1,133 @@
+{
+  "fixture": "hcbs14-case-01",
+  "generatedBy": "State workbook formulas recalculated in LibreOffice headless (no engine code involved)",
+  "sources": {
+    "14a": {
+      "title": "DHSS HCBS Manual 4.00 Appendix 14a - Agency Model Scheduling Worksheet",
+      "url": "https://health.mo.gov/sites/health/files/media/file/2026/07/4.00appendix14a%20%281%29.xlsx",
+      "sha256": "a10b05d10b9dc0b148a0c8ec72be140f47a9d837ce883475b0cbd684c059b968",
+      "fileModified": "2025-09-24"
+    },
+    "14b": {
+      "title": "DHSS HCBS Manual 4.00 Appendix 14b - CDS Scheduling Worksheet",
+      "url": "https://health.mo.gov/sites/health/files/media/file/2026/07/4.00appendix14b.xlsx",
+      "sha256": "d62480a6f9668c9c321083a331f3d3c9a9e54a5a80b5cb024e48979f1b613f7a",
+      "fileModified": "2025-09-19"
+    }
+  },
+  "inputs": {
+    "startDate": "2026-02-01",
+    "exampleMonth": "2026-07",
+    "tasks": [
+      {
+        "row": 7,
+        "name": "Task A 3x/wk 30min",
+        "minutesByDay": { "Mon": 30, "Wed": 30, "Fri": 30 }
+      },
+      {
+        "row": 8,
+        "name": "Task B 7x/wk 25min",
+        "minutesByDay": { "Sun": 25, "Mon": 25, "Tue": 25, "Wed": 25, "Thu": 25, "Fri": 25, "Sat": 25 }
+      },
+      {
+        "row": 9,
+        "name": "Task C 4x/wk 20min",
+        "minutesByDay": { "Sun": 20, "Tue": 20, "Thu": 20, "Sat": 20 }
+      },
+      {
+        "row": 10,
+        "name": "Task D 2x/wk 10min",
+        "minutesByDay": { "Mon": 10, "Fri": 10 }
+      },
+      {
+        "row": 11,
+        "name": "Task E Thu only 45min",
+        "minutesByDay": { "Thu": 45 }
+      }
+    ]
+  },
+  "expected": {
+    "14a": {
+      "perTask": [
+        { "row": 7, "timesPerWeek_D": 3, "weeklyMinutes_L": 90, "units31d_M": 30 },
+        { "row": 8, "timesPerWeek_D": 7, "weeklyMinutes_L": 175, "units31d_M": 52 },
+        { "row": 9, "timesPerWeek_D": 4, "weeklyMinutes_L": 80, "units31d_M": 26 },
+        { "row": 10, "timesPerWeek_D": 2, "weeklyMinutes_L": 20, "units31d_M": 7 },
+        { "row": 11, "timesPerWeek_D": 1, "weeklyMinutes_L": 45, "units31d_M": 15 }
+      ],
+      "dailyMinutes_E27_K27": [45, 65, 45, 55, 90, 65, 45],
+      "dailyUnits_E30_K30": [3, 4, 3, 3, 6, 4, 3],
+      "dailyRemainder_E31_K31": [0, 5, 0, 10, 0, 5, 0],
+      "weeklyUnits_L30": 27,
+      "weeklyAccrual_L31": 5,
+      "monthlyUnits_D37_O37": {
+        "2026-02": 125,
+        "2026-03": 130,
+        "2026-04": 128,
+        "2026-05": 130,
+        "2026-06": 128,
+        "2026-07": 130,
+        "2026-08": 130,
+        "2026-09": 128,
+        "2026-10": 130,
+        "2026-11": 128,
+        "2026-12": 130,
+        "2027-01": 130
+      },
+      "twelveMonthTotal_P37": 1547,
+      "baseline52wk_P38": 1404,
+      "exampleMonth": {
+        "weekdayCounts_D7_J7": [4, 4, 4, 5, 5, 5, 4],
+        "taskMonthMinutes_K8_K12": [420, 775, 340, 90, 0],
+        "monthMinutes_K28": 1625,
+        "monthUnits_K31": 108,
+        "monthRemainder_K32": 5
+      }
+    },
+    "14b": {
+      "perTask": [
+        { "row": 7, "timesPerWeek_D": 3, "weeklyMinutes_L": 90, "units31d_M": 30 },
+        { "row": 8, "timesPerWeek_D": 7, "weeklyMinutes_L": 175, "units31d_M": 52 },
+        { "row": 9, "timesPerWeek_D": 4, "weeklyMinutes_L": 80, "units31d_M": 26 },
+        { "row": 10, "timesPerWeek_D": 2, "weeklyMinutes_L": 20, "units31d_M": 7 },
+        { "row": 11, "timesPerWeek_D": 1, "weeklyMinutes_L": 45, "units31d_M": 15 }
+      ],
+      "dailyMinutes_E27_K27": [45, 65, 45, 55, 90, 65, 45],
+      "dailyUnits_E30_K30": [3, 4, 3, 3, 6, 4, 3],
+      "dailyRemainder_E31_K31": [0, 5, 0, 10, 0, 5, 0],
+      "weeklyUnits_L30": 27,
+      "weeklyAccrual_L31": 5,
+      "monthlyUnits_D37_O37": {
+        "2026-02": 125,
+        "2026-03": 130,
+        "2026-04": 128,
+        "2026-05": 130,
+        "2026-06": 128,
+        "2026-07": 130,
+        "2026-08": 130,
+        "2026-09": 128,
+        "2026-10": 130,
+        "2026-11": 128,
+        "2026-12": 130,
+        "2027-01": 130
+      },
+      "twelveMonthTotal_P37": 1547,
+      "baseline52wk_P38": 1404,
+      "exampleMonth": {
+        "weekdayCounts_D7_J7": [4, 4, 4, 5, 5, 5, 4],
+        "taskMonthMinutes_K8_K12": [420, 775, 340, 90, 225],
+        "monthMinutes_K28": 1850,
+        "monthUnits_K31": 123,
+        "monthRemainder_K32": 5
+      }
+    }
+  },
+  "knownStateDefects": [
+    {
+      "workbook": "14a",
+      "cell": "'Example Month'!H12",
+      "detail": "Hardcoded 0 instead of ='Weekly Schedule'!I11; Thursday minutes on task line 5 are dropped from the Example Month. 14b is correct.",
+      "effectInThisCase": "14a July 2026 month minutes 1625 vs 14b 1850 (225 minutes / 15 units missing)"
+    }
+  ]
+}

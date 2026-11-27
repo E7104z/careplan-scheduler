@@ -15,7 +15,7 @@ const SOURCES: Record<string, string> = {
   "AUTH-13": "Product decision approved Oct 20, 2026 (P-06)",
   "SCH-02": "INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2",
   "SCH-03": "Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid",
-  "SCH-08": "DHSS 14a/14b \"Example Month\" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026",
+  "SCH-08": "DHSS 14a/14b \"Example Month\" sheet (calendar expansion); 13 CSR 70-91.010(1)(B)2; overage check: LTSS email Nov 24, 2026",
   "SCH-11": "INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic",
   "SCH-12": "Product decision approved Oct 20, 2026",
   "SCH-14": "Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval)",
