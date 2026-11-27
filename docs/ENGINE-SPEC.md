@@ -202,7 +202,8 @@ Assistive Transfer Device (alias "Asst. Transfer Device"); Assistance with Toile
 Hygiene; Change Linens; Clean Bath; Clean Floors; Clean Kitchen; Clean/Maintain Equipment;
 Dressing/Grooming; Essential Correspondence (alias "Essential Correspond", Fusion's truncation); Laundry (Home); Laundry (Off Site); Make Bed;
 Meal Prep/Eating; Medications; Mobility/Transfer; Ostomy Hygiene; Passive ROM; Tidy and Dust;
-Trash; Treatments; Turning/Positioning; Wash Dishes; Essential Transportation (transport).
+Trash; Treatments; Turning/Positioning; Wash Dishes.
+Essential Transportation (transport) is not in the 14b dropdown: it is HCBS-3c only (F-4), not a scheduled task.
 
 Agency model (DHSS 14a dropdown):
 Basic PC — Bathing; Dietary; Dressing/Grooming; Mobility/Transfer/Position; Self-Admin of
@@ -280,7 +281,7 @@ luxon, so a page that calls `validatePlan` and not `validateSchedule` doesn't lo
 |---|---|---|---|---|
 | SCH-02 | Template: weekdays scheduled for a task > `daysPerWeek` → BLOCK; < `daysPerWeek` → WARN. | BLOCK / WARN | VERIFIED basis | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
 | SCH-03 | Any template occurrence with minutes > `minPerDay` → WARN. | WARN | APPROVED | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
-| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → WARN (overage is a warning, not a stop). | WARN | VERIFIED | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2; LTSS email Nov 24, 2026 |
+| SCH-08 | Expand template + exceptions onto every date of each month in the authorization; per task, scheduled minutes > 15 × month units → WARN (overage is a warning, not a stop). | WARN | VERIFIED | DHSS 14a/14b "Example Month" sheet (calendar expansion); 13 CSR 70-91.010(1)(B)2; overage check: LTSS email Nov 24, 2026 |
 | SCH-11 | Same task's exception repeated in 2 consecutive months → WARN "consider a care plan change request" (product heuristic). Exceptions with `kind: "fit"` are not counted (Amendment A). | WARN | APPROVED | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
 | SCH-12 | Dates outside start/end are not scheduled; partial months with no imported figure → REVIEW. | REVIEW | APPROVED | Product decision approved Oct 20, 2026 |
 | SCH-14 | Visits on suspended or expired dates → BLOCK; future-effective → INFO "draft only". | BLOCK / INFO | APPROVED | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |

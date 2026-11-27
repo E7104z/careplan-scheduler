@@ -11,9 +11,8 @@ export interface DayChangeResult {
 /**
  * "Change this day" (CP3-7): set the minutes a task has on one date, as a calendar exception over
  * the weekly pattern. The pattern and the authorization are never edited. It goes through the
- * guard (APP-SPEC 5.7): a change that would break a Must-fix rule, such as putting the month over
- * its units, is refused with the limit and nothing changes. Setting the pattern's own minutes back
- * removes the change.
+ * guard (APP-SPEC 5.7): a change that would break a Must-fix rule is refused with the limit and
+ * nothing changes. Setting the pattern's own minutes back removes the change.
  */
 export function changeDay(plan: CarePlan, service: number, change: DayChange, pack: RulePack): DayChangeResult {
   const state = plan.services[service];

@@ -31,7 +31,7 @@ FIX IDs refer to the review-fix regression tests in `packages/engine/test/review
 |---|---|---|---|---|---|
 | SCH-02 | `packages/engine/src/rules/sch.ts` | `ruleSCH02TemplateDays` | `packages/engine/test/rules-auth-sch.test.ts` | — (custom) | INFO 09-25-02 (Sep 23, 2025); DHSS 14a/14b cell D7; 13 CSR 70-91.010(3)(H)2 |
 | SCH-03 | `packages/engine/src/rules/sch.ts` | `ruleSCH03TemplateMinutes` | `packages/engine/test/rules-auth-sch.test.ts` | TC-16 (WARN) | Product decision approved Oct 20, 2026; DHSS 14a/14b weekly grid |
-| SCH-08 | `packages/engine/src/rules/sch.ts` | `ruleSCH08CalendarCheck` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-16 (BLOCK), FIX-1 | DHSS 14a/14b "Example Month" sheet; 13 CSR 70-91.010(1)(B)2 |
+| SCH-08 | `packages/engine/src/rules/sch.ts` | `ruleSCH08CalendarCheck` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-16 (BLOCK), FIX-1 | DHSS 14a/14b "Example Month" sheet (calendar expansion); 13 CSR 70-91.010(1)(B)2; overage check: LTSS email Nov 24, 2026 |
 | SCH-11 | `packages/engine/src/rules/sch.ts` | `ruleSCH11RepeatedExceptions` | `packages/engine/test/fit.test.ts` | TC-39 | INFO 09-25-02 (Sep 23, 2025); CDS policy clarification Q9; two-month trigger is a product heuristic |
 | SCH-12 | `packages/engine/src/rules/sch.ts` | `ruleSCH12PartialMonth` | `packages/engine/test/rules-auth-sch.test.ts` | TC-21 | Product decision approved Oct 20, 2026 |
 | SCH-14 | `packages/engine/src/rules/sch.ts` | `ruleSCH14VisitDates` | `packages/engine/test/rules-auth-sch.test.ts`, `packages/engine/test/review-fixes.test.ts` | TC-22, TC-24, FIX-6c | Product decision approved Oct 20, 2026; Policy 3.55 (pending BFP approval) |

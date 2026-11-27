@@ -87,28 +87,26 @@ test("AC-25: on Oct 21, 2026, no month before October 2026 is scheduled, and an 
   await expect(page.getByRole("heading", { name: "This care plan has ended" })).toBeVisible();
 });
 
-test("AC-04: raising Monday's Bathing to 60 is refused and the week is unchanged", async ({ page }) => {
+test("AC-04: raising Monday's Bathing to 60 is accepted and flagged, not refused", async ({ page }) => {
   await buildB(page);
 
+  // Over-authorization is a warning now (DSDS Nov 24, 2026), so the change is accepted.
   await changeCell(page, "Bathing", "Monday", 45, 60);
-  const alert = page.getByRole("alert");
-  await expect(alert).toContainText("Not changed.");
-  await expect(alert).toContainText("That would put Bathing over its 93 units in December 2025.");
-  await expect(alert).toContainText("Bathing can't have more than 45 minutes on Monday.");
-  await expect(page.getByRole("button", { name: "Bathing, Monday, 45 minutes. Change minutes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bathing, Monday, 60 minutes. Change minutes" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(statusPanel(page)).toContainText("Ready to use");
 });
 
-test("AC-05: accepted Monday edit, refused Tuesday edit, then Use 55 minutes", async ({ page }) => {
+test("AC-05: accepted Monday edit, then an accepted Tuesday edit that goes over", async ({ page }) => {
   await buildB(page);
 
   await changeCell(page, "Bathing", "Monday", 45, 30);
   await expect(page.getByRole("button", { name: "Bathing, Monday, 30 minutes. Change minutes" })).toBeVisible();
 
+  // Tuesday 45 -> 60 goes over the task's day and the month: accepted as a warning, not a refusal.
   await changeCell(page, "Bathing", "Tuesday", 45, 60);
-  await expect(page.getByRole("alert")).toContainText("The most Bathing can have on Tuesday is 55 minutes.");
-
-  await page.getByRole("button", { name: "Use 55 minutes" }).click();
-  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 55 minutes. Change minutes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 60 minutes. Change minutes" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(statusPanel(page)).toContainText("Ready to use");
 });
 test("AC-06: fixture D offers a partial build and the summary says what's missing", async ({ page }) => {
@@ -288,15 +286,14 @@ test("AC-15: the participant's name and DCN never reach storage or the console",
     }
   };
 
-  // Opened (AC-02), a cell refused and changed (AC-04, AC-05).
+  // Opened (AC-02), two cells changed (AC-04, AC-05).
   await page.goto("/quick");
   await openCarePlan(page, fixturePdf("fusion-table-with-banner"));
   await expect(page.getByRole("heading", { name: "SAMPLE PARTICIPANT B" })).toBeVisible();
   await page.waitForFunction(() => sessionStorage.getItem("cps.quick.v3")?.includes("Laundry (Off Site)"));
   await changeCell(page, "Bathing", "Monday", 45, 30);
   await changeCell(page, "Bathing", "Tuesday", 45, 60);
-  await page.getByRole("button", { name: "Use 55 minutes" }).click();
-  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 55 minutes. Change minutes" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bathing, Tuesday, 60 minutes. Change minutes" })).toBeVisible();
   await expectNothingStored();
 
   // On to January 2026; the viewed month is saved.

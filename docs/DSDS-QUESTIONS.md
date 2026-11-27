@@ -64,3 +64,27 @@ until then and where that is written down. Send to **LTSS@health.mo.gov** (the c
 Applied: SCH-17 (end-of-month trims) removed; SCH-08 overage is a WARN; the care plan screen's one
 figure is validation-only. See `docs/SPEC-FOLLOWUPS.md` for the still-frozen IMP-10 and APP-SPEC
 5.4 items.
+
+## 2. Appendix 14a "Example Month" H12 hardcodes 0 (defect found in parity testing)
+
+**What we found (Nov 25, 2026):**
+4.00 Appendix 14a's `Example Month` sheet has `H12` hardcoded to `0` where 14b's matching cell
+reads `='Weekly Schedule'!I11` (Thursday minutes on task line 5). A 45-minute Thursday task drops
+225 minutes (15 units) out of 14a's month view; 14b keeps them. The engine reproduces the correct
+(14b) figure, and `docs/fixtures/state/hcbs14-case-01.golden.json` records the defect in
+`knownStateDefects`.
+
+**Email (ready to send):**
+
+> Subject: Appendix 14a "Example Month" H12 looks hardcoded
+>
+> Hello,
+>
+> In the 4.00 Appendix 14a "Agency Model Scheduling Worksheet" the Example Month cell H12 is
+> hardcoded to 0, where Appendix 14b's matching cell reads `='Weekly Schedule'!I11`. Thursday
+> minutes on task line 5 therefore drop out of 14a's month view while 14b keeps them. We wanted to
+> confirm this is a typo in 14a before matching the workbook.
+>
+> Thank you,
+>
+> (name, agency, phone)

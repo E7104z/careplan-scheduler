@@ -277,7 +277,7 @@ app), and clock times arrive with Phase 4.
 - Coverage line on every view, including one-service plans, and on the printout.
 - No "compliant" or "approved" wording anywhere while a REVIEW stands (today the status reads
   "Ready to use" and lists items to review; keep it that way).
-- **Evidence:** Appendix 14a/14b XLSX bytes for WORKBOOK-01 parity.
+- **Evidence:** fuller 14a/14b parity beyond the one committed case (E-12); the XLSX bytes are already committed in `docs/fixtures/state/`.
 
 ### Security and environment (runs across phases)
 Quick Schedule stays local (browser only, no upload, name and DCN never stored). Agency mode is a
@@ -334,7 +334,7 @@ Fusion material).
 | SEC-01 | No upload without action; no PHI in diagnostics; tenant isolation | PARTIAL: IMP-16 privacy test, Firestore rules tests; participant gate (R-21–R-28) built, live PHI disabled until Google Cloud BAA executed | section 7 |
 | EXPORT-01 | PDF, print, CSV, XLSX agree | PARTIAL: PDF and print share one sheet and name kept authorizations; CSV/XLSX to build | Phase 5 |
 | SOURCE-01 | Rules cite a dated source; version on results | PASS | `catalog.test.ts`, `sources.test.ts`, AUTH-13 |
-| WORKBOOK-01 | 14a/14b parity | EVIDENCE | E-12 |
+| WORKBOOK-01 | 14a/14b parity | PARTIAL: covered for unit math (D7/L/M7, F-2b/F-3/F-5) and the Example Month on one case; the 14a "Example Month" H12 defect is recorded; 28-day-February, 6-day, 0-minute-day and odd-remainder cases added | `stateparity-golden-14.test.ts`, `stateparity-14-edge.test.ts` |
 
 ## 9. Unresolved: what only DHSS or Fusion can settle
 
@@ -352,7 +352,7 @@ when the email goes:
     (E-18)?
 12. **ILW case management:** Appendix 1 lists $38.17 a month; the HCBS-3c ILW tab shows
     $458.09. Which applies, and is the 3c amount yearly?
-13. **Appendix 14a/14b:** the current XLSX files, so their formulas can be matched (E-12).
+13. **Appendix 14a/14b:** the current XLSX files are obtained and committed (`docs/fixtures/state/`, SHA-256 pinned). Unit math and the Example Month now match on one case; the 14a "Example Month" H12 hardcode is a state defect (see `docs/DSDS-QUESTIONS.md`) and fuller parity across more cases is still to build (E-12).
 14. **Aides in an RCF/ALF:** Policy 3.05 bars immediate family and non-employees from delivering
     PC, and says PC is also provided in an RCF/ALF; Policy 3.20 (rev. Mar 2026) doesn't restate
     it. Does the restriction apply to RCF/ALF personal care and APC? (CON-07 is REVIEW there.)
