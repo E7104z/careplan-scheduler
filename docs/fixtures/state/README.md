@@ -18,7 +18,8 @@ and the 14b file 2025-09-19 (the same day as DSDS's training video).
 recalculated in LibreOffice headless (no engine code involved).
 `packages/engine/test/stateparity-golden-14.test.ts` runs the engine on the same inputs and checks
 every figure against it, and hashes the committed xlsx files to confirm they are the exact workbooks
-the fixture cites.
+the fixture cites. `packages/engine/test/stateparity-14-edge.test.ts` adds hand-computed cases for
+the remaining edges (28-day February, a 6-day task, a 0-minute day and an odd remainder).
 
 ## Known state defect
 
